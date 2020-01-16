@@ -87,21 +87,35 @@ def gen(dry_run=False):
 
     w = writer.new_writer(extension, dry_run=dry_run)
 
-    cmd = ['git', 'describe', '--tags', '--match', '[0-9]*']
+    cmd = ['git', 'describe', '--tags', '--dirty', '--match', '[0-9]*']
     try:
-        version = subprocess.check_output(cmd).decode().strip()
+        describe_out = (
+            subprocess.check_output(
+                [
+                    'git',
+                    'describe',
+                    '--tags',
+                    '--dirty',
+                    '--match',
+                    '[0-9]*',
+                ],
+                stderr=subprocess.STDOUT,
+            )
+            .decode()
+            .split('-')
+        )
     except subprocess.CalledProcessError:
         click.echo('Unable to get version number from git tags')
         raise click.Abort
 
-    # PEP 386 compatibility
-    if '-' in version:
-        version = '.post'.join(version.split('-')[:2])
+    print(describe_out)
+    if describe_out[-1].strip() == "dirty":
+        if not click.confirm('Changes made since release, continue generating CHANGELOG'):
+            raise click.Abort()
+        describe_out.pop()
 
-    print(version)
-    # TODO: extract version from git.
+    version = "v0.0.1"
     # TODO: take a note from bumpversion, read in versioning format string
-    version = 'v0.0.2'
 
     w.add_version(version)
 
