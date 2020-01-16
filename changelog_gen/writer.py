@@ -1,4 +1,5 @@
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 
 SUPPORTED_EXTENSIONS = ["md", "rst"]
