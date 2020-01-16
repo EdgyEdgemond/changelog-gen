@@ -21,13 +21,17 @@ from changelog_gen.vcs import Git
 # https://github.com/c4urself/bump2version/blob/master/bumpversion/cli.py _determine_config_file
 
 
-def process_info(info):
+def process_info(info, dry_run):
     if info["dirty"]:
         click.echo("Working directory is not clean.")
         raise click.Abort()
 
-    if info["distance_to_latest_tag"] != 0 and not click.confirm(
-        "Changes made since release, continue generating CHANGELOG"
+    if (
+        not dry_run
+        and info["distance_to_latest_tag"] != 0
+        and not click.confirm(
+            "Changes made since release, continue generating CHANGELOG"
+        )
     ):
         raise click.Abort()
 
@@ -67,7 +71,7 @@ def gen(dry_run=False):
         raise click.Abort()
 
     info = Git().get_latest_tag_info()
-    process_info(info)
+    process_info(info, dry_run)
 
     # TODO: take a note from bumpversion, read in versioning format string
     version = "v{current_version}".format(current_version=info["current_version"])
