@@ -97,8 +97,6 @@ def gen(dry_run=False):
 
     w.write()
     if not dry_run:
-        for x in release_notes.iterdir():
-            if x.is_file and not x.name.startswith("."):
-                x.unlink()
+        e.clean()
 
         # TODO: Commit changes and retag (detect from config)
