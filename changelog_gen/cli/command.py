@@ -131,7 +131,7 @@ def gen(dry_run=False):
     ):
         raise click.Abort()
 
-    version = info['current_version']
+    version = f"v{info['current_version']}"
     # TODO: take a note from bumpversion, read in versioning format string
 
     w.add_version(version)
