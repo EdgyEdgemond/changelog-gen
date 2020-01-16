@@ -1,4 +1,0 @@
-[console_scripts]
-changelog-gen = changelog_gen.cli.command:gen
-changelog-init = changelog_gen.cli.command:init
-
