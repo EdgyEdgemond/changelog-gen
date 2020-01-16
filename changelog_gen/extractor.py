@@ -3,8 +3,8 @@ from pathlib import Path
 
 
 SUPPORTED_SECTIONS = {
-    "feature": "Features and Improvements",
-    "bugfix": "Bug fixes",
+    "feat": "Features and Improvements",
+    "fix": "Bug fixes",
 }
 
 
