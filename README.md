@@ -1,4 +1,4 @@
-# Changelog Generator - v0.0.10
+# Changelog Generator - v0.0.11
 
 ## Installation
 
