@@ -31,7 +31,7 @@ class BaseWriter:
             with NamedTemporaryFile('wb') as output_file:
                 output_file.write('\n'.join(self.content))
         else:
-            filename = f'CHANGELOG.{self.extension}'
+            filename = 'CHANGELOG.{extension}'.format(extension=self.extension)
             with open(filename, 'w') as output_file:
                 output_file.write('\n'.join(self.content))
 
@@ -42,13 +42,13 @@ class MdWriter(BaseWriter):
     extension = 'md'
 
     def _add_version(self, version):
-        self.content.extend([f'## {version}', ''])
+        self.content.extend(['## {version}'.format(version=version), ''])
 
     def _add_section_header(self, header):
-        self.content.extend([f'### {header}', ''])
+        self.content.extend(['### {header}'.format(header=header), ''])
 
     def _add_section_line(self, line):
-        self.content.extend([f'- {line}'])
+        self.content.extend(['- {line}'.format(line=line)])
 
 
 class RstWriter(BaseWriter):
@@ -63,14 +63,14 @@ class RstWriter(BaseWriter):
         self.content.extend([header, '-' * len(header), ''])
 
     def _add_section_line(self, line):
-        self.content.extend([f'* {line}', ''])
+        self.content.extend([f'* {line}'.format(line=line), ''])
 
 
 def new_writer(extension, dry_run=False):
     if extension not in SUPPORTED_EXTENSIONS:
-        raise ValueError(f'Changelog extension "{extension}" not supported.')
+        raise ValueError('Changelog extension "{extension}" not supported.'.format(extension=extension))
 
-    changelog = Path(f'CHANGELOG.{extension}')
+    changelog = Path('CHANGELOG.{extension}'.format(extension=extension))
     if not changelog.exists():
         changelog = None
 

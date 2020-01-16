@@ -26,5 +26,5 @@ def common_options(command):
 
 def detect_extension():
     for ext in SUPPORTED_EXTENSIONS:
-        if Path(f'CHANGELOG.{ext}').exists():
+        if Path('CHANGELOG.{ext}'.format(ext=ext)).exists():
             return ext

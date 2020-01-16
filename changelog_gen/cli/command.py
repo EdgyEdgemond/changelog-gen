@@ -26,7 +26,16 @@ SUPPORTED_SECTIONS = {
 # https://github.com/c4urself/bump2version/blob/master/bumpversion/cli.py _determine_config_file
 # TODO: DetailsExtraction if release_notes, file format, if commit messages, main commit message
 
-# TODO: Don't use fstrings that limits python version
+def process_info(info):
+    if info['dirty']:
+        click.echo('Working directory is not clean.')
+        raise click.Abort()
+
+    if (
+        info['distance_to_latest_tag'] != 0 and
+        not click.confirm('Changes made since release, continue generating CHANGELOG')
+    ):
+        raise click.Abort()
 
 
 @util.common_options
@@ -40,7 +49,7 @@ def init(file_format):
     """
     extension = util.detect_extension()
     if extension is not None:
-        click.echo(f'CHANGELOG.{extension} detected.')
+        click.echo('CHANGELOG.{extension} detected.'.format(extension=extension))
         raise click.Abort()
 
     w = writer.new_writer(file_format)
@@ -69,20 +78,10 @@ def gen(dry_run=False):
         raise click.Abort()
 
     info = Git().get_latest_tag_info()
-
-    print(info)
-    if info['dirty']:
-        click.echo('Working directory is not clean.')
-        raise click.Abort()
-
-    if (
-        info['distance_to_latest_tag'] != 0 and
-        not click.confirm('Changes made since release, continue generating CHANGELOG')
-    ):
-        raise click.Abort()
+    process_info(info)
 
     # TODO: take a note from bumpversion, read in versioning format string
-    version = f"v{info['current_version']}"
+    version = 'v{current_version}'.format(current_version=info['current_version'])
 
     # TODO: supported default extensions (steal from conventional commits)
     # TODO: support multiple extras by default (the usuals)
@@ -95,7 +94,7 @@ def gen(dry_run=False):
             ticket, section = issue.name.split('.')
             contents = issue.read_text().strip()
             if section not in SUPPORTED_SECTIONS:
-                click.echo(f'Unsupported CHANGELOG section {section}')
+                click.echo('Unsupported CHANGELOG section {section}'.format(section=section))
                 raise click.Abort()
 
             sections[section][ticket] = contents
