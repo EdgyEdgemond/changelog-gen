@@ -5,26 +5,18 @@ from tempfile import NamedTemporaryFile
 
 import click
 
+from changelog_gen import extractor
 from changelog_gen import writer
 from changelog_gen.cli import util
 from changelog_gen.vcs import Git
 
 
-SUPPORTED_SECTIONS = {
-    'feature': 'Features and Improvements',
-    'bugfix': 'Bug fixes',
-}
-
 # Create a public repo on pypi?
 
-# TODO: changelog-init --ff=md|rst create base file.
-# TODO: changelog-gen rename command
-# TODO: FileGenerator classes for .md and .rst
 # TODO: use config to support reading from files, or from commits
 # TODO: support ConventionalCommits instead of reading from files?
 # setup.cfg or pyproject.toml
 # https://github.com/c4urself/bump2version/blob/master/bumpversion/cli.py _determine_config_file
-# TODO: DetailsExtraction if release_notes, file format, if commit messages, main commit message
 
 def process_info(info):
     if info['dirty']:
@@ -71,12 +63,6 @@ def gen(dry_run=False):
         click.echo('No CHANGELOG file detected, run changelog-init')
         raise click.Abort()
 
-    release_notes = Path('./release_notes')
-
-    if not release_notes.exists() or not release_notes.is_dir:
-        click.echo('No release notes directory found.')
-        raise click.Abort()
-
     info = Git().get_latest_tag_info()
     process_info(info)
 
@@ -86,28 +72,18 @@ def gen(dry_run=False):
     # TODO: supported default extensions (steal from conventional commits)
     # TODO: support multiple extras by default (the usuals)
     # TODO: Read in additional extensions to headings or overrides for custom headings
-    sections = defaultdict(dict)
-
-    # Extract changelog details from release note files.
-    for issue in release_notes.iterdir():
-        if issue.is_file and not issue.name.startswith('.'):
-            ticket, section = issue.name.split('.')
-            contents = issue.read_text().strip()
-            if section not in SUPPORTED_SECTIONS:
-                click.echo('Unsupported CHANGELOG section {section}'.format(section=section))
-                raise click.Abort()
-
-            sections[section][ticket] = contents
+    e = extractor.ReleaseNoteExtractor()
+    sections = e.extract()
 
     w = writer.new_writer(extension, dry_run=dry_run)
 
     w.add_version(version)
 
-    for section in SUPPORTED_SECTIONS:
+    for section in extractor.SUPPORTED_SECTIONS:
         if section not in sections:
             continue
 
-        header = SUPPORTED_SECTIONS[section]
+        header = extractor.SUPPORTED_SECTIONS[section]
         lines = [
             '{}: {}\n'.format(ticket, content)
             for ticket, content in sections[section].items()
