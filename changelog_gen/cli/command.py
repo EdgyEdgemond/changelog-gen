@@ -5,9 +5,15 @@ from tempfile import NamedTemporaryFile
 
 import click
 
-from changelog_gen.cli import util
 from changelog_gen import writer
+from changelog_gen.cli import util
+from changelog_gen.vcs import Git
 
+
+SUPPORTED_SECTIONS = {
+    'feature': 'Features and Improvements',
+    'bugfix': 'Bug fixes',
+}
 
 # Create a public repo on pypi?
 
@@ -62,63 +68,7 @@ def gen(dry_run=False):
         click.echo('No release notes directory found.')
         raise click.Abort()
 
-    supported_sections = {
-        'feature': 'Features and Improvements',
-        'bugfix': 'Bug fixes',
-    }
-
-    # TODO: check git is ready for making changes (not dirty)
-
-    # TODO: supported default extensions (steal from conventional commits)
-    # TODO: support multiple extras by default (the usuals)
-    # TODO: Read in additional extensions to headings or overrides for custom headings
-    sections = defaultdict(dict)
-
-    # Extract changelog details from release note files.
-    for issue in release_notes.iterdir():
-        if issue.is_file and not issue.name.startswith('.'):
-            ticket, section = issue.name.split('.')
-            contents = issue.read_text().strip()
-            if section not in supported_sections:
-                click.echo(f'Unsupported CHANGELOG section {section}')
-                raise click.Abort()
-
-            sections[section][ticket] = contents
-
-    w = writer.new_writer(extension, dry_run=dry_run)
-
-    cmd = ['git', 'describe', '--tags', '--dirty', '--match', '[0-9]*']
-    try:
-        describe_out = (
-            subprocess.check_output(
-                [
-                    'git',
-                    'describe',
-                    '--tags',
-                    '--dirty',
-                    '--long',
-                    '--match',
-                    '[0-9]*',
-                ],
-                stderr=subprocess.STDOUT,
-            )
-            .decode()
-            .strip()
-            .split('-')
-        )
-    except subprocess.CalledProcessError:
-        click.echo('Unable to get version number from git tags')
-        raise click.Abort
-
-    info = {'dirty': False}
-
-    if describe_out[-1].strip() == "dirty":
-        info['dirty'] = True
-        describe_out.pop()
-
-    info['commit_sha'] = describe_out.pop().lstrip('g')
-    info['distance_to_latest_tag'] = int(describe_out.pop())
-    info['current_version'] = '-'.join(describe_out).lstrip('v')
+    info = Git().get_latest_tag_info()
 
     print(info)
     if info['dirty']:
@@ -131,16 +81,34 @@ def gen(dry_run=False):
     ):
         raise click.Abort()
 
-    version = f"v{info['current_version']}"
     # TODO: take a note from bumpversion, read in versioning format string
+    version = f"v{info['current_version']}"
+
+    # TODO: supported default extensions (steal from conventional commits)
+    # TODO: support multiple extras by default (the usuals)
+    # TODO: Read in additional extensions to headings or overrides for custom headings
+    sections = defaultdict(dict)
+
+    # Extract changelog details from release note files.
+    for issue in release_notes.iterdir():
+        if issue.is_file and not issue.name.startswith('.'):
+            ticket, section = issue.name.split('.')
+            contents = issue.read_text().strip()
+            if section not in SUPPORTED_SECTIONS:
+                click.echo(f'Unsupported CHANGELOG section {section}')
+                raise click.Abort()
+
+            sections[section][ticket] = contents
+
+    w = writer.new_writer(extension, dry_run=dry_run)
 
     w.add_version(version)
 
-    for section in supported_sections:
+    for section in SUPPORTED_SECTIONS:
         if section not in sections:
             continue
 
-        header = supported_sections[section]
+        header = SUPPORTED_SECTIONS[section]
         lines = [
             '{}: {}\n'.format(ticket, content)
             for ticket, content in sections[section].items()
