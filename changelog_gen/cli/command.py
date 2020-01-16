@@ -87,12 +87,16 @@ def gen(dry_run=False):
 
     w = writer.new_writer(extension, dry_run=dry_run)
 
-    cmd = ['git' 'describe', '--tags', '--match', '[0-9]*']
+    cmd = ['git', 'describe', '--tags', '--match', '[0-9]*']
     try:
         version = subprocess.check_output(cmd).decode().strip()
     except subprocess.CalledProcessError:
         click.echo('Unable to get version number from git tags')
         raise click.Abort
+
+    # PEP 386 compatibility
+    if '-' in version:
+        version = '.post'.join(version.split('-')[:2])
 
     print(version)
     # TODO: extract version from git.
