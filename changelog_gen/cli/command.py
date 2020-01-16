@@ -114,8 +114,6 @@ def gen(dry_run=False):
 
     if describe_out[-1].strip() == "dirty":
         info['dirty'] = True
-        if not click.confirm('Changes made since release, continue generating CHANGELOG'):
-            raise click.Abort()
         describe_out.pop()
 
     info['commit_sha'] = describe_out.pop().lstrip('g')
@@ -123,7 +121,17 @@ def gen(dry_run=False):
     info['current_version'] = '-'.join(describe_out).lstrip('v')
 
     print(info)
-    version = "v0.0.1"
+    if info['dirty']:
+        click.echo('Working directory is not clean.')
+        raise click.Abort()
+
+    if (
+        info['distance_to_latest_tag'] != 0 and
+        not click.confirm('Changes made since release, continue generating CHANGELOG')
+    ):
+        raise click.Abort()
+
+    version = info['current_version']
     # TODO: take a note from bumpversion, read in versioning format string
 
     w.add_version(version)
