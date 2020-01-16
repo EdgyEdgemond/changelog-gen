@@ -1,5 +1,4 @@
 import subprocess
-from collections import defaultdict
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
