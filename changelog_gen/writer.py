@@ -31,7 +31,7 @@ class BaseWriter:
 
         if self.dry_run:
             with NamedTemporaryFile("wb") as output_file:
-                output_file.write("\n".join(self.content))
+                output_file.write(("\n".join(self.content)).encode("utf-8"))
         else:
             filename = "CHANGELOG.{extension}".format(extension=self.extension)
             with open(filename, "w") as output_file:
