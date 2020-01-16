@@ -96,24 +96,33 @@ def gen(dry_run=False):
                     'describe',
                     '--tags',
                     '--dirty',
+                    '--long',
                     '--match',
                     '[0-9]*',
                 ],
                 stderr=subprocess.STDOUT,
             )
             .decode()
+            .strip()
             .split('-')
         )
     except subprocess.CalledProcessError:
         click.echo('Unable to get version number from git tags')
         raise click.Abort
 
-    print(describe_out)
+    info = {'dirty': False}
+
     if describe_out[-1].strip() == "dirty":
+        info['dirty'] = True
         if not click.confirm('Changes made since release, continue generating CHANGELOG'):
             raise click.Abort()
         describe_out.pop()
 
+    info['commit_sha'] = describe_out.pop().lstrip('g')
+    info['distance_to_latest_tag'] = int(describe_out.pop())
+    info['current_version'] = '-'.join(describe_out).lstrip('v')
+
+    print(info)
     version = "v0.0.1"
     # TODO: take a note from bumpversion, read in versioning format string
 
