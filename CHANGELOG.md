@@ -5,5 +5,3 @@
 ### Features and Improvements
 
 - 1: Use ConventionalCommit style endings.
-
-## v0.0.10
