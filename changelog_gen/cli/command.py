@@ -87,7 +87,7 @@ def gen(dry_run=False):
 
     w = writer.new_writer(extension, dry_run=dry_run)
 
-    cmd = ['git' 'describe', '--tags', '--match', '\d+\.\d+\.\d+*']
+    cmd = ['git' 'describe', '--tags', '--match', '[0-9]*']
     try:
         version = subprocess.check_output(cmd).decode().strip()
     except subprocess.CalledProcessError:
