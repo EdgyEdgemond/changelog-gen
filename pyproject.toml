@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "changelog_gen"
+version = "0.0.0"
+description = "Changelog generation tool"
+authors = ["Daniel Edgecombe <edgy.edgemond@gmail.com>"]
+license = "Apache-2.0"
+repository="https://github.com/EdgyEdgemond/changelog-gen/"
+homepage="https://github.com/EdgyEdgemond/changelog-gen/"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "~3.7"
+
+click = "~7.0"
+
+[tool.poetry.dev-dependencies]
+
+bump2version = "^0.5.11"
+pytest = "^5.2"
+pytest-cov = "^2.8"
+pytest-random-order = "^1.0"
+
+[tool.poetry.scripts]
+changelog-gen = "changelog_gen.cli.command:gen"
+changelog-init = "changelog_gen.cli.command:init"
+
+[build-system]
+requires = ["poetry>=1.0"]
+build-backend = "poetry.masonry.api"

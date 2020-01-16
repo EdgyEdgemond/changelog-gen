@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: changelog-gen
+Version: 0.0.0
+Summary: Changelog generation tool
+Home-page: https://github.com/EdgyEdgemond/changelog-gen/
+Author: Daniel Edgecombe
+Author-email: edgy.edgemond@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.7,<3.8
