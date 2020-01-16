@@ -1,6 +1,7 @@
 from pathlib import Path
 
-SUPPORTED_EXTENSIONS = ['md', 'rst']
+
+SUPPORTED_EXTENSIONS = ["md", "rst"]
 
 
 class BaseWriter:
@@ -11,8 +12,8 @@ class BaseWriter:
     def __init__(self, changelog=None, dry_run=False):
         self.existing = []
         if changelog:
-            lines = changelog.read_text().split('\n')
-            self.existing = lines[self.file_header_line_count + 1:]
+            lines = changelog.read_text().split("\n")
+            self.existing = lines[self.file_header_line_count + 1 :]
         self.content = [self.file_header]
         self.dry_run = dry_run
 
@@ -28,53 +29,57 @@ class BaseWriter:
         self.content.extend(self.existing)
 
         if self.dry_run:
-            with NamedTemporaryFile('wb') as output_file:
-                output_file.write('\n'.join(self.content))
+            with NamedTemporaryFile("wb") as output_file:
+                output_file.write("\n".join(self.content))
         else:
-            filename = 'CHANGELOG.{extension}'.format(extension=self.extension)
-            with open(filename, 'w') as output_file:
-                output_file.write('\n'.join(self.content))
+            filename = "CHANGELOG.{extension}".format(extension=self.extension)
+            with open(filename, "w") as output_file:
+                output_file.write("\n".join(self.content))
 
 
 class MdWriter(BaseWriter):
     file_header_line_count = 1
-    file_header = '# Changelog\n'
-    extension = 'md'
+    file_header = "# Changelog\n"
+    extension = "md"
 
     def _add_version(self, version):
-        self.content.extend(['## {version}'.format(version=version), ''])
+        self.content.extend(["## {version}".format(version=version), ""])
 
     def _add_section_header(self, header):
-        self.content.extend(['### {header}'.format(header=header), ''])
+        self.content.extend(["### {header}".format(header=header), ""])
 
     def _add_section_line(self, line):
-        self.content.extend(['- {line}'.format(line=line)])
+        self.content.extend(["- {line}".format(line=line)])
 
 
 class RstWriter(BaseWriter):
     file_header_line_count = 3
-    file_header = '=========\nChangelog\n=========\n'
-    extension = 'rst'
+    file_header = "=========\nChangelog\n=========\n"
+    extension = "rst"
 
     def _add_version(self, version):
-        self.content.extend([version, '=' * len(version), ''])
+        self.content.extend([version, "=" * len(version), ""])
 
     def _add_section_header(self, header):
-        self.content.extend([header, '-' * len(header), ''])
+        self.content.extend([header, "-" * len(header), ""])
 
     def _add_section_line(self, line):
-        self.content.extend([f'* {line}'.format(line=line), ''])
+        self.content.extend([f"* {line}".format(line=line), ""])
 
 
 def new_writer(extension, dry_run=False):
     if extension not in SUPPORTED_EXTENSIONS:
-        raise ValueError('Changelog extension "{extension}" not supported.'.format(extension=extension))
+        raise ValueError(
+            'Changelog extension "{extension}" not supported.'.format(
+                extension=extension
+            )
+        )
 
-    changelog = Path('CHANGELOG.{extension}'.format(extension=extension))
+    changelog = Path("CHANGELOG.{extension}".format(extension=extension))
     if not changelog.exists():
         changelog = None
 
-    if extension == 'md':
+    if extension == "md":
         return MdWriter(changelog, dry_run=dry_run)
-    if extension == 'rst':
+    if extension == "rst":
         return RstWriter(changelog, dry_run=dry_run)

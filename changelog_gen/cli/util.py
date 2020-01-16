@@ -14,8 +14,10 @@ def common_options(command):
     flags that we want to include in all of them.
     """
     options = [
-        click.version_option(changelog_gen.VERSION, '-v', '--version', prog_name='changelog-gen'),
-        click.help_option('--help', help='Show this message and exit.'),
+        click.version_option(
+            changelog_gen.VERSION, "-v", "--version", prog_name="changelog-gen"
+        ),
+        click.help_option("--help", help="Show this message and exit."),
     ]
 
     for option in options:
@@ -26,5 +28,5 @@ def common_options(command):
 
 def detect_extension():
     for ext in SUPPORTED_EXTENSIONS:
-        if Path('CHANGELOG.{ext}'.format(ext=ext)).exists():
+        if Path("CHANGELOG.{ext}".format(ext=ext)).exists():
             return ext

@@ -15,7 +15,9 @@ click = "~7.0"
 
 [tool.poetry.dev-dependencies]
 
+black = { version = "*", allow-prereleases = true }
 bump2version = "^0.5.11"
+isort = "~4.3"
 pytest = "^5.2"
 pytest-cov = "^2.8"
 pytest-random-order = "^1.0"

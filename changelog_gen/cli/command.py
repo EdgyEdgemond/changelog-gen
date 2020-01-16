@@ -5,8 +5,10 @@ from tempfile import NamedTemporaryFile
 
 import click
 
-from changelog_gen import extractor
-from changelog_gen import writer
+from changelog_gen import (
+    extractor,
+    writer,
+)
 from changelog_gen.cli import util
 from changelog_gen.vcs import Git
 
@@ -18,21 +20,21 @@ from changelog_gen.vcs import Git
 # setup.cfg or pyproject.toml
 # https://github.com/c4urself/bump2version/blob/master/bumpversion/cli.py _determine_config_file
 
+
 def process_info(info):
-    if info['dirty']:
-        click.echo('Working directory is not clean.')
+    if info["dirty"]:
+        click.echo("Working directory is not clean.")
         raise click.Abort()
 
-    if (
-        info['distance_to_latest_tag'] != 0 and
-        not click.confirm('Changes made since release, continue generating CHANGELOG')
+    if info["distance_to_latest_tag"] != 0 and not click.confirm(
+        "Changes made since release, continue generating CHANGELOG"
     ):
         raise click.Abort()
 
 
 @util.common_options
-@click.option('--file-format', type=str, default='md', help='File format to generate')
-@click.command('changelog-init', help='Generate an empty CHANGELOG file')
+@click.option("--file-format", type=str, default="md", help="File format to generate")
+@click.command("changelog-init", help="Generate an empty CHANGELOG file")
 def init(file_format):
     """
     Create a new CHANGELOG file.
@@ -41,17 +43,18 @@ def init(file_format):
     """
     extension = util.detect_extension()
     if extension is not None:
-        click.echo('CHANGELOG.{extension} detected.'.format(extension=extension))
+        click.echo("CHANGELOG.{extension} detected.".format(extension=extension))
         raise click.Abort()
 
     w = writer.new_writer(file_format)
     w.write()
 
 
-
 @util.common_options
-@click.option('--dry-run', is_flag=True, help="Don't write release notes to check for errors")
-@click.command('changelog-gen', help='Generate a change log from release_notes/* files')
+@click.option(
+    "--dry-run", is_flag=True, help="Don't write release notes to check for errors"
+)
+@click.command("changelog-gen", help="Generate a change log from release_notes/* files")
 def gen(dry_run=False):
     """
     Read release notes and generate a new CHANGELOG entry for the current version.
@@ -60,14 +63,14 @@ def gen(dry_run=False):
     extension = util.detect_extension()
 
     if extension is None:
-        click.echo('No CHANGELOG file detected, run changelog-init')
+        click.echo("No CHANGELOG file detected, run changelog-init")
         raise click.Abort()
 
     info = Git().get_latest_tag_info()
     process_info(info)
 
     # TODO: take a note from bumpversion, read in versioning format string
-    version = 'v{current_version}'.format(current_version=info['current_version'])
+    version = "v{current_version}".format(current_version=info["current_version"])
 
     # TODO: supported default extensions (steal from conventional commits)
     # TODO: support multiple extras by default (the usuals)
@@ -85,7 +88,7 @@ def gen(dry_run=False):
 
         header = extractor.SUPPORTED_SECTIONS[section]
         lines = [
-            '{}: {}\n'.format(ticket, content)
+            "{}: {}\n".format(ticket, content)
             for ticket, content in sections[section].items()
         ]
         w.add_section(header, lines)
@@ -93,7 +96,7 @@ def gen(dry_run=False):
     w.write()
     if not dry_run:
         for x in release_notes.iterdir():
-            if x.is_file and not x.name.startswith('.'):
+            if x.is_file and not x.name.startswith("."):
                 x.unlink()
 
         # TODO: Commit changes and retag (detect from config)
