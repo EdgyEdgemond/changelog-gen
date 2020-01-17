@@ -1,6 +1,6 @@
 import subprocess
 
-import click
+from changelog_gen import errors
 
 
 class BumpVersion:
@@ -17,8 +17,7 @@ class BumpVersion:
                 .split("\n")
             )
         except subprocess.CalledProcessError:
-            click.echo("Unable to get version data from bumpversion")
-            raise click.Abort
+            raise errors.VersionDetectionError("Unable to get version data from bumpversion")
 
         bumpversion_data = {v.split("=")[0]: v.split("=")[1] for v in describe_out}
 

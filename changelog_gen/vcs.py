@@ -1,5 +1,7 @@
 import subprocess
 
+from changelog_gen import errors
+
 
 class Git:
     @classmethod
@@ -23,8 +25,7 @@ class Git:
                 .split("-")
             )
         except subprocess.CalledProcessError:
-            click.echo("Unable to get version number from git tags")
-            raise click.Abort
+            raise errors.VcsError("Unable to get version number from git tags")
 
         info = {"dirty": False}
 
