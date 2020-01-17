@@ -102,10 +102,8 @@ def gen(dry_run=False):
 
     click.echo(w)
     
-    if not dry_run:
-        click.confirm("Write CHANGELOG for suggested version {}".format(version_info["new"]))
-
-    w.write()
-    e.clean()
+    if dry_run or click.confirm("Write CHANGELOG for suggested version {}".format(version_info["new"])):
+        w.write()
+        e.clean()
 
     # TODO: Commit changes and retag (detect from config)
