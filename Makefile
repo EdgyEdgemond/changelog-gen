@@ -1,6 +1,6 @@
 clean:
 	isort -y
-	black .
+	flake8
 
 release:
 	changelog-gen

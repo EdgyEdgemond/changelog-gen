@@ -15,7 +15,7 @@ def common_options(command):
     """
     options = [
         click.version_option(
-            changelog_gen.VERSION, "-v", "--version", prog_name="changelog-gen"
+            changelog_gen.VERSION, "-v", "--version", prog_name="changelog-gen",
         ),
         click.help_option("--help", help="Show this message and exit."),
     ]
