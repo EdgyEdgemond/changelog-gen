@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -32,6 +31,7 @@ def changelog_rst(tmp_path):
     p.write_text("Changelog\n=========\n")
     return p
 
+
 class TestBaseWriter:
     def test_content_as_str(self, changelog_md):
         w = writer.BaseWriter(changelog_md)
@@ -43,13 +43,13 @@ class TestBaseWriter:
         w = writer.BaseWriter(changelog_rst)
 
         with pytest.raises(NotImplementedError):
-            w._add_section_header('header')
+            w._add_section_header("header")
 
         with pytest.raises(NotImplementedError):
-            w._add_section_line('line')
+            w._add_section_line("line")
 
         with pytest.raises(NotImplementedError):
-            w._add_version('0.0.0')
+            w._add_version("0.0.0")
 
     def test_add_version(self, monkeypatch, changelog_md):
         monkeypatch.setattr(writer.BaseWriter, "_add_version", mock.Mock())
@@ -150,6 +150,7 @@ class TestMdWriter:
 - line2
 - line3
 """
+
 
 class TestRstWriter:
     def test_add_version(self, changelog_rst):
