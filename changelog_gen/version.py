@@ -9,7 +9,7 @@ class BumpVersion:
         try:
             describe_out = (
                 subprocess.check_output(
-                    ["bumpversion", semver, "--dry-run", "--list", "--allow-dirty",],
+                    ["bumpversion", semver, "--dry-run", "--list", "--allow-dirty"],
                     stderr=subprocess.STDOUT,
                 )
                 .decode()
@@ -26,3 +26,7 @@ class BumpVersion:
             "current": bumpversion_data["current_version"],
             "new": bumpversion_data["new_version"],
         }
+
+    @classmethod
+    def release(cls, semver):
+        subprocess.check_output(["bumpversion", semver])
