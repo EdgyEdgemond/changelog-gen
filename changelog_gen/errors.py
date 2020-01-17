@@ -1,14 +1,17 @@
-class NoReleaseNotesError(Exception):
+class ChangelogException(Exception):
+    pass
+
+class NoReleaseNotesError(ChangelogException):
     pass
 
 
-class InvalidSectionError(Exception):
+class InvalidSectionError(ChangelogException):
     pass
 
 
-class VcsError(Exception):
+class VcsError(ChangelogException):
     pass
 
 
-class VersionDetectionError(Exception):
+class VersionDetectionError(ChangelogException):
     pass
