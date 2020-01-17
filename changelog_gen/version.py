@@ -23,8 +23,10 @@ class BumpVersion:
         except subprocess.CalledProcessError:
             click.echo("Unable to get version data from bumpversion")
             raise click.Abort
-        info = {}
 
-        print(describe_out)
+        bumpversion_data = {v.split("=")[0]: v.split("=")[1] for v in describe_out}
 
-        return info
+        return {
+            "current": bumpversion_data["current_version"],
+            "new": bumpversion_data["new_version"],
+        }
