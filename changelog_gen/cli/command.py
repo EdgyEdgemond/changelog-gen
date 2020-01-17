@@ -112,6 +112,8 @@ def gen(dry_run=False):
 
         # TODO: Commit changes if configured
         Git.add_path("CHANGELOG.{extension}".format(extension=extension))
+        # TODO: Dont add release notes if using commit messages...
+        Git.add_path("release_notes")
         Git.commit(version_info["new"])
 
-        # TODO: Bumpversion if configured
+        # TODO: use bumpversion to tag if configured
