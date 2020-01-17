@@ -6,9 +6,7 @@
 pip install changelog-gen
 ```
 
-## Notes
-
-Current python support 3.7, add 3.X and python 2.7 (or ignore cos EOL'd)
+## Usage
 
 ```bash
 $ changelog-gen
@@ -18,8 +16,11 @@ $ changelog-gen
 ### Bug fixes
 
 - Raise errors from internal classes, don't use click.echo() [#4]
-
 - Update changelog line format to include issue number at the end. [#7]
 
 Write CHANGELOG for suggested version 0.2.2 [y/N]: y
 ```
+
+## Notes
+
+Current python support 3.7, add 3.X and python 2.7 (or ignore cos EOL'd)

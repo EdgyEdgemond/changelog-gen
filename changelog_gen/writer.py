@@ -15,7 +15,7 @@ class BaseWriter:
         self.changelog = changelog
         if self.changelog.exists():
             lines = changelog.read_text().split("\n")
-            self.existing = lines[self.file_header_line_count + 1 :]
+            self.existing = lines[self.file_header_line_count + 1:]
         self.content = []
         self.dry_run = dry_run
 
@@ -90,8 +90,8 @@ def new_writer(extension, dry_run=False):
     if extension not in SUPPORTED_EXTENSIONS:
         raise ValueError(
             'Changelog extension "{extension}" not supported.'.format(
-                extension=extension
-            )
+                extension=extension,
+            ),
         )
 
     changelog = Path("CHANGELOG.{extension}".format(extension=extension))

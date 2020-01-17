@@ -29,8 +29,8 @@ class ReleaseNoteExtractor:
                 if section not in SUPPORTED_SECTIONS:
                     raise errors.InvalidSectionError(
                         "Unsupported CHANGELOG section {section}".format(
-                            section=section
-                        )
+                            section=section,
+                        ),
                     )
 
                 sections[section][ticket] = contents

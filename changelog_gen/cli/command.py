@@ -1,6 +1,3 @@
-import subprocess
-from pathlib import Path
-
 import click
 
 from changelog_gen import (
@@ -25,10 +22,10 @@ def process_info(info, dry_run):
         raise click.Abort()
 
     if (
-        not dry_run
-        and info["distance_to_latest_tag"] != 0
-        and not click.confirm(
-            "Changes made since release, continue generating CHANGELOG"
+        not dry_run and
+        info["distance_to_latest_tag"] != 0 and
+        not click.confirm(
+            "Changes made since release, continue generating CHANGELOG",
         )
     ):
         raise click.Abort()
@@ -54,7 +51,7 @@ def init(file_format):
 
 @util.common_options
 @click.option(
-    "--dry-run", is_flag=True, help="Don't write release notes to check for errors"
+    "--dry-run", is_flag=True, help="Don't write release notes to check for errors",
 )
 @click.command("changelog-gen", help="Generate a change log from release_notes/* files")
 def gen(dry_run=False):
@@ -109,7 +106,7 @@ def _gen(dry_run=False):
     click.echo(w)
 
     if dry_run or click.confirm(
-        "Write CHANGELOG for suggested version {}".format(version_info["new"])
+        "Write CHANGELOG for suggested version {}".format(version_info["new"]),
     ):
         w.write()
         e.clean()
