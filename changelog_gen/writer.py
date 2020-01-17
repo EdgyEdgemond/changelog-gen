@@ -36,7 +36,7 @@ class BaseWriter:
 
     def _add_section_line(self, line):
         raise NotImplementedError
-    
+
     def _post_section(self):
         pass
 
