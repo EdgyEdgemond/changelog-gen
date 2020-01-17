@@ -15,7 +15,7 @@ class BaseWriter:
         if changelog:
             lines = changelog.read_text().split("\n")
             self.existing = lines[self.file_header_line_count + 1 :]
-        self.content = [self.file_header]
+        self.content = []
         self.dry_run = dry_run
 
     def add_version(self, version):
@@ -26,8 +26,11 @@ class BaseWriter:
         for line in lines:
             self._add_section_line(line)
 
+    def __str__(self):
+        return "\n".join(self.content)
+
     def write(self):
-        self.content.extend(self.existing)
+        self.content = [self.file_header] + self.content + self.existing
 
         if self.dry_run:
             with NamedTemporaryFile("wb") as output_file:
