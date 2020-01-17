@@ -4,6 +4,7 @@ from pathlib import Path
 import click
 
 from changelog_gen import (
+    errors,
     extractor,
     writer,
 )
@@ -65,7 +66,7 @@ def gen(dry_run=False):
 
     try:
         _gen(dry_run)
-    except ChangelogException as ex:
+    except errors.ChangelogException as ex:
         click.echo(ex)
         raise click.Abort()
 
