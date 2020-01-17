@@ -9,8 +9,9 @@ SUPPORTED_SECTIONS = {
 
 
 class ReleaseNoteExtractor:
-    def __init__(self):
+    def __init__(self, dry_run=False):
         self.release_notes = Path("./release_notes")
+        self.dry_run = dry_run
 
         if not self.release_notes.exists() or not self.release_notes.is_dir:
             click.echo("No release notes directory found.")
@@ -35,8 +36,9 @@ class ReleaseNoteExtractor:
                 sections[section][ticket] = contents
 
         return sections
-    
+
     def clean(self):
-        for x in self.release_notes.iterdir():
-            if x.is_file and not x.name.startswith("."):
-                x.unlink()
+        if not self.dry_run:
+            for x in self.release_notes.iterdir():
+                if x.is_file and not x.name.startswith("."):
+                    x.unlink()
