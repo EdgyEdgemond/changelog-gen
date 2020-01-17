@@ -4,15 +4,16 @@ import click
 
 
 class BumpVersion:
-    def get_version_info(self):
+    def get_version_info(self, semver):
         try:
             describe_out = (
                 subprocess.check_output(
                     [
                         "bumpversion",
-                        "patch",
+                        semver,
                         "--dry-run",
                         "--list",
+                        "--allow-dirty",
                     ],
                     stderr=subprocess.STDOUT,
                 )
