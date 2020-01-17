@@ -9,7 +9,7 @@ homepage="https://github.com/EdgyEdgemond/changelog-gen/"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "~3.7"
+python = "^3.5"
 
 click = "^7.0"
 bump2version = "^0.5.11"
