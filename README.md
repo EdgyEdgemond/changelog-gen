@@ -1,4 +1,4 @@
-# Changelog Generator - v0.2.1
+# Changelog Generator - v0.2.2
 
 ## Installation
 
@@ -13,7 +13,7 @@ Current python support 3.7, add 3.X and python 2.7 (or ignore cos EOL'd)
 ```bash
 $ changelog-gen
 
-## v0.2.1
+## v0.2.2
 
 ### Bug fixes
 
@@ -21,5 +21,5 @@ $ changelog-gen
 
 - Update changelog line format to include issue number at the end. [#7]
 
-Write CHANGELOG for suggested version 0.2.1 [y/N]: y
+Write CHANGELOG for suggested version 0.2.2 [y/N]: y
 ```
