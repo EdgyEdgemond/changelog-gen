@@ -1,6 +1,8 @@
 from collections import defaultdict
 from pathlib import Path
 
+from changelog_gen import errors
+
 
 SUPPORTED_SECTIONS = {
     "feat": "Features and Improvements",
@@ -14,8 +16,7 @@ class ReleaseNoteExtractor:
         self.dry_run = dry_run
 
         if not self.release_notes.exists() or not self.release_notes.is_dir:
-            click.echo("No release notes directory found.")
-            raise click.Abort()
+            raise errors.NoReleaseNotesError("No release notes directory found.")
 
     def extract(self):
         sections = defaultdict(dict)
@@ -26,12 +27,11 @@ class ReleaseNoteExtractor:
                 ticket, section = issue.name.split(".")
                 contents = issue.read_text().strip()
                 if section not in SUPPORTED_SECTIONS:
-                    click.echo(
+                    raise errors.InvalidSectionError(
                         "Unsupported CHANGELOG section {section}".format(
                             section=section
                         )
                     )
-                    raise click.Abort()
 
                 sections[section][ticket] = contents
 

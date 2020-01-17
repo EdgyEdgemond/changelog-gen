@@ -1,0 +1,1 @@
+Raise errors from internal classes, don't use click.echo()
