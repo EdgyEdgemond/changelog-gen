@@ -63,6 +63,14 @@ def gen(dry_run=False):
     Read release notes and generate a new CHANGELOG entry for the current version.
     """
 
+    try:
+        _gen(dry_run)
+    except ChangelogException as ex:
+        click.echo(ex)
+        raise click.Abort()
+
+
+def _gen(dry_run=False):
     extension = util.detect_extension()
 
     if extension is None:
