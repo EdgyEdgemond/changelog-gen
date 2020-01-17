@@ -13,8 +13,6 @@ from changelog_gen.vcs import Git
 from changelog_gen.version import BumpVersion
 
 
-# Create a public repo on pypi?
-
 # TODO: use config to support reading from files, or from commits
 # TODO: support ConventionalCommits instead of reading from files?
 # setup.cfg or pyproject.toml
