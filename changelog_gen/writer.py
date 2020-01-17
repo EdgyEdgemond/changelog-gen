@@ -83,7 +83,7 @@ class RstWriter(BaseWriter):
         self.content.extend([header, "-" * len(header), ""])
 
     def _add_section_line(self, line):
-        self.content.extend([f"* {line}".format(line=line), ""])
+        self.content.extend(["* {line}".format(line=line), ""])
 
 
 def new_writer(extension, dry_run=False):
