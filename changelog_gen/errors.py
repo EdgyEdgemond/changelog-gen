@@ -1,6 +1,7 @@
 class ChangelogException(Exception):
     pass
 
+
 class NoReleaseNotesError(ChangelogException):
     pass
 
