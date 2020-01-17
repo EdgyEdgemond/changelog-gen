@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.2
+
+### Bug fixes
+
+- Fix missing import in cli.command [#5]
+
 ## v0.2.1
 
 ### Bug fixes
