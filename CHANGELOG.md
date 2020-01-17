@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.0
+
+### Features and Improvements
+
+- 6: Bump the version of the library after writing changelog.
+
 ## v0.1.0
 
 ### Features and Improvements
