@@ -4,17 +4,12 @@ import click
 
 
 class BumpVersion:
-    def get_version_info(self, semver):
+    @classmethod
+    def get_version_info(cls, semver):
         try:
             describe_out = (
                 subprocess.check_output(
-                    [
-                        "bumpversion",
-                        semver,
-                        "--dry-run",
-                        "--list",
-                        "--allow-dirty",
-                    ],
+                    ["bumpversion", semver, "--dry-run", "--list", "--allow-dirty",],
                     stderr=subprocess.STDOUT,
                 )
                 .decode()

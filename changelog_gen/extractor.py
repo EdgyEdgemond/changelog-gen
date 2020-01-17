@@ -36,7 +36,7 @@ class ReleaseNoteExtractor:
                 sections[section][ticket] = contents
 
         return sections
-    
+
     def clean(self):
         if not self.dry_run:
             for x in self.release_notes.iterdir():

@@ -2,7 +2,8 @@ import subprocess
 
 
 class Git:
-    def get_latest_tag_info(self):
+    @classmethod
+    def get_latest_tag_info(cls):
         try:
             describe_out = (
                 subprocess.check_output(
@@ -36,3 +37,13 @@ class Git:
         info["current_version"] = "-".join(describe_out).lstrip("v")
 
         return info
+
+    @classmethod
+    def add_path(cls, path):
+        subprocess.check_output(["git", "add", "--update", path])
+
+    @classmethod
+    def commit(cls, version):
+        subprocess.check_output(
+            ["git", "commit", "-m", "Update CHANGELOG for {}".format(version)],
+        )

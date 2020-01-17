@@ -74,13 +74,12 @@ def gen(dry_run=False):
     # TODO: Read in additional extensions to headings or overrides for custom headings
     e = extractor.ReleaseNoteExtractor(dry_run=dry_run)
     sections = e.extract()
-    
-    # TODO: break could be a fix or a feat... Detect break some other way
-    semver = "major" if "break" in sections else "minor" if "feat" in sections else "patch"
-    version_info = BumpVersion().get_version_info(semver)
 
-    # info = Git().get_latest_tag_info()
-    # process_info(info, dry_run)
+    # TODO: break could be a fix or a feat... Detect break some other way
+    semver = (
+        "major" if "break" in sections else "minor" if "feat" in sections else "patch"
+    )
+    version_info = BumpVersion.get_version_info(semver)
 
     # TODO: take a note from bumpversion, read in versioning format string
     version = "v{new_version}".format(new_version=version_info["new"])
@@ -101,9 +100,18 @@ def gen(dry_run=False):
         w.add_section(header, lines)
 
     click.echo(w)
-    
-    if dry_run or click.confirm("Write CHANGELOG for suggested version {}".format(version_info["new"])):
+
+    if dry_run or click.confirm(
+        "Write CHANGELOG for suggested version {}".format(version_info["new"])
+    ):
         w.write()
         e.clean()
 
-    # TODO: Commit changes and retag (detect from config)
+        if dry_run:
+            return
+
+        # TODO: Commit changes if configured
+        Git.add_path("CHANGELOG.{extension}".format(extension=extension))
+        Git.commit(version_info["new"])
+
+        # TODO: Bumpversion if configured
