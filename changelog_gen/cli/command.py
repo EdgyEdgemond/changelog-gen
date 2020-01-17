@@ -9,6 +9,7 @@ from changelog_gen import (
 )
 from changelog_gen.cli import util
 from changelog_gen.vcs import Git
+from changelog_gen.version import BumpVersion
 
 
 # Create a public repo on pypi?
@@ -68,17 +69,21 @@ def gen(dry_run=False):
         click.echo("No CHANGELOG file detected, run changelog-init")
         raise click.Abort()
 
-    info = Git().get_latest_tag_info()
-    process_info(info, dry_run)
-
-    # TODO: take a note from bumpversion, read in versioning format string
-    version = "v{current_version}".format(current_version=info["current_version"])
-
     # TODO: supported default extensions (steal from conventional commits)
     # TODO: support multiple extras by default (the usuals)
     # TODO: Read in additional extensions to headings or overrides for custom headings
-    e = extractor.ReleaseNoteExtractor()
+    e = extractor.ReleaseNoteExtractor(dry_run=dry_run)
     sections = e.extract()
+    
+    # TODO: break could be a fix or a feat... Detect break some other way
+    semver = "major" if "break" in sections else "minor" if "feat" in sections else "patch"
+    version_info = BumpVersion().get_version_info(semver)
+
+    # info = Git().get_latest_tag_info()
+    # process_info(info, dry_run)
+
+    # TODO: take a note from bumpversion, read in versioning format string
+    version = "v{new_version}".format(new_version=version_info["new"])
 
     w = writer.new_writer(extension, dry_run=dry_run)
 
@@ -95,8 +100,12 @@ def gen(dry_run=False):
         ]
         w.add_section(header, lines)
 
-    w.write()
+    click.echo(w)
+    
     if not dry_run:
-        e.clean()
+        click.confirm("Write CHANGELOG for suggested version {}".format(version_info["new"]))
 
-        # TODO: Commit changes and retag (detect from config)
+    w.write()
+    e.clean()
+
+    # TODO: Commit changes and retag (detect from config)
