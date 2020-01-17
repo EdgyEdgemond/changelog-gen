@@ -117,3 +117,4 @@ def gen(dry_run=False):
         Git.commit(version_info["new"])
 
         # TODO: use bumpversion to tag if configured
+        BumpVersion.release(semver)
