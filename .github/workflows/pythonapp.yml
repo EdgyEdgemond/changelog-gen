@@ -21,7 +21,7 @@ jobs:
       run: |
         flake8
 
-  test-3.7:
+  test-37:
 
     runs-on: ubuntu-latest
 
