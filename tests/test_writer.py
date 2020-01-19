@@ -28,7 +28,7 @@ def changelog_md(tmp_path):
 @pytest.fixture
 def changelog_rst(tmp_path):
     p = tmp_path / "CHANGELOG.rst"
-    p.write_text("Changelog\n=========\n")
+    p.write_text("=========\nChangelog\n=========\n")
     return p
 
 
@@ -96,6 +96,14 @@ class TestMdWriter:
         w._add_section_line("line [#1]")
 
         assert w.content == ["- line [#1]"]
+
+    def test_write_dry_run_doesnt_write_to_file(self, changelog_md):
+        w = writer.MdWriter(changelog_md, dry_run=True)
+        w.add_version("0.0.1")
+        w.add_section("header", ["line1", "line2", "line3"])
+
+        w.write()
+        assert changelog_md.read_text() == """# Changelog\n"""
 
     def test_write(self, changelog_md):
         w = writer.MdWriter(changelog_md)
@@ -173,6 +181,18 @@ class TestRstWriter:
         w._add_section_line("line [#1]")
 
         assert w.content == ["* line [#1]", ""]
+
+    def test_write_dry_run_doesnt_write_to_file(self, changelog_rst):
+        w = writer.RstWriter(changelog_rst, dry_run=True)
+        w.add_version("0.0.1")
+        w.add_section("header", ["line1", "line2", "line3"])
+
+        w.write()
+        assert changelog_rst.read_text() == """=========
+Changelog
+=========
+"""
+
 
     def test_write(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)
