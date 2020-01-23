@@ -1,7 +1,5 @@
 from unittest import mock
 
-import pytest
-
 from changelog_gen import version
 
 
