@@ -1,22 +1,7 @@
-import os
-
 import pytest
 
 from changelog_gen import errors
 from changelog_gen.extractor import ReleaseNoteExtractor
-
-
-@pytest.fixture
-def cwd(tmp_path):
-    orig = os.getcwd()
-
-    try:
-        os.chdir(tmp_path)
-        yield tmp_path
-    except Exception:
-        raise
-    finally:
-        os.chdir(orig)
 
 
 @pytest.fixture
