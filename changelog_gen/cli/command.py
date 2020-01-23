@@ -95,14 +95,14 @@ def _gen(dry_run=False, release=False, version_tag=None):
 
     w.add_version(version_string)
 
-    for section in extractor.SUPPORTED_SECTIONS:
+    for section in sorted(extractor.SUPPORTED_SECTIONS):
         if section not in sections:
             continue
 
         header = extractor.SUPPORTED_SECTIONS[section]
         lines = [
             "{} [#{}]".format(content, issue_number)
-            for issue_number, content in sorted(sections[section].items())
+            for issue_number, content in sections[section].items()
         ]
         w.add_section(header, lines)
 
