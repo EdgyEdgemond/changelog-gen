@@ -92,8 +92,8 @@ def test_generate_confirms_suggested_changes(cli_runner, cwd, changelog, release
 
 ### Features and Improvements
 
-- Detail about 3 [#3]
 - Detail about 2 [#2]
+- Detail about 3 [#3]
 
 ### Bug fixes
 
@@ -123,8 +123,8 @@ def test_generate_writes_to_file(
 
 ### Features and Improvements
 
-- Detail about 3 [#3]
 - Detail about 2 [#2]
+- Detail about 3 [#3]
 
 ### Bug fixes
 
