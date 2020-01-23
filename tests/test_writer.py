@@ -19,6 +19,13 @@ def test_new_writer_raises_for_unsupported_extension():
 
 
 @pytest.fixture
+def changelog(tmp_path):
+    p = tmp_path / "CHANGELOG"
+    p.write_text("")
+    return p
+
+
+@pytest.fixture
 def changelog_md(tmp_path):
     p = tmp_path / "CHANGELOG.md"
     p.write_text("# Changelog\n")
@@ -33,14 +40,43 @@ def changelog_rst(tmp_path):
 
 
 class TestBaseWriter:
-    def test_content_as_str(self, changelog_md):
-        w = writer.BaseWriter(changelog_md)
+    def test_init(self, changelog):
+        w = writer.BaseWriter(changelog)
+
+        assert w.content == []
+        assert w.dry_run is False
+
+    def test_init(self, changelog):
+        w = writer.BaseWriter(changelog, dry_run=True)
+
+        assert w.content == []
+        assert w.dry_run is True
+
+    def test_init_no_existing_entries(self, changelog):
+        w = writer.BaseWriter(changelog)
+
+        assert w.existing == []
+
+    def test_init_stores_existing_changelog(self, changelog):
+        changelog.write_text("""
+## 0.0.1
+
+### header
+
+- line1
+- line2
+- line3
+""")
+        w = writer.BaseWriter(changelog)
+
+    def test_content_as_str(self, changelog):
+        w = writer.BaseWriter(changelog)
         w.content = ["line1", "line2", "line3"]
 
         assert str(w) == "line1\nline2\nline3"
 
-    def test_base_methods_not_implemented(self, changelog_rst):
-        w = writer.BaseWriter(changelog_rst)
+    def test_base_methods_not_implemented(self, changelog):
+        w = writer.BaseWriter(changelog)
 
         with pytest.raises(NotImplementedError):
             w._add_section_header("header")
@@ -51,19 +87,19 @@ class TestBaseWriter:
         with pytest.raises(NotImplementedError):
             w._add_version("0.0.0")
 
-    def test_add_version(self, monkeypatch, changelog_md):
+    def test_add_version(self, monkeypatch, changelog):
         monkeypatch.setattr(writer.BaseWriter, "_add_version", mock.Mock())
-        w = writer.BaseWriter(changelog_md)
+        w = writer.BaseWriter(changelog)
 
         w.add_version("0.0.0")
 
         assert w._add_version.call_args == mock.call("0.0.0")
 
-    def test_add_section(self, monkeypatch, changelog_rst):
+    def test_add_section(self, monkeypatch, changelog):
         monkeypatch.setattr(writer.BaseWriter, "_add_section_header", mock.Mock())
         monkeypatch.setattr(writer.BaseWriter, "_add_section_line", mock.Mock())
 
-        w = writer.BaseWriter(changelog_rst)
+        w = writer.BaseWriter(changelog)
 
         w.add_section("header", ["line1", "line2", "line3"])
 
@@ -76,6 +112,48 @@ class TestBaseWriter:
 
 
 class TestMdWriter:
+    def test_init(self, changelog_md):
+        w = writer.MdWriter(changelog_md)
+
+        assert w.content == []
+        assert w.dry_run is False
+
+    def test_init(self, changelog_md):
+        w = writer.MdWriter(changelog_md, dry_run=True)
+
+        assert w.content == []
+        assert w.dry_run is True
+
+    def test_init_no_existing_entries(self, changelog_md):
+        w = writer.MdWriter(changelog_md)
+
+        assert w.existing == []
+
+    def test_init_stores_existing_changelog(self, changelog_md):
+        changelog_md.write_text("""# Changelog
+
+## 0.0.1
+
+### header
+
+- line1
+- line2
+- line3
+""")
+
+        w = writer.MdWriter(changelog_md)
+
+        assert w.existing == [
+            "## 0.0.1",
+            "",
+            "### header",
+            "",
+            "- line1",
+            "- line2",
+            "- line3",
+            "",
+        ]
+
     def test_add_version(self, changelog_md):
         w = writer.MdWriter(changelog_md)
 
@@ -161,6 +239,57 @@ class TestMdWriter:
 
 
 class TestRstWriter:
+    def test_init(self, changelog_rst):
+        w = writer.RstWriter(changelog_rst)
+
+        assert w.content == []
+        assert w.dry_run is False
+
+    def test_init(self, changelog_rst):
+        w = writer.RstWriter(changelog_rst, dry_run=True)
+
+        assert w.content == []
+        assert w.dry_run is True
+
+    def test_init_no_existing_entries(self, changelog_rst):
+        w = writer.RstWriter(changelog_rst)
+
+        assert w.existing == []
+
+    def test_init_stores_existing_changelog(self, changelog_rst):
+        changelog_rst.write_text("""=========
+Changelog
+=========
+
+0.0.1
+=====
+
+header
+------
+
+* line1
+
+* line2
+
+* line3
+""")
+
+        w = writer.RstWriter(changelog_rst)
+
+        assert w.existing == [
+            "0.0.1",
+            "=====",
+            "",
+            "header",
+            "------",
+            "",
+            "* line1",
+            "",
+            "* line2",
+            "",
+            "* line3",
+            "",
+        ]
     def test_add_version(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)
 
