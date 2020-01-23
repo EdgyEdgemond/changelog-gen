@@ -84,11 +84,13 @@ def _gen(dry_run=False, release=False, version_tag=None):
     e = extractor.ReleaseNoteExtractor(dry_run=dry_run)
     sections = e.extract()
 
+    semver = None
     if version_tag is None:
-        # TODO: break could be a fix or a feat... Detect break some other way
-        semver = (
-            "major" if "break" in sections else "minor" if "feat" in sections else "patch"
-        )
+        semver = "minor" if "feat" in sections else "patch"
+        for section_issues in sections.values():
+            for issue in section_issues.values():
+                if issue["breaking"]:
+                    semver = "major"
         version_info = BumpVersion.get_version_info(semver)
 
         version_tag = version_info["new"]
@@ -106,18 +108,22 @@ def _gen(dry_run=False, release=False, version_tag=None):
 
         header = extractor.SUPPORTED_SECTIONS[section]
         lines = [
-            "{} [#{}]".format(content, issue_number)
+            "{} [#{}]".format(content["description"], issue_number)
             for issue_number, content in sections[section].items()
         ]
         w.add_section(header, lines)
 
     click.echo(w)
 
+    _finalise(w, e, version_tag, extension, dry_run=dry_run, release=release)
+
+
+def _finalise(writer, extractor, version_tag, extension, release=False, dry_run=False):
     if dry_run or click.confirm(
         "Write CHANGELOG for suggested version {}".format(version_tag),
     ):
-        w.write()
-        e.clean()
+        writer.write()
+        extractor.clean()
 
         if dry_run:
             return
@@ -130,4 +136,4 @@ def _gen(dry_run=False, release=False, version_tag=None):
 
         if release:
             # TODO: use bumpversion to tag if configured
-            BumpVersion.release(semver)
+            BumpVersion.release(version_tag)

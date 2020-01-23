@@ -21,6 +21,13 @@ def valid_release_notes(release_notes):
 
 
 @pytest.fixture
+def breaking_release_notes(release_notes):
+    for i, note in enumerate(["1.fix!", "2.feat", "3.feat!", "4.fix"], 1):
+        n = release_notes / note
+        n.write_text("Detail about {}".format(i))
+
+
+@pytest.fixture
 def invalid_release_notes(release_notes):
     for i, note in enumerate(["1.fix", "2.feat", "3.bug", "4.fix"]):
         n = release_notes / note
@@ -54,12 +61,29 @@ def test_valid_notes_extraction(valid_release_notes):
 
     assert sections == {
         "feat": {
-            "2": "Detail about 2",
-            "3": "Detail about 3",
+            "2": {"description": "Detail about 2", "breaking": False},
+            "3": {"description": "Detail about 3", "breaking": False},
         },
         "fix": {
-            "1": "Detail about 1",
-            "4": "Detail about 4",
+            "1": {"description": "Detail about 1", "breaking": False},
+            "4": {"description": "Detail about 4", "breaking": False},
+        },
+    }
+
+
+def test_breaking_notes_extraction(breaking_release_notes):
+    e = ReleaseNoteExtractor()
+
+    sections = e.extract()
+
+    assert sections == {
+        "feat": {
+            "2": {"description": "Detail about 2", "breaking": False},
+            "3": {"description": "Detail about 3", "breaking": True},
+        },
+        "fix": {
+            "1": {"description": "Detail about 1", "breaking": True},
+            "4": {"description": "Detail about 4", "breaking": False},
         },
     }
 
