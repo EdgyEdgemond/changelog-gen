@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.3
+
+### Bug fixes
+
+- Add in tests [#8]
+
 ## v0.2.2
 
 ### Bug fixes
