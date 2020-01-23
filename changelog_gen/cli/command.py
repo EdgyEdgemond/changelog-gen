@@ -50,23 +50,22 @@ def init(file_format):
 
 
 @util.common_options
-@click.option(
-    "--dry-run", is_flag=True, help="Don't write release notes to check for errors",
-)
+@click.option("--release", is_flag=True, help="Use bumpversion to tag the release")
+@click.option("--dry-run", is_flag=True, help="Don't write release notes to check for errors")
 @click.command("changelog-gen", help="Generate a change log from release_notes/* files")
-def gen(dry_run=False):
+def gen(dry_run=False, release=False):
     """
     Read release notes and generate a new CHANGELOG entry for the current version.
     """
 
     try:
-        _gen(dry_run)
+        _gen(dry_run, release)
     except errors.ChangelogException as ex:
         click.echo(ex)
         raise click.Abort()
 
 
-def _gen(dry_run=False):
+def _gen(dry_run=False, release=False):
     extension = util.detect_extension()
 
     if extension is None:
@@ -99,7 +98,7 @@ def _gen(dry_run=False):
         header = extractor.SUPPORTED_SECTIONS[section]
         lines = [
             "{} [#{}]".format(content, issue_number)
-            for issue_number, content in sections[section].items()
+            for issue_number, content in sorted(sections[section].items())
         ]
         w.add_section(header, lines)
 
@@ -120,5 +119,6 @@ def _gen(dry_run=False):
         Git.add_path("release_notes")
         Git.commit(version_info["new"])
 
-        # TODO: use bumpversion to tag if configured
-        BumpVersion.release(semver)
+        if release:
+            # TODO: use bumpversion to tag if configured
+            BumpVersion.release(semver)
