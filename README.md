@@ -1,4 +1,4 @@
-# Changelog Generator - v0.2.3
+# Changelog Generator - v0.3.0
 
 `changelog-gen` is a CHANGELOG generator intended to be used in conjunction
 with [bumpversion](https://github.com/c4urself/bump2version) to generate
@@ -29,12 +29,12 @@ made, this will lead to a major release being suggested.
 ```bash
 $ changelog-gen
 
-## v0.2.3
+## v0.3.0
 
 ### Bug fixes
 
 - Raise errors from internal classes, don't use click.echo() [#4]
 - Update changelog line format to include issue number at the end. [#7]
 
-Write CHANGELOG for suggested version 0.2.3 [y/N]: y
+Write CHANGELOG for suggested version 0.3.0 [y/N]: y
 ```
