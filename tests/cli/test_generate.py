@@ -69,21 +69,21 @@ def test_generate_aborts_if_changelog_missing(cli_runner, cwd):
     assert result.output == "No CHANGELOG file detected, run changelog-init\nAborted!\n"
 
 
-def test_generate_aborts_if_no_release_notes_directory(cli_runner, cwd, changelog):
+def test_generate_aborts_if_no_release_notes_directory(cli_runner, changelog):
     result = cli_runner.invoke()
 
     assert result.exit_code == 1
     assert result.output == "No release notes directory found.\nAborted!\n"
 
 
-def test_generate_wraps_errors(cli_runner, cwd, changelog, release_notes):
+def test_generate_wraps_errors(cli_runner, changelog, release_notes):
     result = cli_runner.invoke()
 
     assert result.exit_code == 1
     assert result.output == "Unable to get version data from bumpversion\nAborted!\n"
 
 
-def test_generate_confirms_suggested_changes(cli_runner, cwd, changelog, release_notes, bumpversion):
+def test_generate_confirms_suggested_changes(cli_runner, changelog, release_notes, bumpversion):
     result = cli_runner.invoke()
 
     assert result.exit_code == 0
@@ -105,7 +105,7 @@ Write CHANGELOG for suggested version 0.1.0 [y/N]: \n""".lstrip()
 
 def test_generate_writes_to_file(
     cli_runner,
-    cwd,
+    git_repo,
     changelog,
     release_notes,
     bumpversion,
@@ -131,11 +131,27 @@ def test_generate_writes_to_file(
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 """.lstrip()
+    assert git_repo.api.head.commit.message == "Update CHANGELOG for 0.1.0\n"
+
+
+def test_generate_creates_release(
+    cli_runner,
+    git_repo,
+    changelog,
+    release_notes,
+    bumpversion,
+    monkeypatch,
+):
+    monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+    result = cli_runner.invoke(["--release"])
+
+    assert result.exit_code == 0
+    assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
 
 
 def test_generate_dry_run(
     cli_runner,
-    cwd,
+    git_repo,
     changelog,
     release_notes,
     bumpversion,
