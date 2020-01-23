@@ -1,7 +1,8 @@
 # Changelog Generator - v0.2.2
 
-`changelog-gen` is a CHANGELOG generator intended to be used in conjunction with `bumpversion`
-to generate changelogs and create release tags.
+`changelog-gen` is a CHANGELOG generator intended to be used in conjunction
+with [bumpversion](https://github.com/c4urself/bump2version) to generate
+changelogs and create release tags.
 
 ## Installation
 
