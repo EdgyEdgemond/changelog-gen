@@ -10,8 +10,6 @@ from changelog_gen.vcs import Git
 from changelog_gen.version import BumpVersion
 
 
-# Create a public repo on pypi?
-
 # TODO: use config to support reading from files, or from commits
 # TODO: support ConventionalCommits instead of reading from files?
 # setup.cfg or pyproject.toml
@@ -100,7 +98,7 @@ def _gen(dry_run=False):
 
         header = extractor.SUPPORTED_SECTIONS[section]
         lines = [
-            "{} [#{}]\n".format(content, issue_number)
+            "{} [#{}]".format(content, issue_number)
             for issue_number, content in sections[section].items()
         ]
         w.add_section(header, lines)
