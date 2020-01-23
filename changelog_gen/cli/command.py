@@ -50,22 +50,23 @@ def init(file_format):
 
 
 @util.common_options
+@click.option("--version-tag", default=None, help="Provide the desired version tag, skip auto generation.")
 @click.option("--release", is_flag=True, help="Use bumpversion to tag the release")
 @click.option("--dry-run", is_flag=True, help="Don't write release notes to check for errors")
 @click.command("changelog-gen", help="Generate a change log from release_notes/* files")
-def gen(dry_run=False, release=False):
+def gen(dry_run=False, release=False, version_tag=None):
     """
     Read release notes and generate a new CHANGELOG entry for the current version.
     """
 
     try:
-        _gen(dry_run, release)
+        _gen(dry_run, release, version_tag)
     except errors.ChangelogException as ex:
         click.echo(ex)
         raise click.Abort()
 
 
-def _gen(dry_run=False, release=False):
+def _gen(dry_run=False, release=False, version_tag=None):
     extension = util.detect_extension()
 
     if extension is None:
@@ -78,18 +79,21 @@ def _gen(dry_run=False, release=False):
     e = extractor.ReleaseNoteExtractor(dry_run=dry_run)
     sections = e.extract()
 
-    # TODO: break could be a fix or a feat... Detect break some other way
-    semver = (
-        "major" if "break" in sections else "minor" if "feat" in sections else "patch"
-    )
-    version_info = BumpVersion.get_version_info(semver)
+    if version_tag is None:
+        # TODO: break could be a fix or a feat... Detect break some other way
+        semver = (
+            "major" if "break" in sections else "minor" if "feat" in sections else "patch"
+        )
+        version_info = BumpVersion.get_version_info(semver)
+
+        version_tag = version_info["new"]
 
     # TODO: take a note from bumpversion, read in versioning format string
-    version = "v{new_version}".format(new_version=version_info["new"])
+    version_string = "v{version_tag}".format(version_tag=version_tag)
 
     w = writer.new_writer(extension, dry_run=dry_run)
 
-    w.add_version(version)
+    w.add_version(version_string)
 
     for section in extractor.SUPPORTED_SECTIONS:
         if section not in sections:
@@ -105,7 +109,7 @@ def _gen(dry_run=False, release=False):
     click.echo(w)
 
     if dry_run or click.confirm(
-        "Write CHANGELOG for suggested version {}".format(version_info["new"]),
+        "Write CHANGELOG for suggested version {}".format(version_tag),
     ):
         w.write()
         e.clean()
@@ -117,7 +121,7 @@ def _gen(dry_run=False, release=False):
         Git.add_path("CHANGELOG.{extension}".format(extension=extension))
         # TODO: Dont add release notes if using commit messages...
         Git.add_path("release_notes")
-        Git.commit(version_info["new"])
+        Git.commit(version_tag)
 
         if release:
             # TODO: use bumpversion to tag if configured

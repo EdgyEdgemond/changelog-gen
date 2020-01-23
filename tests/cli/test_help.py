@@ -7,10 +7,11 @@ def test_main_help(cli_runner):
   Generate a change log from release_notes/* files
 
 Options:
-  --dry-run      Don't write release notes to check for errors
-  --release      Use bumpversion to tag the release
-  -v, --version  Show the version and exit.
-  --help         Show this message and exit.
+  --dry-run           Don't write release notes to check for errors
+  --release           Use bumpversion to tag the release
+  --version-tag TEXT  Provide the desired version tag, skip auto generation.
+  -v, --version       Show the version and exit.
+  --help              Show this message and exit.
 """
     assert result.output == expected
 
