@@ -49,6 +49,21 @@ def release_notes(git_repo):
 
 
 @pytest.fixture
+def breaking_release_notes(git_repo):
+    r = git_repo.workspace / "release_notes"
+    r.mkdir()
+    f = r / ".file"
+    f.write_text("")
+
+    for i, note in enumerate(["1.fix", "2.feat!", "3.feat", "4.fix"], 1):
+        n = r / note
+        n.write_text("Detail about {}".format(i))
+
+    git_repo.run("git add release_notes")
+    git_repo.api.index.commit("commit release_notes")
+
+
+@pytest.fixture
 def setup(git_repo):
     p = git_repo.workspace / "setup.cfg"
     p.write_text("""
@@ -134,6 +149,37 @@ def test_generate_writes_to_file(
 - Detail about 4 [#4]
 """.lstrip()
     assert git_repo.api.head.commit.message == "Update CHANGELOG for 0.1.0\n"
+
+
+def test_generate_suggests_major_version_for_breaking_change(
+    cli_runner,
+    git_repo,
+    changelog,
+    breaking_release_notes,
+    setup,
+    monkeypatch,
+):
+    monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 0
+
+    assert changelog.read_text() == """
+# Changelog
+
+## v1.0.0
+
+### Features and Improvements
+
+- Detail about 2 [#2]
+- Detail about 3 [#3]
+
+### Bug fixes
+
+- Detail about 1 [#1]
+- Detail about 4 [#4]
+""".lstrip()
+    assert git_repo.api.head.commit.message == "Update CHANGELOG for 1.0.0\n"
 
 
 def test_generate_creates_release(

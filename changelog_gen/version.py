@@ -27,5 +27,5 @@ class BumpVersion:
         }
 
     @classmethod
-    def release(cls, semver):
-        subprocess.check_output(["bumpversion", semver])
+    def release(cls, version):
+        subprocess.check_output(["bumpversion", "--new-version", version, "patch"])

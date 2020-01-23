@@ -13,8 +13,9 @@ class TestBumpVersion:
 
         assert version.BumpVersion.get_version_info("patch") == {"current": "1.0.0", "new": "1.1.0"}
 
-    @pytest.mark.parametrize("semver", ["patch", "minor", "major"])
-    def test_release(self, monkeypatch, semver):
+    def test_release(self, monkeypatch):
         monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())
-        version.BumpVersion.release(semver)
-        assert version.subprocess.check_output.call_args == mock.call(["bumpversion", semver])
+        version.BumpVersion.release("1.2.3")
+        assert version.subprocess.check_output.call_args == mock.call(
+            ["bumpversion", "--new-version", "1.2.3", "patch"],
+        )
