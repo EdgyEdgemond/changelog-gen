@@ -6,6 +6,7 @@ from changelog_gen import (
     writer,
 )
 from changelog_gen.cli import util
+from changelog_gen.config import Config
 from changelog_gen.vcs import Git
 from changelog_gen.version import BumpVersion
 
@@ -67,6 +68,10 @@ def gen(dry_run=False, release=False, version_tag=None):
 
 
 def _gen(dry_run=False, release=False, version_tag=None):
+    config = Config().read()
+
+    release = config.get("release", release)
+
     extension = util.detect_extension()
 
     if extension is None:

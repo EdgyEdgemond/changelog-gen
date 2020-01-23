@@ -49,7 +49,7 @@ def release_notes(git_repo):
 
 
 @pytest.fixture
-def bumpversion(git_repo):
+def setup(git_repo):
     p = git_repo.workspace / "setup.cfg"
     p.write_text("""
 [bumpversion]
@@ -60,6 +60,8 @@ tag = true
 
     git_repo.run("git add setup.cfg")
     git_repo.api.index.commit("commit setup.cfg")
+
+    return p
 
 
 def test_generate_aborts_if_changelog_missing(cli_runner, cwd):
@@ -83,7 +85,7 @@ def test_generate_wraps_errors(cli_runner, changelog, release_notes):
     assert result.output == "Unable to get version data from bumpversion\nAborted!\n"
 
 
-def test_generate_confirms_suggested_changes(cli_runner, changelog, release_notes, bumpversion):
+def test_generate_confirms_suggested_changes(cli_runner, changelog, release_notes, setup):
     result = cli_runner.invoke()
 
     assert result.exit_code == 0
@@ -108,7 +110,7 @@ def test_generate_writes_to_file(
     git_repo,
     changelog,
     release_notes,
-    bumpversion,
+    setup,
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -139,11 +141,39 @@ def test_generate_creates_release(
     git_repo,
     changelog,
     release_notes,
-    bumpversion,
+    setup,
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
     result = cli_runner.invoke(["--release"])
+
+    assert result.exit_code == 0
+    assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
+
+
+def test_generate_creates_release_using_config(
+    cli_runner,
+    git_repo,
+    changelog,
+    release_notes,
+    monkeypatch,
+):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+release = true
+""")
+
+    git_repo.run("git add setup.cfg")
+    git_repo.api.index.commit("commit setup.cfg")
+
+    monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+    result = cli_runner.invoke()
 
     assert result.exit_code == 0
     assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
@@ -154,7 +184,7 @@ def test_generate_uses_supplied_version_tag(
     git_repo,
     changelog,
     release_notes,
-    bumpversion,
+    setup,
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -184,7 +214,7 @@ def test_generate_dry_run(
     git_repo,
     changelog,
     release_notes,
-    bumpversion,
+    setup,
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
