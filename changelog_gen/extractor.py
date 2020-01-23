@@ -22,7 +22,7 @@ class ReleaseNoteExtractor:
         sections = defaultdict(dict)
 
         # Extract changelog details from release note files.
-        for issue in self.release_notes.iterdir():
+        for issue in sorted(self.release_notes.iterdir()):
             if issue.is_file and not issue.name.startswith("."):
                 ticket, section = issue.name.split(".")
                 contents = issue.read_text().strip()
