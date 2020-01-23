@@ -1,5 +1,7 @@
 from unittest import mock
 
+import pytest
+
 from changelog_gen import version
 
 
@@ -11,6 +13,8 @@ class TestBumpVersion:
         assert version.BumpVersion.get_version_info("patch") == {"current": "1.0.0", "new": "1.1.0"} 
 
 
-    def test_release(self, monkeypatch):
+    @pytest.mark.parametrize("semver", ["patch", "minor", "major"])
+    def test_release(self, monkeypatch, semver):
         monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())
-        assert version.BumpVersion.release("patch") is None
+        version.BumpVersion.release(semver)
+        assert version.subprocess.check_output.call_args == mock.call(["bumpversion", semver])
