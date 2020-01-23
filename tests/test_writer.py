@@ -46,7 +46,7 @@ class TestBaseWriter:
         assert w.content == []
         assert w.dry_run is False
 
-    def test_init(self, changelog):
+    def test_init_dry_run(self, changelog):
         w = writer.BaseWriter(changelog, dry_run=True)
 
         assert w.content == []
@@ -68,6 +68,17 @@ class TestBaseWriter:
 - line3
 """)
         w = writer.BaseWriter(changelog)
+
+        assert w.existing == [
+            "## 0.0.1",
+            "",
+            "### header",
+            "",
+            "- line1",
+            "- line2",
+            "- line3",
+            "",
+        ]
 
     def test_content_as_str(self, changelog):
         w = writer.BaseWriter(changelog)
@@ -118,7 +129,7 @@ class TestMdWriter:
         assert w.content == []
         assert w.dry_run is False
 
-    def test_init(self, changelog_md):
+    def test_init_dry_run(self, changelog_md):
         w = writer.MdWriter(changelog_md, dry_run=True)
 
         assert w.content == []
@@ -245,7 +256,7 @@ class TestRstWriter:
         assert w.content == []
         assert w.dry_run is False
 
-    def test_init(self, changelog_rst):
+    def test_init_dry_run(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, dry_run=True)
 
         assert w.content == []
@@ -290,6 +301,7 @@ header
             "* line3",
             "",
         ]
+
     def test_add_version(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)
 
@@ -321,7 +333,6 @@ header
 Changelog
 =========
 """
-
 
     def test_write(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)

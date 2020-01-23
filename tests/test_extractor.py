@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-from changelog_gen.extractor import ReleaseNoteExtractor
 from changelog_gen import errors
+from changelog_gen.extractor import ReleaseNoteExtractor
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def remap_release_notes(release_notes):
 
 def test_init_with_no_release_notes_raises(cwd):
     with pytest.raises(errors.NoReleaseNotesError):
-        ReleaseNoteExtractor() 
+        ReleaseNoteExtractor()
 
 
 def test_init_with_release_notes_non_dir_raises(cwd):
@@ -59,11 +59,11 @@ def test_init_with_release_notes_non_dir_raises(cwd):
     r.write_text("not a dir")
 
     with pytest.raises(errors.NoReleaseNotesError):
-        ReleaseNoteExtractor() 
+        ReleaseNoteExtractor()
 
 
 def test_valid_notes_extraction(valid_release_notes):
-    e = ReleaseNoteExtractor() 
+    e = ReleaseNoteExtractor()
 
     sections = e.extract()
 
@@ -80,14 +80,14 @@ def test_valid_notes_extraction(valid_release_notes):
 
 
 def test_invalid_notes_extraction_raises(invalid_release_notes):
-    e = ReleaseNoteExtractor() 
+    e = ReleaseNoteExtractor()
 
     with pytest.raises(errors.InvalidSectionError):
         e.extract()
 
 
 def test_dry_run_clean_keeps_files(valid_release_notes, release_notes):
-    e = ReleaseNoteExtractor(dry_run=True) 
+    e = ReleaseNoteExtractor(dry_run=True)
 
     e.clean()
 
@@ -100,7 +100,7 @@ def test_clean_removes_all_non_dotfiles(valid_release_notes, release_notes):
     """
     Clean should not remove .gitkeep files etc
     """
-    e = ReleaseNoteExtractor() 
+    e = ReleaseNoteExtractor()
 
     e.clean()
 
