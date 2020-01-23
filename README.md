@@ -23,7 +23,8 @@ poetry install
 
 Files in the folder should use the format `{issue_number}.{type}`, supported
 types are currently `fix` and `feat`. The contents of the file is used to populate
-the changelog file.
+the changelog file. If the type ends with a `!` it denotes a breaking change has been
+made, this will lead to a major release being suggested.
 
 ```bash
 $ changelog-gen
