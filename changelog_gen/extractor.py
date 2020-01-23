@@ -1,4 +1,7 @@
-from collections import defaultdict
+from collections import (
+    OrderedDict,
+    defaultdict,
+)
 from pathlib import Path
 
 from changelog_gen import errors
@@ -19,7 +22,7 @@ class ReleaseNoteExtractor:
             raise errors.NoReleaseNotesError("No release notes directory found.")
 
     def extract(self):
-        sections = defaultdict(dict)
+        sections = defaultdict(OrderedDict)
 
         # Extract changelog details from release note files.
         for issue in sorted(self.release_notes.iterdir()):
