@@ -149,6 +149,36 @@ def test_generate_creates_release(
     assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
 
 
+def test_generate_uses_supplied_version_tag(
+    cli_runner,
+    git_repo,
+    changelog,
+    release_notes,
+    bumpversion,
+    monkeypatch,
+):
+    monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+    result = cli_runner.invoke(["--version-tag", "0.3.2"])
+
+    assert result.exit_code == 0
+    assert changelog.read_text() == """
+# Changelog
+
+## v0.3.2
+
+### Features and Improvements
+
+- Detail about 2 [#2]
+- Detail about 3 [#3]
+
+### Bug fixes
+
+- Detail about 1 [#1]
+- Detail about 4 [#4]
+""".lstrip()
+    assert git_repo.api.head.commit.message == "Update CHANGELOG for 0.3.2\n"
+
+
 def test_generate_dry_run(
     cli_runner,
     git_repo,
