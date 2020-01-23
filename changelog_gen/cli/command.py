@@ -98,7 +98,7 @@ def _gen(dry_run=False, release=False):
         header = extractor.SUPPORTED_SECTIONS[section]
         lines = [
             "{} [#{}]".format(content, issue_number)
-            for issue_number, content in sections[section].items()
+            for issue_number, content in sorted(sections[section].items())
         ]
         w.add_section(header, lines)
 
