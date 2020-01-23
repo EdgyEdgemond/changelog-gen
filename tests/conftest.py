@@ -8,7 +8,7 @@ def cwd(tmp_path):
     orig = os.getcwd()
 
     try:
-        os.chdir(tmp_path)
+        os.chdir(str(tmp_path))
         yield tmp_path
     except Exception:
         raise
@@ -24,7 +24,7 @@ def git_repo(git_repo):
     orig = os.getcwd()
 
     try:
-        os.chdir(git_repo.workspace)
+        os.chdir(str(git_repo.workspace))
         yield git_repo
     except Exception:
         raise
