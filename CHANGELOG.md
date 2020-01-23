@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.0
+
+### Features and Improvements
+
+- Add in --release flag to trigger tagging the release. [#12]
+- Add in --version-tag flag to skip auto generation of the version tag. [#13]
+- Support configuration via setup.cfg [#14]
+- Introduce a method to detect breaking changes. [#16]
+
 ## v0.2.3
 
 ### Bug fixes
