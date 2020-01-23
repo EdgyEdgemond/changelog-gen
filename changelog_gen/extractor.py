@@ -15,14 +15,14 @@ class ReleaseNoteExtractor:
         self.release_notes = Path("./release_notes")
         self.dry_run = dry_run
 
-        if not self.release_notes.exists() or not self.release_notes.is_dir:
+        if not self.release_notes.exists() or not self.release_notes.is_dir():
             raise errors.NoReleaseNotesError("No release notes directory found.")
 
     def extract(self):
         sections = defaultdict(dict)
 
         # Extract changelog details from release note files.
-        for issue in self.release_notes.iterdir():
+        for issue in sorted(self.release_notes.iterdir()):
             if issue.is_file and not issue.name.startswith("."):
                 ticket, section = issue.name.split(".")
                 contents = issue.read_text().strip()

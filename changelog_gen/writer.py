@@ -6,13 +6,14 @@ SUPPORTED_EXTENSIONS = ["md", "rst"]
 
 
 class BaseWriter:
-    file_header_line_count = None
+    file_header_line_count = 0
     file_header = None
     extension = None
 
-    def __init__(self, changelog=None, dry_run=False):
+    def __init__(self, changelog, dry_run=False):
         self.existing = []
-        if changelog:
+        self.changelog = changelog
+        if self.changelog.exists():
             lines = changelog.read_text().split("\n")
             self.existing = lines[self.file_header_line_count + 1:]
         self.content = []
@@ -21,10 +22,23 @@ class BaseWriter:
     def add_version(self, version):
         self._add_version(version)
 
+    def _add_version(self, version):
+        raise NotImplementedError
+
     def add_section(self, header, lines):
         self._add_section_header(header)
         for line in lines:
             self._add_section_line(line)
+        self._post_section()
+
+    def _add_section_header(self, header):
+        raise NotImplementedError
+
+    def _add_section_line(self, line):
+        raise NotImplementedError
+
+    def _post_section(self):
+        pass
 
     def __str__(self):
         return "\n".join(self.content)
@@ -36,9 +50,7 @@ class BaseWriter:
             with NamedTemporaryFile("wb") as output_file:
                 output_file.write(("\n".join(self.content)).encode("utf-8"))
         else:
-            filename = "CHANGELOG.{extension}".format(extension=self.extension)
-            with open(filename, "w") as output_file:
-                output_file.write("\n".join(self.content))
+            self.changelog.write_text("\n".join(self.content))
 
 
 class MdWriter(BaseWriter):
@@ -55,6 +67,9 @@ class MdWriter(BaseWriter):
     def _add_section_line(self, line):
         self.content.extend(["- {line}".format(line=line)])
 
+    def _post_section(self):
+        self.content.extend([""])
+
 
 class RstWriter(BaseWriter):
     file_header_line_count = 3
@@ -68,7 +83,7 @@ class RstWriter(BaseWriter):
         self.content.extend([header, "-" * len(header), ""])
 
     def _add_section_line(self, line):
-        self.content.extend([f"* {line}".format(line=line), ""])
+        self.content.extend(["* {line}".format(line=line), ""])
 
 
 def new_writer(extension, dry_run=False):
@@ -80,8 +95,6 @@ def new_writer(extension, dry_run=False):
         )
 
     changelog = Path("CHANGELOG.{extension}".format(extension=extension))
-    if not changelog.exists():
-        changelog = None
 
     if extension == "md":
         return MdWriter(changelog, dry_run=dry_run)
