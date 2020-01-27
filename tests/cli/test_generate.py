@@ -232,7 +232,6 @@ def test_generate_writes_to_file(
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 """.lstrip()
-    assert git_repo.api.head.commit.message == "Update CHANGELOG for 0.1.0\n"
 
 
 def test_generate_suggests_major_version_for_breaking_change(
@@ -244,7 +243,7 @@ def test_generate_suggests_major_version_for_breaking_change(
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
-    result = cli_runner.invoke()
+    result = cli_runner.invoke(["--commit"])
 
     assert result.exit_code == 0
 
@@ -275,7 +274,7 @@ def test_generate_creates_release(
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
-    result = cli_runner.invoke(["--release"])
+    result = cli_runner.invoke(["--commit", "--release"])
 
     assert result.exit_code == 0
     assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
@@ -296,6 +295,7 @@ commit = true
 tag = true
 
 [changelog_gen]
+commit = true
 release = true
 """)
 
@@ -318,7 +318,7 @@ def test_generate_uses_supplied_version_tag(
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
-    result = cli_runner.invoke(["--version-tag", "0.3.2"])
+    result = cli_runner.invoke(["--version-tag", "0.3.2", "--commit"])
 
     assert result.exit_code == 0
     assert changelog.read_text() == """

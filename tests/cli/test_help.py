@@ -7,6 +7,7 @@ def test_main_help(cli_runner):
   Generate a change log from release_notes/* files
 
 Options:
+  --commit            Commit changes made to changelog after writing
   --allow-dirty       Don't abort if branch contains uncommited changes
   --dry-run           Don't write release notes to check for errors
   --release           Use bumpversion to tag the release
