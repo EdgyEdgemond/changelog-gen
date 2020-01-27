@@ -18,6 +18,9 @@ from changelog_gen.version import BumpVersion
 
 
 def process_info(info, dry_run, allow_dirty, config):
+    if dry_run:
+        return
+
     if info["dirty"] and not allow_dirty:
         click.echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.")
         raise click.Abort()
@@ -82,9 +85,11 @@ def _gen(dry_run=False, allow_dirty=False, release=False, commit=False, version_
 
     # TODO: supported default extensions (steal from conventional commits)
     # TODO: support multiple extras by default (the usuals)
-    # TODO: Read in additional extensions to headings or overrides for custom headings
+
+    section_mapping = config.get("section_mapping", {})
+
     e = extractor.ReleaseNoteExtractor(dry_run=dry_run)
-    sections = e.extract()
+    sections = e.extract(section_mapping)
 
     semver = None
     if version_tag is None:

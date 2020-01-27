@@ -27,19 +27,14 @@ class Config:
         self._config.read_string(config_content)
 
         for listvaluename in ("allowed_branches",):
-            try:
-                value = self._config.get("changelog_gen", listvaluename)
-            except NoOptionError:
-                pass  # no default value then ;)
-            else:
-                config[listvaluename] = []
+            listvalue = self.parse_list_value(listvaluename)
+            if listvalue:
+                config[listvaluename] = listvalue
 
-                listvalue = list(
-                    filter(None, (x.strip() for x in value.splitlines())),
-                )
-
-                for value in listvalue:
-                    config[listvaluename].extend(value.split(","))
+        for dictvaluename in ("section_mapping",):
+            dictvalue = self.parse_dict_value(dictvaluename)
+            if dictvalue:
+                config[dictvaluename] = dictvalue
 
         for boolvaluename in ("release", "commit", "allow_dirty"):
             try:
@@ -50,3 +45,36 @@ class Config:
                 config[boolvaluename] = False
 
         return config
+
+    def parse_dict_value(self, dictvaluename):
+        try:
+            value = self._config.get("changelog_gen", dictvaluename)
+        except NoOptionError:
+            pass  # no default value then ;)
+        else:
+            ret = {}
+            dictvalue = list(
+                filter(None, (x.strip() for x in value.splitlines())),
+            )
+
+            for value in dictvalue:
+                k, v = value.split("=")
+                ret[k] = v
+
+            return ret
+
+    def parse_list_value(self, listvaluename):
+        try:
+            value = self._config.get("changelog_gen", listvaluename)
+        except NoOptionError:
+            pass  # no default value then ;)
+        else:
+            ret = []
+            listvalue = list(
+                filter(None, (x.strip() for x in value.splitlines())),
+            )
+
+            for value in listvalue:
+                ret.extend(value.split(","))
+
+            return ret
