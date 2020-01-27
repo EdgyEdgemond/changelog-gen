@@ -51,7 +51,7 @@ Write CHANGELOG for suggested version 0.3.0 [y/N]: y
 Of the command line arguments, most of them can be configured in `setup.cfg` to remove
 the need to pass them in every time.
 
-Example `setup.cfg`:`
+Example `setup.cfg`:
 
 ```ini
 [bumpversion]
