@@ -7,6 +7,7 @@ def test_main_help(cli_runner):
   Generate a change log from release_notes/* files
 
 Options:
+  --allow-dirty       Don't abort if branch contains uncommited changes
   --dry-run           Don't write release notes to check for errors
   --release           Use bumpversion to tag the release
   --version-tag TEXT  Provide the desired version tag, skip auto generation.
