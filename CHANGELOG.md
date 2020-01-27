@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.4.0
+
+### Features and Improvements
+
+- Add ability to restrict which branches command can run in, and to fail on dirty branch. [#11]
+- Allow configuration of release note suffix to changelog section mapping. [#19]
+
+### Bug fixes
+
+- Commit configuration was ignored. Fixed cli to use configured value. [#24]
+
 ## v0.3.0
 
 ### Features and Improvements

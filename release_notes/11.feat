@@ -1,1 +1,0 @@
-Add ability to restrict which branches command can run in, and to fail on dirty branch.
