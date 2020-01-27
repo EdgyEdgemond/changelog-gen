@@ -49,3 +49,16 @@ def test_config_picks_up_list_values(config_factory, branches):
 
     c = Config().read()
     assert c["allowed_branches"] == ["master", "feature/11"]
+
+
+def test_config_picks_up_dict_values(config_factory):
+    config_factory("""
+[changelog_gen]
+section_mapping =
+  feature=feat
+  bug=fix
+  test=fix
+""")
+
+    c = Config().read()
+    assert c["section_mapping"] == {"feature": "feat", "bug": "fix", "test": "fix"}
