@@ -24,6 +24,17 @@ def multiversion_repo(git_repo):
     return git_repo
 
 
+def test_get_latest_info_branch(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+
+    f.write_text("hello world! v3")
+
+    info = Git.get_latest_tag_info()
+
+    assert info["branch"] == "master"
+
+
 def test_get_latest_info_clean(multiversion_repo):
     info = Git.get_latest_tag_info()
 

@@ -93,6 +93,90 @@ def test_generate_aborts_if_no_release_notes_directory(cli_runner, changelog):
     assert result.output == "No release notes directory found.\nAborted!\n"
 
 
+def test_generate_aborts_if_dirty(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = false
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 1
+    assert result.output == "Working directory is not clean. Use `allow_dirty` configuration to ignore.\nAborted!\n"
+
+
+def test_generate_allows_dirty(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = false
+""")
+    result = cli_runner.invoke(["--allow-dirty"])
+
+    assert result.exit_code == 0
+
+
+def test_generate_continues_if_allow_dirty_configured(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = true
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 0
+
+
+def test_generate_aborts_if_unsupported_current_branch(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = true
+allowed_branches = release_candidate
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 1
+    assert result.output == "Current branch not in allowed generation branches.\nAborted!\n"
+
+
+def test_generate_allows_supported_branch(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = true
+allowed_branches = master
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 0
+
+
 def test_generate_wraps_errors(cli_runner, changelog, release_notes):
     result = cli_runner.invoke()
 
