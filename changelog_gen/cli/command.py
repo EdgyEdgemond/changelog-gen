@@ -18,6 +18,9 @@ from changelog_gen.version import BumpVersion
 
 
 def process_info(info, dry_run, allow_dirty, config):
+    if dry_run:
+        return
+
     if info["dirty"] and not allow_dirty:
         click.echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.")
         raise click.Abort()
