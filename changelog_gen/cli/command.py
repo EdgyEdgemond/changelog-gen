@@ -51,24 +51,26 @@ def init(file_format):
 @click.option("--release", is_flag=True, help="Use bumpversion to tag the release")
 @click.option("--dry-run", is_flag=True, help="Don't write release notes to check for errors")
 @click.option("--allow-dirty", is_flag=True, help="Don't abort if branch contains uncommited changes")
+@click.option("--commit", is_flag=True, help="Commit changes made to changelog after writing")
 @click.command("changelog-gen", help="Generate a change log from release_notes/* files")
-def gen(dry_run=False, allow_dirty=False, release=False, version_tag=None):
+def gen(dry_run=False, allow_dirty=False, release=False, commit=False, version_tag=None):
     """
     Read release notes and generate a new CHANGELOG entry for the current version.
     """
 
     try:
-        _gen(dry_run, allow_dirty, release, version_tag)
+        _gen(dry_run, allow_dirty, release, commit, version_tag)
     except errors.ChangelogException as ex:
         click.echo(ex)
         raise click.Abort()
 
 
-def _gen(dry_run=False, allow_dirty=False, release=False, version_tag=None):
+def _gen(dry_run=False, allow_dirty=False, release=False, commit=False, version_tag=None):
     config = Config().read()
 
     release = config.get("release") or release
     allow_dirty = config.get("allow_dirty") or allow_dirty
+    commit = config.get("commit") or commit
 
     extension = util.detect_extension()
 
@@ -115,25 +117,23 @@ def _gen(dry_run=False, allow_dirty=False, release=False, version_tag=None):
 
     click.echo(w)
 
-    _finalise(w, e, version_tag, extension, dry_run=dry_run, release=release)
+    _finalise(w, e, version_tag, extension, dry_run=dry_run, release=release, commit=commit)
 
 
-def _finalise(writer, extractor, version_tag, extension, release=False, dry_run=False):
+def _finalise(writer, extractor, version_tag, extension, release=False, dry_run=False, commit=False):
     if dry_run or click.confirm(
         "Write CHANGELOG for suggested version {}".format(version_tag),
     ):
         writer.write()
         extractor.clean()
 
-        if dry_run:
+        if dry_run or not commit:
             return
 
-        # TODO: Commit changes if configured
         Git.add_path("CHANGELOG.{extension}".format(extension=extension))
         # TODO: Dont add release notes if using commit messages...
         Git.add_path("release_notes")
         Git.commit(version_tag)
 
         if release:
-            # TODO: use bumpversion to tag if configured
             BumpVersion.release(version_tag)
