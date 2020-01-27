@@ -17,18 +17,14 @@ from changelog_gen.version import BumpVersion
 # https://github.com/c4urself/bump2version/blob/master/bumpversion/cli.py _determine_config_file
 
 
-def process_info(info, dry_run):
-    if info["dirty"]:
-        click.echo("Working directory is not clean.")
+def process_info(info, dry_run, allow_dirty, config):
+    if info["dirty"] and not allow_dirty:
+        click.echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.")
         raise click.Abort()
 
-    if (
-        not dry_run and
-        info["distance_to_latest_tag"] != 0 and
-        not click.confirm(
-            "Changes made since release, continue generating CHANGELOG",
-        )
-    ):
+    allowed_branches = config.get("allowed_branches")
+    if allowed_branches and info["branch"] not in allowed_branches:
+        click.echo("Current branch not in allowed generation branches.")
         raise click.Abort()
 
 
@@ -54,29 +50,33 @@ def init(file_format):
 @click.option("--version-tag", default=None, help="Provide the desired version tag, skip auto generation.")
 @click.option("--release", is_flag=True, help="Use bumpversion to tag the release")
 @click.option("--dry-run", is_flag=True, help="Don't write release notes to check for errors")
+@click.option("--allow-dirty", is_flag=True, help="Don't abort if branch contains uncommited changes")
 @click.command("changelog-gen", help="Generate a change log from release_notes/* files")
-def gen(dry_run=False, release=False, version_tag=None):
+def gen(dry_run=False, allow_dirty=False, release=False, version_tag=None):
     """
     Read release notes and generate a new CHANGELOG entry for the current version.
     """
 
     try:
-        _gen(dry_run, release, version_tag)
+        _gen(dry_run, allow_dirty, release, version_tag)
     except errors.ChangelogException as ex:
         click.echo(ex)
         raise click.Abort()
 
 
-def _gen(dry_run=False, release=False, version_tag=None):
+def _gen(dry_run=False, allow_dirty=False, release=False, version_tag=None):
     config = Config().read()
 
-    release = config.get("release", release)
+    release = config.get("release") or release
+    allow_dirty = config.get("allow_dirty") or allow_dirty
 
     extension = util.detect_extension()
 
     if extension is None:
         click.echo("No CHANGELOG file detected, run changelog-init")
         raise click.Abort()
+
+    process_info(Git.get_latest_tag_info(), dry_run, allow_dirty, config)
 
     # TODO: supported default extensions (steal from conventional commits)
     # TODO: support multiple extras by default (the usuals)
