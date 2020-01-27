@@ -21,17 +21,22 @@ class ReleaseNoteExtractor:
         if not self.release_notes.exists() or not self.release_notes.is_dir():
             raise errors.NoReleaseNotesError("No release notes directory found.")
 
-    def extract(self):
+    def extract(self, section_mapping=None):
+        section_mapping = section_mapping or {}
+
         sections = defaultdict(OrderedDict)
 
         # Extract changelog details from release note files.
         for issue in sorted(self.release_notes.iterdir()):
             if issue.is_file and not issue.name.startswith("."):
                 ticket, section = issue.name.split(".")
+                section = section_mapping.get(section, section)
+
                 breaking = False
                 if section.endswith("!"):
                     section = section[:-1]
                     breaking = True
+
                 contents = issue.read_text().strip()
                 if section not in SUPPORTED_SECTIONS:
                     raise errors.InvalidSectionError(

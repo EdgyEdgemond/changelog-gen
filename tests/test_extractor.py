@@ -29,7 +29,7 @@ def breaking_release_notes(release_notes):
 
 @pytest.fixture
 def invalid_release_notes(release_notes):
-    for i, note in enumerate(["1.fix", "2.feat", "3.bug", "4.fix"]):
+    for i, note in enumerate(["1.fix", "2.feat", "3.bug", "4.fix"], 1):
         n = release_notes / note
         n.write_text("Detail about {}".format(i))
 
@@ -93,6 +93,22 @@ def test_invalid_notes_extraction_raises(invalid_release_notes):
 
     with pytest.raises(errors.InvalidSectionError):
         e.extract()
+
+
+def test_section_remapping_can_remap_invalid_sections(invalid_release_notes):
+    e = ReleaseNoteExtractor()
+
+    sections = e.extract({"bug": "fix"})
+    assert sections == {
+        "feat": {
+            "2": {"description": "Detail about 2", "breaking": False},
+        },
+        "fix": {
+            "1": {"description": "Detail about 1", "breaking": False},
+            "3": {"description": "Detail about 3", "breaking": False},
+            "4": {"description": "Detail about 4", "breaking": False},
+        },
+    }
 
 
 def test_dry_run_clean_keeps_files(valid_release_notes, release_notes):
