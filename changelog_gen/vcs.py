@@ -27,7 +27,29 @@ class Git:
         except subprocess.CalledProcessError:
             raise errors.VcsError("Unable to get version number from git tags")
 
-        info = {"dirty": False}
+        try:
+            rev_parse_out = (
+                subprocess.check_output(
+                    [
+                        "git",
+                        "rev-parse",
+                        "--tags",
+                        "--abbrev-ref",
+                        "HEAD",
+                    ],
+                    stderr=subprocess.STDOUT,
+                )
+                .decode()
+                .strip()
+                .split("\n")
+            )
+        except subprocess.CalledProcessError:
+            raise errors.VcsError("Unable to get current git branch")
+
+        info = {
+            "dirty": False,
+            "branch": rev_parse_out[-1],
+        }
 
         if describe_out[-1].strip() == "dirty":
             info["dirty"] = True
