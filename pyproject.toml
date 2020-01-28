@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "changelog_gen"
-version = "0.5.1"
+version = "0.6.0"
 description = "Changelog generation tool"
 authors = ["Daniel Edgecombe <edgy.edgemond@gmail.com>"]
 license = "Apache-2.0"
