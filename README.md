@@ -54,7 +54,7 @@ the need to pass them in every time.
 Example `setup.cfg`:
 
 ```ini
-[bumpversion]
+[changelog_gen]
 commit = true
 release = true
 allow_dirty = false
@@ -87,6 +87,20 @@ General configuration is grouped in a `[changelog_gen]` section.
   Don't abort if the current branch contains uncommited changes
 
   Also available as `--allow-dirty` (e.g. `changelog-gen --allow-dirty`)
+
+#### `issue_link =`
+  _**[optional]**_<br />
+  **default**: None
+
+  Create links in the CHANGELOG to the originating issue. A url that contains an
+  `{issue_ref}` for formatting.
+
+  Example:
+
+```ini
+[changelog_gen]
+issue_link = http://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}
+```
 
 #### `allowed_branches =`
   _**[optional]**_<br />

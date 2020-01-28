@@ -105,7 +105,7 @@ def _gen(dry_run=False, allow_dirty=False, release=False, commit=False, version_
     # TODO: take a note from bumpversion, read in versioning format string
     version_string = "v{version_tag}".format(version_tag=version_tag)
 
-    w = writer.new_writer(extension, dry_run=dry_run)
+    w = writer.new_writer(extension, dry_run=dry_run, issue_link=config.get("issue_link"))
 
     w.add_version(version_string)
 
@@ -114,11 +114,7 @@ def _gen(dry_run=False, allow_dirty=False, release=False, commit=False, version_
             continue
 
         header = extractor.SUPPORTED_SECTIONS[section]
-        lines = [
-            "{} [#{}]".format(content["description"], issue_number)
-            for issue_number, content in sections[section].items()
-        ]
-        w.add_section(header, lines)
+        w.add_section(header, {k: v["description"] for k, v in sections[section].items()})
 
     click.echo(w)
 
