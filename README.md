@@ -1,4 +1,4 @@
-# Changelog Generator - v0.5.0
+# Changelog Generator - v0.5.1
 
 `changelog-gen` is a CHANGELOG generator intended to be used in conjunction
 with [bumpversion](https://github.com/c4urself/bump2version) to generate
