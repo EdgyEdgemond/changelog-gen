@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.0
+
+### Features and Improvements
+
+- Support custom changelog headers. [[#32](https://github.com/EdgyEdgemond/changelog-gen/32)]
+
 ## v0.5.1
 
 ### Bug fixes

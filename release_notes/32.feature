@@ -1,1 +1,0 @@
-Support custom changelog headers.
