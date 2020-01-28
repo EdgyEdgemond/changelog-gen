@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.1
+
+### Bug fixes
+
+- Render RST links when performing a dry-run. [[#30](https://github.com/EdgyEdgemond/changelog-gen/30)]
+
 ## v0.5.0
 
 ### Features and Improvements
