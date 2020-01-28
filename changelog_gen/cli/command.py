@@ -13,8 +13,12 @@ from changelog_gen.version import BumpVersion
 
 # TODO: use config to support reading from files, or from commits
 # TODO: support ConventionalCommits instead of reading from files?
-# setup.cfg or pyproject.toml
-# https://github.com/c4urself/bump2version/blob/master/bumpversion/cli.py _determine_config_file
+
+
+SUPPORTED_SECTIONS = {
+    "feat": "Features and Improvements",
+    "fix": "Bug fixes",
+}
 
 
 def process_info(info, dry_run, allow_dirty, config):
@@ -85,10 +89,10 @@ def _gen(dry_run=False, allow_dirty=False, release=False, commit=False, version_
 
     # TODO: supported default extensions (steal from conventional commits)
     # TODO: support multiple extras by default (the usuals)
-
     section_mapping = config.get("section_mapping", {})
+    supported_sections = config.get("sections", SUPPORTED_SECTIONS)
 
-    e = extractor.ReleaseNoteExtractor(dry_run=dry_run)
+    e = extractor.ReleaseNoteExtractor(dry_run=dry_run, supported_sections=supported_sections)
     sections = e.extract(section_mapping)
 
     semver = None
@@ -109,11 +113,11 @@ def _gen(dry_run=False, allow_dirty=False, release=False, commit=False, version_
 
     w.add_version(version_string)
 
-    for section in sorted(extractor.SUPPORTED_SECTIONS):
+    for section in sorted(e.supported_sections):
         if section not in sections:
             continue
 
-        header = extractor.SUPPORTED_SECTIONS[section]
+        header = e.supported_sections[section]
         w.add_section(header, {k: v["description"] for k, v in sections[section].items()})
 
     click.echo(w)
