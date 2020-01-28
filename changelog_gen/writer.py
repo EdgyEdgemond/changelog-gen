@@ -111,7 +111,7 @@ class RstWriter(BaseWriter):
 
     def write(self):
         self.content = [self.file_header] + self.content + self.existing
-        for ref, link in self.links.items():
+        for ref, link in sorted(self.links.items()):
             self.content.append(".. _`{}`: {}".format(ref, link))
         self._write(self.content)
 
