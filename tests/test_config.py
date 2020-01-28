@@ -36,6 +36,20 @@ def test_config_picks_up_boolean_values(config_factory, release):
     assert c["release"] is True
 
 
+@pytest.mark.parametrize("issue_link", [
+    "issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/{}",
+    "issue_link=https://github.com/EdgyEdgemond/changelog-gen/issues/{}",
+])
+def test_config_picks_up_strings_values(config_factory, issue_link):
+    config_factory("""
+[changelog_gen]
+{}
+""".format(issue_link))
+
+    c = Config().read()
+    assert c["issue_link"] == "https://github.com/EdgyEdgemond/changelog-gen/issues/{}"
+
+
 @pytest.mark.parametrize("branches", [
     "allowed_branches = master,feature/11",
     "allowed_branches=master,feature/11",

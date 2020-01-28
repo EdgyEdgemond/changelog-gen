@@ -15,7 +15,7 @@ class Config:
 
         self._config.add_section("changelog_gen")
 
-    def read(self):
+    def read(self):  # noqa
         config = {}
 
         if not Path("setup.cfg").exists():
@@ -25,6 +25,14 @@ class Config:
             config_content = config_fp.read()
 
         self._config.read_string(config_content)
+
+        for stringvaluename in ("issue_link",):
+            try:
+                config[stringvaluename] = self._config.get(
+                    "changelog_gen", stringvaluename,
+                )
+            except NoOptionError:
+                pass
 
         for listvaluename in ("allowed_branches",):
             listvalue = self.parse_list_value(listvaluename)
