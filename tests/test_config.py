@@ -65,7 +65,7 @@ def test_config_picks_up_list_values(config_factory, branches):
     assert c["allowed_branches"] == ["master", "feature/11"]
 
 
-def test_config_picks_up_dict_values(config_factory):
+def test_config_picks_up_section_mapping(config_factory):
     config_factory("""
 [changelog_gen]
 section_mapping =
@@ -76,3 +76,16 @@ section_mapping =
 
     c = Config().read()
     assert c["section_mapping"] == {"feature": "feat", "bug": "fix", "test": "fix"}
+
+
+def test_config_picks_up_custom_sections(config_factory):
+    config_factory("""
+[changelog_gen]
+sections =
+  bug=Bugfixes
+  feat=New Features
+  remove=Removals
+""")
+
+    c = Config().read()
+    assert c["sections"] == {"bug": "Bugfixes", "feat": "New Features", "remove": "Removals"}

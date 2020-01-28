@@ -233,6 +233,39 @@ section_mapping =
 Write CHANGELOG for suggested version 0.0.1 [y/N]: \n""".lstrip()
 
 
+def test_generate_with_custom_sections(cli_runner, changelog, release_notes, setup, git_repo):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = true
+sections =
+  feat=My Features
+  fix=My Fixes
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 0
+    assert result.output == """
+## v0.1.0
+
+### My Features
+
+- Detail about 2 [#2]
+- Detail about 3 [#3]
+
+### My Fixes
+
+- Detail about 1 [#1]
+- Detail about 4 [#4]
+
+Write CHANGELOG for suggested version 0.1.0 [y/N]: \n""".lstrip()
+
+
 def test_generate_writes_to_file(
     cli_runner,
     git_repo,
