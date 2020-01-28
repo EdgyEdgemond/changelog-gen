@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.0
+
+### Features and Improvements
+
+- Allow configuration of an issue url to create links in CHANGELOG. [[#28](https://github.com/EdgyEdgemond/changelog-gen/28)]
+
 ## v0.4.0
 
 ### Features and Improvements
