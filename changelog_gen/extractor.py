@@ -29,7 +29,7 @@ class ReleaseNoteExtractor:
         # Extract changelog details from release note files.
         for issue in sorted(self.release_notes.iterdir()):
             if issue.is_file and not issue.name.startswith("."):
-                ticket, section = issue.name.split(".")
+                issue_ref, section = issue.name.split(".")
                 section = section_mapping.get(section, section)
 
                 breaking = False
@@ -45,7 +45,7 @@ class ReleaseNoteExtractor:
                         ),
                     )
 
-                sections[section][ticket] = {
+                sections[section][issue_ref] = {
                     "description": contents,
                     "breaking": breaking,
                 }

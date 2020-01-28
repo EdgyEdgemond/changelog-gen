@@ -10,7 +10,7 @@ class BaseWriter:
     file_header = None
     extension = None
 
-    def __init__(self, changelog, dry_run=False):
+    def __init__(self, changelog, dry_run=False, issue_link=None):
         self.existing = []
         self.changelog = changelog
         if self.changelog.exists():
@@ -18,6 +18,7 @@ class BaseWriter:
             self.existing = lines[self.file_header_line_count + 1:]
         self.content = []
         self.dry_run = dry_run
+        self.issue_link = issue_link
 
     def add_version(self, version):
         self._add_version(version)
@@ -27,14 +28,14 @@ class BaseWriter:
 
     def add_section(self, header, lines):
         self._add_section_header(header)
-        for line in lines:
-            self._add_section_line(line)
+        for issue_ref, description in lines.items():
+            self._add_section_line(description, issue_ref)
         self._post_section()
 
     def _add_section_header(self, header):
         raise NotImplementedError
 
-    def _add_section_line(self, line):
+    def _add_section_line(self, description, issue_ref):
         raise NotImplementedError
 
     def _post_section(self):
@@ -45,12 +46,14 @@ class BaseWriter:
 
     def write(self):
         self.content = [self.file_header] + self.content + self.existing
+        self._write(self.content)
 
+    def _write(self, content):
         if self.dry_run:
             with NamedTemporaryFile("wb") as output_file:
-                output_file.write(("\n".join(self.content)).encode("utf-8"))
+                output_file.write(("\n".join(content)).encode("utf-8"))
         else:
-            self.changelog.write_text("\n".join(self.content))
+            self.changelog.write_text("\n".join(content))
 
 
 class MdWriter(BaseWriter):
@@ -64,11 +67,21 @@ class MdWriter(BaseWriter):
     def _add_section_header(self, header):
         self.content.extend(["### {header}".format(header=header), ""])
 
-    def _add_section_line(self, line):
-        self.content.extend(["- {line}".format(line=line)])
+    def _add_section_line(self, description, issue_ref):
+        if self.issue_link:
+            line = "- {} [[#{}]({})]".format(
+                description,
+                issue_ref,
+                self.issue_link,
+            )
+        else:
+            line = "- {} [#{}]".format(description, issue_ref)
+        line = line.format(issue_ref=issue_ref)
+
+        self.content.append(line)
 
     def _post_section(self):
-        self.content.extend([""])
+        self.content.append("")
 
 
 class RstWriter(BaseWriter):
@@ -76,17 +89,34 @@ class RstWriter(BaseWriter):
     file_header = "=========\nChangelog\n=========\n"
     extension = "rst"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.links = {}
+
     def _add_version(self, version):
         self.content.extend([version, "=" * len(version), ""])
 
     def _add_section_header(self, header):
         self.content.extend([header, "-" * len(header), ""])
 
-    def _add_section_line(self, line):
-        self.content.extend(["* {line}".format(line=line), ""])
+    def _add_section_line(self, description, issue_ref):
+        if self.issue_link:
+            line = "* {} [`#{}`_]".format(description, issue_ref)
+            self.links["#{}".format(issue_ref)] = self.issue_link.format(issue_ref=issue_ref)
+        else:
+            line = "* {} [#{}]".format(description, issue_ref)
+        line = line.format(issue_ref=issue_ref)
+
+        self.content.extend([line, ""])
+
+    def write(self):
+        self.content = [self.file_header] + self.content + self.existing
+        for ref, link in self.links.items():
+            self.content.append(".. _`{}`: {}".format(ref, link))
+        self._write(self.content)
 
 
-def new_writer(extension, dry_run=False):
+def new_writer(extension, dry_run=False, issue_link=None):
     if extension not in SUPPORTED_EXTENSIONS:
         raise ValueError(
             'Changelog extension "{extension}" not supported.'.format(
@@ -97,6 +127,6 @@ def new_writer(extension, dry_run=False):
     changelog = Path("CHANGELOG.{extension}".format(extension=extension))
 
     if extension == "md":
-        return MdWriter(changelog, dry_run=dry_run)
+        return MdWriter(changelog, dry_run=dry_run, issue_link=issue_link)
     if extension == "rst":
-        return RstWriter(changelog, dry_run=dry_run)
+        return RstWriter(changelog, dry_run=dry_run, issue_link=issue_link)
