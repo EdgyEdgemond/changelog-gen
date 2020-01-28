@@ -91,7 +91,17 @@ class RstWriter(BaseWriter):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.links = {}
+        self._links = {}
+
+    def __str__(self):
+        return "\n".join(self.content + self.links)
+
+    @property
+    def links(self):
+        return [
+            ".. _`{}`: {}".format(ref, link)
+            for ref, link in sorted(self._links.items())
+        ]
 
     def _add_version(self, version):
         self.content.extend([version, "=" * len(version), ""])
@@ -102,7 +112,7 @@ class RstWriter(BaseWriter):
     def _add_section_line(self, description, issue_ref):
         if self.issue_link:
             line = "* {} [`#{}`_]".format(description, issue_ref)
-            self.links["#{}".format(issue_ref)] = self.issue_link.format(issue_ref=issue_ref)
+            self._links["#{}".format(issue_ref)] = self.issue_link.format(issue_ref=issue_ref)
         else:
             line = "* {} [#{}]".format(description, issue_ref)
         line = line.format(issue_ref=issue_ref)
@@ -110,9 +120,7 @@ class RstWriter(BaseWriter):
         self.content.extend([line, ""])
 
     def write(self):
-        self.content = [self.file_header] + self.content + self.existing
-        for ref, link in sorted(self.links.items()):
-            self.content.append(".. _`{}`: {}".format(ref, link))
+        self.content = [self.file_header] + self.content + self.existing + self.links
         self._write(self.content)
 
 
