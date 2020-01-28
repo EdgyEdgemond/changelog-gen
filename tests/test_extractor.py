@@ -1,6 +1,7 @@
 import pytest
 
 from changelog_gen import errors
+from changelog_gen.cli.command import SUPPORTED_SECTIONS
 from changelog_gen.extractor import ReleaseNoteExtractor
 
 
@@ -43,7 +44,7 @@ def remap_release_notes(release_notes):
 
 def test_init_with_no_release_notes_raises(cwd):
     with pytest.raises(errors.NoReleaseNotesError):
-        ReleaseNoteExtractor()
+        ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
 
 def test_init_with_release_notes_non_dir_raises(cwd):
@@ -51,11 +52,11 @@ def test_init_with_release_notes_non_dir_raises(cwd):
     r.write_text("not a dir")
 
     with pytest.raises(errors.NoReleaseNotesError):
-        ReleaseNoteExtractor()
+        ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
 
 def test_valid_notes_extraction(valid_release_notes):
-    e = ReleaseNoteExtractor()
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     sections = e.extract()
 
@@ -72,7 +73,7 @@ def test_valid_notes_extraction(valid_release_notes):
 
 
 def test_breaking_notes_extraction(breaking_release_notes):
-    e = ReleaseNoteExtractor()
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     sections = e.extract()
 
@@ -89,14 +90,14 @@ def test_breaking_notes_extraction(breaking_release_notes):
 
 
 def test_invalid_notes_extraction_raises(invalid_release_notes):
-    e = ReleaseNoteExtractor()
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     with pytest.raises(errors.InvalidSectionError):
         e.extract()
 
 
-def test_section_remapping_can_remap_invalid_sections(invalid_release_notes):
-    e = ReleaseNoteExtractor()
+def test_section_remapping_can_remap_custom_sections(invalid_release_notes):
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     sections = e.extract({"bug": "fix"})
     assert sections == {
@@ -111,8 +112,24 @@ def test_section_remapping_can_remap_invalid_sections(invalid_release_notes):
     }
 
 
+def test_section_mapping_can_handle_new_sections(invalid_release_notes):
+    e = ReleaseNoteExtractor({"bug": "BugFix", "feat": "Features"})
+
+    sections = e.extract({"fix": "bug"})
+    assert sections == {
+        "feat": {
+            "2": {"description": "Detail about 2", "breaking": False},
+        },
+        "bug": {
+            "1": {"description": "Detail about 1", "breaking": False},
+            "3": {"description": "Detail about 3", "breaking": False},
+            "4": {"description": "Detail about 4", "breaking": False},
+        },
+    }
+
+
 def test_dry_run_clean_keeps_files(valid_release_notes, release_notes):
-    e = ReleaseNoteExtractor(dry_run=True)
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS, dry_run=True)
 
     e.clean()
 
@@ -125,7 +142,7 @@ def test_clean_removes_all_non_dotfiles(valid_release_notes, release_notes):
     """
     Clean should not remove .gitkeep files etc
     """
-    e = ReleaseNoteExtractor()
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     e.clean()
 

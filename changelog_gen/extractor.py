@@ -7,16 +7,11 @@ from pathlib import Path
 from changelog_gen import errors
 
 
-SUPPORTED_SECTIONS = {
-    "feat": "Features and Improvements",
-    "fix": "Bug fixes",
-}
-
-
 class ReleaseNoteExtractor:
-    def __init__(self, dry_run=False):
+    def __init__(self, supported_sections, dry_run=False):
         self.release_notes = Path("./release_notes")
         self.dry_run = dry_run
+        self.supported_sections = supported_sections
 
         if not self.release_notes.exists() or not self.release_notes.is_dir():
             raise errors.NoReleaseNotesError("No release notes directory found.")
@@ -38,7 +33,7 @@ class ReleaseNoteExtractor:
                     breaking = True
 
                 contents = issue.read_text().strip()
-                if section not in SUPPORTED_SECTIONS:
+                if section not in self.supported_sections:
                     raise errors.InvalidSectionError(
                         "Unsupported CHANGELOG section {section}".format(
                             section=section,

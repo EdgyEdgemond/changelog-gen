@@ -39,7 +39,7 @@ class Config:
             if listvalue:
                 config[listvaluename] = listvalue
 
-        for dictvaluename in ("section_mapping",):
+        for dictvaluename in ("section_mapping", "sections"):
             dictvalue = self.parse_dict_value(dictvaluename)
             if dictvalue:
                 config[dictvaluename] = dictvalue
