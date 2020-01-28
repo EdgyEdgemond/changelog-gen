@@ -28,7 +28,7 @@ class BaseWriter:
 
     def add_section(self, header, lines):
         self._add_section_header(header)
-        for issue_ref, description in lines.items():
+        for issue_ref, description in sorted(lines.items()):
             self._add_section_line(description, issue_ref)
         self._post_section()
 
