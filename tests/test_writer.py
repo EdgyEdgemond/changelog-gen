@@ -336,7 +336,31 @@ header
         w._add_section_line("line", "1")
 
         assert w.content == ["* line [`#1`_]", ""]
-        assert w.links == {"#1": "http://url/issues/1"}
+        assert w._links == {"#1": "http://url/issues/1"}
+        assert w.links == [".. _`#1`: http://url/issues/1"]
+
+    def test_str_with_links(self, changelog_rst):
+        w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/{issue_ref}")
+        w.add_version("0.0.1")
+        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
+
+        assert str(w) == """
+0.0.1
+=====
+
+header
+------
+
+* line1 [`#1`_]
+
+* line2 [`#2`_]
+
+* line3 [`#3`_]
+
+.. _`#1`: http://url/issues/1
+.. _`#2`: http://url/issues/2
+.. _`#3`: http://url/issues/3
+""".strip()
 
     def test_write_dry_run_doesnt_write_to_file(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, dry_run=True)
