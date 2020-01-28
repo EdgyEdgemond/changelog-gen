@@ -118,6 +118,24 @@ allowed_branches =
   develop
 ```
 
+#### `sections =`
+  _**[optional]**_<br />
+  **default**: None
+
+  Define custom headers or new sections/headers, new sections will require a matching
+  section_mapping configuration.
+
+  Example:
+
+```ini
+[changelog_gen]
+sections = 
+  feat=New Features
+  change=Changes
+  remove=Removals
+  fix=Bugfixes
+```
+
 #### `section_mapping =`
   _**[optional]**_<br />
   **default**: None
