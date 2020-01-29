@@ -2,8 +2,9 @@
 [![image](https://img.shields.io/pypi/v/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
 [![image](https://img.shields.io/pypi/l/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
 [![image](https://img.shields.io/pypi/pyversions/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
-![image](https://github.com/EdgyEdgemond/changelog-gen/workflows/style/badge.svg)
-![image](https://github.com/EdgyEdgemond/changelog-gen/workflows/tests/badge.svg)
+![style](https://github.com/EdgyEdgemond/changelog-gen/workflows/style/badge.svg)
+![tests](https://github.com/EdgyEdgemond/changelog-gen/workflows/tests/badge.svg)
+[![codecov](https://codecov.io/gh/EdgyEdgemond/changelog-gen/branch/master/graph/badge.svg)](https://codecov.io/gh/EdgyEdgemond/changelog-gen)
 
 `changelog-gen` is a CHANGELOG generator intended to be used in conjunction
 with [bumpversion](https://github.com/c4urself/bump2version) to generate
