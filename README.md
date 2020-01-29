@@ -2,6 +2,7 @@
 [![image](https://img.shields.io/pypi/v/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
 [![image](https://img.shields.io/pypi/l/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
 [![image](https://img.shields.io/pypi/pyversions/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
+![image](https://github.com/EdgyEdgemond/changelog_gen/workflows/Python application/badge.svg)
 
 `changelog-gen` is a CHANGELOG generator intended to be used in conjunction
 with [bumpversion](https://github.com/c4urself/bump2version) to generate
