@@ -93,6 +93,90 @@ def test_generate_aborts_if_no_release_notes_directory(cli_runner, changelog):
     assert result.output == "No release notes directory found.\nAborted!\n"
 
 
+def test_generate_aborts_if_dirty(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = false
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 1
+    assert result.output == "Working directory is not clean. Use `allow_dirty` configuration to ignore.\nAborted!\n"
+
+
+def test_generate_allows_dirty(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = false
+""")
+    result = cli_runner.invoke(["--allow-dirty"])
+
+    assert result.exit_code == 0
+
+
+def test_generate_continues_if_allow_dirty_configured(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = true
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 0
+
+
+def test_generate_aborts_if_unsupported_current_branch(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = true
+allowed_branches = release_candidate
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 1
+    assert result.output == "Current branch not in allowed generation branches.\nAborted!\n"
+
+
+def test_generate_allows_supported_branch(cli_runner, changelog, release_notes, git_repo, setup):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = true
+allowed_branches = master
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 0
+
+
 def test_generate_wraps_errors(cli_runner, changelog, release_notes):
     result = cli_runner.invoke()
 
@@ -113,6 +197,68 @@ def test_generate_confirms_suggested_changes(cli_runner, changelog, release_note
 - Detail about 3 [#3]
 
 ### Bug fixes
+
+- Detail about 1 [#1]
+- Detail about 4 [#4]
+
+Write CHANGELOG for suggested version 0.1.0 [y/N]: \n""".lstrip()
+
+
+def test_generate_with_section_mapping(cli_runner, changelog, release_notes, setup, git_repo):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = true
+section_mapping =
+  feat=fix
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 0
+    assert result.output == """
+## v0.0.1
+
+### Bug fixes
+
+- Detail about 1 [#1]
+- Detail about 2 [#2]
+- Detail about 3 [#3]
+- Detail about 4 [#4]
+
+Write CHANGELOG for suggested version 0.0.1 [y/N]: \n""".lstrip()
+
+
+def test_generate_with_custom_sections(cli_runner, changelog, release_notes, setup, git_repo):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+allow_dirty = true
+sections =
+  feat=My Features
+  fix=My Fixes
+""")
+    result = cli_runner.invoke()
+
+    assert result.exit_code == 0
+    assert result.output == """
+## v0.1.0
+
+### My Features
+
+- Detail about 2 [#2]
+- Detail about 3 [#3]
+
+### My Fixes
 
 - Detail about 1 [#1]
 - Detail about 4 [#4]
@@ -148,7 +294,6 @@ def test_generate_writes_to_file(
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 """.lstrip()
-    assert git_repo.api.head.commit.message == "Update CHANGELOG for 0.1.0\n"
 
 
 def test_generate_suggests_major_version_for_breaking_change(
@@ -160,7 +305,7 @@ def test_generate_suggests_major_version_for_breaking_change(
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
-    result = cli_runner.invoke()
+    result = cli_runner.invoke(["--commit"])
 
     assert result.exit_code == 0
 
@@ -191,7 +336,7 @@ def test_generate_creates_release(
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
-    result = cli_runner.invoke(["--release"])
+    result = cli_runner.invoke(["--commit", "--release"])
 
     assert result.exit_code == 0
     assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
@@ -212,6 +357,7 @@ commit = true
 tag = true
 
 [changelog_gen]
+commit = true
 release = true
 """)
 
@@ -234,7 +380,7 @@ def test_generate_uses_supplied_version_tag(
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
-    result = cli_runner.invoke(["--version-tag", "0.3.2"])
+    result = cli_runner.invoke(["--version-tag", "0.3.2", "--commit"])
 
     assert result.exit_code == 0
     assert changelog.read_text() == """

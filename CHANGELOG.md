@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.6.0
+
+### Features and Improvements
+
+- Support custom changelog headers. [[#32](https://github.com/EdgyEdgemond/changelog-gen/32)]
+
+## v0.5.1
+
+### Bug fixes
+
+- Render RST links when performing a dry-run. [[#30](https://github.com/EdgyEdgemond/changelog-gen/30)]
+
+## v0.5.0
+
+### Features and Improvements
+
+- Allow configuration of an issue url to create links in CHANGELOG. [[#28](https://github.com/EdgyEdgemond/changelog-gen/28)]
+
+## v0.4.0
+
+### Features and Improvements
+
+- Add ability to restrict which branches command can run in, and to fail on dirty branch. [#11]
+- Allow configuration of release note suffix to changelog section mapping. [#19]
+
+### Bug fixes
+
+- Commit configuration was ignored. Fixed cli to use configured value. [#24]
+
 ## v0.3.0
 
 ### Features and Improvements

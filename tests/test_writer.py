@@ -93,7 +93,7 @@ class TestBaseWriter:
             w._add_section_header("header")
 
         with pytest.raises(NotImplementedError):
-            w._add_section_line("line")
+            w._add_section_line("description", "issue_ref")
 
         with pytest.raises(NotImplementedError):
             w._add_version("0.0.0")
@@ -112,13 +112,13 @@ class TestBaseWriter:
 
         w = writer.BaseWriter(changelog)
 
-        w.add_section("header", ["line1", "line2", "line3"])
+        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
 
         assert w._add_section_header.call_args == mock.call("header")
         assert w._add_section_line.call_args_list == [
-            mock.call("line1"),
-            mock.call("line2"),
-            mock.call("line3"),
+            mock.call("line1", "1"),
+            mock.call("line2", "2"),
+            mock.call("line3", "3"),
         ]
 
 
@@ -182,14 +182,21 @@ class TestMdWriter:
     def test_add_section_line(self, changelog_md):
         w = writer.MdWriter(changelog_md)
 
-        w._add_section_line("line [#1]")
+        w._add_section_line("line", "1")
 
         assert w.content == ["- line [#1]"]
+
+    def test_add_section_line_with_issue_link(self, changelog_md):
+        w = writer.MdWriter(changelog_md, issue_link="http://url/issues/{issue_ref}")
+
+        w._add_section_line("line", "1")
+
+        assert w.content == ["- line [[#1](http://url/issues/1)]"]
 
     def test_write_dry_run_doesnt_write_to_file(self, changelog_md):
         w = writer.MdWriter(changelog_md, dry_run=True)
         w.add_version("0.0.1")
-        w.add_section("header", ["line1", "line2", "line3"])
+        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
 
         w.write()
         assert changelog_md.read_text() == """# Changelog\n"""
@@ -197,7 +204,7 @@ class TestMdWriter:
     def test_write(self, changelog_md):
         w = writer.MdWriter(changelog_md)
         w.add_version("0.0.1")
-        w.add_section("header", ["line1", "line2", "line3"])
+        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
 
         w.write()
         assert changelog_md.read_text() == """# Changelog
@@ -206,9 +213,9 @@ class TestMdWriter:
 
 ### header
 
-- line1
-- line2
-- line3
+- line1 [#1]
+- line2 [#2]
+- line3 [#3]
 """
 
     def test_write_with_existing_content(self, changelog_md):
@@ -225,7 +232,7 @@ class TestMdWriter:
 
         w = writer.MdWriter(changelog_md)
         w.add_version("0.0.2")
-        w.add_section("header", ["line4", "line5", "line6"])
+        w.add_section("header", {"4": "line4", "5": "line5", "6": "line6"})
 
         w.write()
 
@@ -235,9 +242,9 @@ class TestMdWriter:
 
 ### header
 
-- line4
-- line5
-- line6
+- line4 [#4]
+- line5 [#5]
+- line6 [#6]
 
 ## 0.0.1
 
@@ -319,14 +326,46 @@ header
     def test_add_section_line(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)
 
-        w._add_section_line("line [#1]")
+        w._add_section_line("line", "1")
 
         assert w.content == ["* line [#1]", ""]
+
+    def test_add_section_line_with_issue_link(self, changelog_rst):
+        w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/{issue_ref}")
+
+        w._add_section_line("line", "1")
+
+        assert w.content == ["* line [`#1`_]", ""]
+        assert w._links == {"#1": "http://url/issues/1"}
+        assert w.links == [".. _`#1`: http://url/issues/1"]
+
+    def test_str_with_links(self, changelog_rst):
+        w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/{issue_ref}")
+        w.add_version("0.0.1")
+        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
+
+        assert str(w) == """
+0.0.1
+=====
+
+header
+------
+
+* line1 [`#1`_]
+
+* line2 [`#2`_]
+
+* line3 [`#3`_]
+
+.. _`#1`: http://url/issues/1
+.. _`#2`: http://url/issues/2
+.. _`#3`: http://url/issues/3
+""".strip()
 
     def test_write_dry_run_doesnt_write_to_file(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, dry_run=True)
         w.add_version("0.0.1")
-        w.add_section("header", ["line1", "line2", "line3"])
+        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
 
         w.write()
         assert changelog_rst.read_text() == """=========
@@ -337,7 +376,7 @@ Changelog
     def test_write(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)
         w.add_version("0.0.1")
-        w.add_section("header", ["line1", "line2", "line3"])
+        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
 
         w.write()
         assert changelog_rst.read_text() == """=========
@@ -350,11 +389,11 @@ Changelog
 header
 ------
 
-* line1
+* line1 [#1]
 
-* line2
+* line2 [#2]
 
-* line3
+* line3 [#3]
 """
 
     def test_write_with_existing_content(self, changelog_rst):
@@ -375,9 +414,9 @@ header
 * line3
 """)
 
-        w = writer.RstWriter(changelog_rst)
+        w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/{issue_ref}")
         w.add_version("0.0.2")
-        w.add_section("header", ["line4", "line5", "line6"])
+        w.add_section("header", {"4": "line4", "5": "line5", "6": "line6"})
 
         w.write()
 
@@ -391,11 +430,11 @@ Changelog
 header
 ------
 
-* line4
+* line4 [`#4`_]
 
-* line5
+* line5 [`#5`_]
 
-* line6
+* line6 [`#6`_]
 
 0.0.1
 =====
@@ -408,4 +447,7 @@ header
 * line2
 
 * line3
-"""
+
+.. _`#4`: http://url/issues/4
+.. _`#5`: http://url/issues/5
+.. _`#6`: http://url/issues/6"""

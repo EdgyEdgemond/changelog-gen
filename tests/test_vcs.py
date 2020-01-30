@@ -1,3 +1,6 @@
+import subprocess
+from unittest import mock
+
 import pytest
 
 from changelog_gen import errors
@@ -22,6 +25,17 @@ def multiversion_repo(git_repo):
     git_repo.api.create_tag("0.0.2")
 
     return git_repo
+
+
+def test_get_latest_info_branch(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+
+    f.write_text("hello world! v3")
+
+    info = Git.get_latest_tag_info()
+
+    assert info["branch"] == "master"
 
 
 def test_get_latest_info_clean(multiversion_repo):
@@ -70,8 +84,22 @@ def test_get_latest_info_commit_sha(multiversion_repo):
 
 
 def test_get_latest_info_raises_if_no_tags_found(git_repo):
-    with pytest.raises(errors.VcsError):
+    with pytest.raises(errors.VcsError) as ex:
         Git.get_latest_tag_info()
+
+    assert str(ex.value) == "Unable to get version number from git tags"
+
+
+def test_get_latest_info_raises_if_rev_parse_fails(git_repo, monkeypatch):
+    monkeypatch.setattr(
+        subprocess,
+        "check_output",
+        mock.Mock(side_effect=[b"", subprocess.CalledProcessError(returncode=1, cmd="")]),
+    )
+    with pytest.raises(errors.VcsError) as ex:
+        Git.get_latest_tag_info()
+
+    assert str(ex.value) == "Unable to get current git branch"
 
 
 def test_add_path_stages_changes_for_commit(multiversion_repo):

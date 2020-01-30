@@ -18,8 +18,8 @@ def cwd(tmp_path):
 
 @pytest.fixture
 def git_repo(git_repo):
-    git_repo.run("git config --global user.email 'you@example.com'")
-    git_repo.run("git config --global user.name 'Your Name'")
+    git_repo.run("git config user.email 'you@example.com'")
+    git_repo.run("git config user.name 'Your Name'")
 
     orig = os.getcwd()
 
