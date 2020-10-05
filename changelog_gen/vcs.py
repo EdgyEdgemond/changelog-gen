@@ -6,25 +6,31 @@ from changelog_gen import errors
 class Git:
     @classmethod
     def get_latest_tag_info(cls):
-        try:
-            describe_out = (
-                subprocess.check_output(
-                    [
-                        "git",
-                        "describe",
-                        "--tags",
-                        "--dirty",
-                        "--long",
-                        "--match",
-                        "[0-9]*",
-                    ],
-                    stderr=subprocess.STDOUT,
+        describe_out = None
+        for tags in ["[0-9]*", "v[0-9]*"]:
+            try:
+                describe_out = (
+                    subprocess.check_output(
+                        [
+                            "git",
+                            "describe",
+                            "--tags",
+                            "--dirty",
+                            "--long",
+                            "--match",
+                            tags,
+                        ],
+                        stderr=subprocess.STDOUT,
+                    )
+                    .decode()
+                    .strip()
+                    .split("-")
                 )
-                .decode()
-                .strip()
-                .split("-")
-            )
-        except subprocess.CalledProcessError:
+            except subprocess.CalledProcessError:
+                pass
+            else:
+                break
+        else:
             raise errors.VcsError("Unable to get version number from git tags")
 
         try:

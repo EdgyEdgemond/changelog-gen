@@ -27,6 +27,26 @@ def multiversion_repo(git_repo):
     return git_repo
 
 
+@pytest.fixture
+def multiversion_v_repo(git_repo):
+    path = git_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world!")
+
+    git_repo.run("git add hello.txt")
+    git_repo.api.index.commit("initial commit")
+
+    git_repo.api.create_tag("v0.0.1")
+
+    f.write_text("hello world! v2")
+    git_repo.run("git add hello.txt")
+    git_repo.api.index.commit("update")
+
+    git_repo.api.create_tag("v0.0.2")
+
+    return git_repo
+
+
 def test_get_latest_info_branch(multiversion_repo):
     path = multiversion_repo.workspace
     f = path / "hello.txt"
@@ -70,6 +90,12 @@ def test_get_latest_info_untagged(multiversion_repo):
 
 
 def test_get_latest_info_current_version(multiversion_repo):
+    info = Git.get_latest_tag_info()
+
+    assert info["current_version"] == "0.0.2"
+
+
+def test_get_latest_info_current_version_vtag(multiversion_v_repo):
     info = Git.get_latest_tag_info()
 
     assert info["current_version"] == "0.0.2"

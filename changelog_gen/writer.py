@@ -83,9 +83,6 @@ class MdWriter(BaseWriter):
     def _post_section(self):
         self.content.append("")
 
-    def _post_section(self):
-        self.content.extend([""])
-
 
 class RstWriter(BaseWriter):
     file_header_line_count = 3
