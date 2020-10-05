@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.0
+
+### Features and Improvements
+
+- Support vX.Y.Z style tags (bumpversion default) [[#37](https://github.com/EdgyEdgemond/changelog-gen/37)]
+
 ## v0.6.0
 
 ### Features and Improvements
