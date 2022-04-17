@@ -3,6 +3,9 @@ from unittest import mock
 import click
 import pytest
 
+from changelog_gen.cli import command
+from changelog_gen.config import PostProcessConfig
+
 
 @pytest.fixture
 def git_repo(git_repo):
@@ -71,6 +74,27 @@ def setup(git_repo):
 current_version = 0.0.0
 commit = true
 tag = true
+""")
+
+    git_repo.run("git add setup.cfg")
+    git_repo.api.index.commit("commit setup.cfg")
+
+    return p
+
+
+@pytest.fixture
+def post_process_setup(git_repo):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text("""
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+post_process =
+    url=https://my-api/{issue_ref}/release
+    auth_env=MY_API_AUTH
 """)
 
     git_repo.run("git add setup.cfg")
@@ -417,3 +441,120 @@ def test_generate_dry_run(
     assert changelog.read_text() == """
 # Changelog
 """.lstrip()
+
+
+class TestDelegatesToPerIssuePostProcess:
+    # The behaviour of per_issue_post_process are tested in test_post_processor
+
+    def test_load_config(
+        self,
+        cli_runner,
+        git_repo,
+        changelog,
+        release_notes,
+        post_process_setup,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+        post_process_mock = mock.MagicMock()
+        monkeypatch.setattr(command, "per_issue_post_process", post_process_mock)
+
+        result = cli_runner.invoke()
+
+        assert result.exit_code == 0
+        assert post_process_mock.call_args_list == [
+            mock.call(
+                PostProcessConfig(
+                    url="https://my-api/{issue_ref}/release",
+                    auth_env="MY_API_AUTH",
+                ),
+                ["1", "2", "3", "4"],
+                "0.1.0",
+                dry_run=False,
+            ),
+        ]
+
+    def test_generate_post_process_url(
+        self,
+        cli_runner,
+        git_repo,
+        changelog,
+        release_notes,
+        post_process_setup,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+        post_process_mock = mock.MagicMock()
+        monkeypatch.setattr(command, "per_issue_post_process", post_process_mock)
+
+        api_url = "https://my-api/{issue_ref}/comment"
+        result = cli_runner.invoke(["--post-process-url", api_url])
+
+        assert result.exit_code == 0
+        assert post_process_mock.call_args_list == [
+            mock.call(
+                PostProcessConfig(
+                    url=api_url,
+                    auth_env="MY_API_AUTH",
+                ),
+                ["1", "2", "3", "4"],
+                "0.1.0",
+                dry_run=False,
+            ),
+        ]
+
+    def test_generate_post_process_auth_env(
+        self,
+        cli_runner,
+        git_repo,
+        changelog,
+        release_notes,
+        post_process_setup,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+        post_process_mock = mock.MagicMock()
+        monkeypatch.setattr(command, "per_issue_post_process", post_process_mock)
+
+        result = cli_runner.invoke(["--post-process-auth-env", "OTHER_API_AUTH"])
+
+        assert result.exit_code == 0
+        assert post_process_mock.call_args_list == [
+            mock.call(
+                PostProcessConfig(
+                    url="https://my-api/{issue_ref}/release",
+                    auth_env="OTHER_API_AUTH",
+                ),
+                ["1", "2", "3", "4"],
+                "0.1.0",
+                dry_run=False,
+            ),
+        ]
+
+    def test_generate_dry_run(
+        self,
+        cli_runner,
+        git_repo,
+        changelog,
+        release_notes,
+        post_process_setup,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+        post_process_mock = mock.MagicMock()
+        monkeypatch.setattr(command, "per_issue_post_process", post_process_mock)
+
+        result = cli_runner.invoke(["--dry-run"])
+
+        assert result.exit_code == 0
+        assert post_process_mock.call_args_list == [
+            mock.call(
+                PostProcessConfig(
+                    url="https://my-api/{issue_ref}/release",
+                    auth_env="MY_API_AUTH",
+                ),
+                ["1", "2", "3", "4"],
+                "0.1.0",
+                dry_run=True,
+            ),
+        ]

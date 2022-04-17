@@ -1,5 +1,8 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import Dict
+
+from changelog_gen.extractor import SectionDict
 
 
 SUPPORTED_EXTENSIONS = ["md", "rst"]
@@ -25,6 +28,14 @@ class BaseWriter:
 
     def _add_version(self, version):
         raise NotImplementedError
+
+    def consume(self, supported_sections: Dict[str, str], sections: SectionDict):
+        for section in sorted(supported_sections):
+            if section not in sections:
+                continue
+
+            header = supported_sections[section]
+            self.add_section(header, {k: v["description"] for k, v in sections[section].items()})
 
     def add_section(self, header, lines):
         self._add_section_header(header)

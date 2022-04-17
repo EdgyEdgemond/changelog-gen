@@ -159,3 +159,51 @@ section_mapping =
   docs=fix
   new=feat
 ```
+
+#### `post_process =`
+  _**[optional]**_<br />
+  **default**: None
+
+  Configure a REST API to contact when a release is made
+
+  See example on Jira configuration information.
+
+ `.url=`<br />
+  _**[required]**_<br />
+  **default**: None<br />
+  The url to contact. 
+  Can have the variables `{issue_ref}` and `{new_version}`.
+
+  `.verb=`<br />
+  _**[optional]**_<br />
+  **default**: POST<br />
+  HTTP method to use.
+
+  `.body=`<br />
+  _**[optional]**_<br />
+  **default**: `{{"body": "Released on v{new_version}"}}`<br />
+  The text to send to the API.
+  Can have the variables `{issue_ref}` and `{new_version}`.
+
+  `.auth_env =`<br />
+  _**[optional]**_<br />
+  **default**: None<br />
+  Name of the environment variable to use to extract the basic auth information to contact the API.
+  The content of the variable should be `{user}:{api key}`.
+
+  Example to post to JIRA:
+
+```ini
+[changelog_gen]
+post_process = 
+  url=https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-{issue_ref}/comment
+  verb=POST
+  body={{"body": "Released on v{new_version}"}}
+  auth_env=JIRA_AUTH
+```
+  This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
+  See [manage-api-tokens-for-your-atlassian-account](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to generate a key.
+
+  Note: spaces around `=` will not be stripped, be sure to use `<field>=<value>`. 
+
+  Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog-gen --post-process-url 'http://my-api-url.domain/comment{issue_ref}' --post-process-auth-env MY_API_AUTH`)
