@@ -1,4 +1,7 @@
-from typing import Optional
+from typing import (
+    Any,
+    Dict,
+)
 
 import click
 
@@ -65,10 +68,10 @@ def init(file_format):
               help="Name of the ENV variable that contains the rest API basic auth content")
 @click.option("--post-process-url", default=None, help="Rest API endpoint to post release version for each issue")
 @click.option("--version-tag", default=None, help="Provide the desired version tag, skip auto generation.")
-@click.option("--release", is_flag=True, help="Use bumpversion to tag the release")
+@click.option("--release/--no-release", help="Use bumpversion to tag the release")
 @click.option("--dry-run", is_flag=True, help="Don't write release notes to check for errors")
-@click.option("--allow-dirty", is_flag=True, help="Don't abort if branch contains uncommited changes")
-@click.option("--commit", is_flag=True, help="Commit changes made to changelog after writing")
+@click.option("--allow-dirty/--no-allow-dirty", help="Don't abort if branch contains uncommited changes")
+@click.option("--commit/--no-commit", help="Commit changes made to changelog after writing")
 @click.command("changelog-gen", help="Generate a change log from release_notes/* files")
 def gen(
     dry_run=False,
@@ -82,46 +85,38 @@ def gen(
     """
     Read release notes and generate a new CHANGELOG entry for the current version.
     """
+    config = Config().read()
+
+    config["release"] = config.get("release") or release
+    config["allow_dirty"] = config.get("allow_dirty") or allow_dirty
+    config["commit"] = config.get("commit") or commit
+
+    post_process: PostProcessConfig = config.get("post_process")
+    if not post_process:
+        # Only overload config on change in case it wasn't present
+        post_process = PostProcessConfig()
+    if post_process_url:
+        post_process.url = post_process_url
+        config["post_process"] = post_process
+    if post_process_auth_env:
+        post_process.auth_env = post_process_auth_env
+        config["post_process"] = post_process
 
     try:
-        _gen(dry_run, allow_dirty, release, commit, version_tag, post_process_url, post_process_auth_env)
+        _gen(config, dry_run, version_tag)
     except errors.ChangelogException as ex:
         click.echo(ex)
         raise click.Abort()
 
 
-def _gen(
-    dry_run=False,
-    allow_dirty=False,
-    release=False,
-    commit=False,
-    version_tag=None,
-    post_process_url=None,
-    post_process_auth_env=None,
-):
-    config = Config().read()
-
-    release = config.get("release") or release
-    allow_dirty = config.get("allow_dirty") or allow_dirty
-    commit = config.get("commit") or commit
-
-    post_process: Optional[PostProcessConfig] = config.get("post_process")
-    if post_process_url:
-        if not post_process:
-            post_process = PostProcessConfig()
-        post_process.url = post_process_url
-    if post_process_auth_env:
-        if not post_process:
-            post_process = PostProcessConfig()
-        post_process.auth_env = post_process_auth_env
-
+def _gen(config: Dict[str, Any], dry_run=False, version_tag=None):
     extension = util.detect_extension()
 
     if extension is None:
         click.echo("No CHANGELOG file detected, run changelog-init")
         raise click.Abort()
 
-    process_info(Git.get_latest_tag_info(), dry_run, allow_dirty, config)
+    process_info(Git.get_latest_tag_info(), dry_run, config["allow_dirty"], config)
 
     # TODO: supported default extensions (steal from conventional commits)
     # TODO: support multiple extras by default (the usuals)
@@ -144,21 +139,29 @@ def _gen(
 
     click.echo(w)
 
-    _finalise(w, e, version_tag, extension, dry_run=dry_run, release=release, commit=commit)
+    _finalise(w, e, version_tag, extension, dry_run, config)
 
+    post_process = config.get("post_process")
     if post_process:
         unique_issues = e.unique_issues(sections)
         per_issue_post_process(post_process, sorted(unique_issues), version_tag, dry_run=dry_run)
 
 
-def _finalise(writer, extractor, version_tag, extension, release=False, dry_run=False, commit=False):
+def _finalise(
+    writer: writer.BaseWriter,
+    extractor: extractor.ReleaseNoteExtractor,
+    version_tag: str,
+    extension: str,
+    dry_run: bool,
+    config: Dict[str, Any],
+):
     if dry_run or click.confirm(
         "Write CHANGELOG for suggested version {}".format(version_tag),
     ):
         writer.write()
         extractor.clean()
 
-        if dry_run or not commit:
+        if dry_run or not config["commit"]:
             return
 
         Git.add_path("CHANGELOG.{extension}".format(extension=extension))
@@ -166,5 +169,5 @@ def _finalise(writer, extractor, version_tag, extension, release=False, dry_run=
         Git.add_path("release_notes")
         Git.commit(version_tag)
 
-        if release:
+        if config["release"]:
             BumpVersion.release(version_tag)

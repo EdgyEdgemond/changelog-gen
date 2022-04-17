@@ -7,23 +7,24 @@ def test_main_help(cli_runner):
   Generate a change log from release_notes/* files
 
 Options:
-  --commit                      Commit changes made to changelog after writing
-  --allow-dirty                 Don't abort if branch contains uncommited
-                                changes
+  --commit / --no-commit          Commit changes made to changelog after writing
+  --allow-dirty / --no-allow-dirty
+                                  Don't abort if branch contains uncommited
+                                  changes
 
-  --dry-run                     Don't write release notes to check for errors
-  --release                     Use bumpversion to tag the release
-  --version-tag TEXT            Provide the desired version tag, skip auto
-                                generation.
+  --dry-run                       Don't write release notes to check for errors
+  --release / --no-release        Use bumpversion to tag the release
+  --version-tag TEXT              Provide the desired version tag, skip auto
+                                  generation.
 
-  --post-process-url TEXT       Rest API endpoint to post release version for
-                                each issue
+  --post-process-url TEXT         Rest API endpoint to post release version for
+                                  each issue
 
-  --post-process-auth-env TEXT  Name of the ENV variable that contains the rest
-                                API basic auth content
+  --post-process-auth-env TEXT    Name of the ENV variable that contains the
+                                  rest API basic auth content
 
-  -v, --version                 Show the version and exit.
-  --help                        Show this message and exit.
+  -v, --version                   Show the version and exit.
+  --help                          Show this message and exit.
 """
     assert result.output == expected
 
