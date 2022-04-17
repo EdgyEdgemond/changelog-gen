@@ -2,6 +2,7 @@ from unittest import mock
 
 import click
 import pytest
+from freezegun import freeze_time
 
 from changelog_gen.cli import command
 from changelog_gen.config import PostProcessConfig
@@ -558,3 +559,91 @@ class TestDelegatesToPerIssuePostProcess:
                 dry_run=True,
             ),
         ]
+
+
+@freeze_time("2022-04-14T16:45:03")
+class TestGenerateWithDate:
+
+    def test_using_config(self, cli_runner, git_repo, changelog, release_notes, monkeypatch):
+        p = git_repo.workspace / "setup.cfg"
+        p.write_text("""
+            [bumpversion]
+            current_version = 0.0.0
+            commit = true
+            tag = true
+
+            [changelog_gen]
+            commit = true
+            release = true
+            date_format =on %%Y-%%m-%%d
+        """.strip())
+
+        git_repo.run("git add setup.cfg")
+        git_repo.api.index.commit("commit setup.cfg")
+
+        monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+        writer_mock = mock.MagicMock()
+        monkeypatch.setattr(command.writer, "new_writer", mock.MagicMock(return_value=writer_mock))
+
+        cli_runner.invoke()
+
+        assert writer_mock.add_version.call_args == mock.call("v0.1.0 on 2022-04-14")
+
+    def test_using_cli(self, cli_runner, changelog, release_notes, setup, monkeypatch):
+        monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+        writer_mock = mock.MagicMock()
+        monkeypatch.setattr(command.writer, "new_writer", mock.MagicMock(return_value=writer_mock))
+
+        cli_runner.invoke(["--date-format", "(%Y-%m-%d at %H:%M)"])
+
+        assert writer_mock.add_version.call_args == mock.call("v0.1.0 (2022-04-14 at 16:45)")
+
+    def test_override_config(self, cli_runner, git_repo, changelog, release_notes, monkeypatch):
+        p = git_repo.workspace / "setup.cfg"
+        p.write_text("""
+            [bumpversion]
+            current_version = 0.0.0
+            commit = true
+            tag = true
+
+            [changelog_gen]
+            commit = true
+            release = true
+            date_format =on %%Y-%%m-%%d
+        """.strip())
+
+        git_repo.run("git add setup.cfg")
+        git_repo.api.index.commit("commit setup.cfg")
+
+        monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+        writer_mock = mock.MagicMock()
+        monkeypatch.setattr(command.writer, "new_writer", mock.MagicMock(return_value=writer_mock))
+
+        cli_runner.invoke(["--date-format", "(%Y-%m-%d at %H:%M)"])
+
+        assert writer_mock.add_version.call_args == mock.call("v0.1.0 (2022-04-14 at 16:45)")
+
+    def test_override_config_and_disable(self, cli_runner, git_repo, changelog, release_notes, monkeypatch):
+        p = git_repo.workspace / "setup.cfg"
+        p.write_text("""
+            [bumpversion]
+            current_version = 0.0.0
+            commit = true
+            tag = true
+
+            [changelog_gen]
+            commit = true
+            release = true
+            date_format =on %%Y-%%m-%%d
+        """.strip())
+
+        git_repo.run("git add setup.cfg")
+        git_repo.api.index.commit("commit setup.cfg")
+
+        monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
+        writer_mock = mock.MagicMock()
+        monkeypatch.setattr(command.writer, "new_writer", mock.MagicMock(return_value=writer_mock))
+
+        cli_runner.invoke(["--date-format", ""])
+
+        assert writer_mock.add_version.call_args == mock.call("v0.1.0")

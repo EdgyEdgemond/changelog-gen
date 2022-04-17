@@ -43,10 +43,11 @@ class Config:
 
         self._config.read_string(config_content)
 
-        for stringvaluename in ("issue_link",):
+        for stringvaluename in ("issue_link", "date_format"):
             try:
                 config[stringvaluename] = self._config.get(
-                    "changelog_gen", stringvaluename,
+                    "changelog_gen",
+                    stringvaluename,
                 )
             except NoOptionError:
                 pass

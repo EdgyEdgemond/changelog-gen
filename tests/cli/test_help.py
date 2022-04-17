@@ -7,6 +7,9 @@ def test_main_help(cli_runner):
   Generate a change log from release_notes/* files
 
 Options:
+  --date-format TEXT              The date format for strftime - empty string
+                                  allowed
+
   --commit / --no-commit          Commit changes made to changelog after writing
   --allow-dirty / --no-allow-dirty
                                   Don't abort if branch contains uncommited

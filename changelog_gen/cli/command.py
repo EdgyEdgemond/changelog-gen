@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import (
     Any,
     Dict,
@@ -72,6 +73,7 @@ def init(file_format):
 @click.option("--dry-run", is_flag=True, help="Don't write release notes to check for errors")
 @click.option("--allow-dirty/--no-allow-dirty", help="Don't abort if branch contains uncommited changes")
 @click.option("--commit/--no-commit", help="Commit changes made to changelog after writing")
+@click.option("--date-format", default=None, help="The date format for strftime - empty string allowed")
 @click.command("changelog-gen", help="Generate a change log from release_notes/* files")
 def gen(
     dry_run=False,
@@ -81,6 +83,7 @@ def gen(
     version_tag=None,
     post_process_url=None,
     post_process_auth_env=None,
+    date_format=None,
 ):
     """
     Read release notes and generate a new CHANGELOG entry for the current version.
@@ -90,6 +93,8 @@ def gen(
     config["release"] = config.get("release") or release
     config["allow_dirty"] = config.get("allow_dirty") or allow_dirty
     config["commit"] = config.get("commit") or commit
+    if date_format is not None:
+        config["date_format"] = date_format
 
     post_process: PostProcessConfig = config.get("post_process")
     if not post_process:
@@ -130,7 +135,11 @@ def _gen(config: Dict[str, Any], dry_run=False, version_tag=None):
         version_tag = extract_version_tag(sections)
 
     # TODO: take a note from bumpversion, read in versioning format string
-    version_string = "v{version_tag}".format(version_tag=version_tag)
+    version_string = f"v{version_tag}"
+
+    date_fmt = config.get("date_format")
+    if date_fmt:
+        version_string += f" {datetime.now().strftime(date_fmt)}"
 
     w = writer.new_writer(extension, dry_run=dry_run, issue_link=config.get("issue_link"))
 

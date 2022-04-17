@@ -108,6 +108,25 @@ General configuration is grouped in a `[changelog_gen]` section.
 issue_link = http://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}
 ```
 
+#### `date_format =`
+  _**[optional]**_<br />
+  **default**: None
+
+  Add a date on the version line, use [strftime and strptime format codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes).
+  The format string can include any character, a space is included between the version tag and the date tag.
+
+  When using in `setup.cfg` be sure to protect the `%` signs (see example bellow) and be mindful about spacing as the string is taken straight from the `=` sign.
+  
+  Also available as `--date-format` (e.g. `--date-format '%Y-%m-%d'`).
+
+  Example:
+
+```ini
+[changelog_gen]
+date_format =on %%Y-%m-%d
+```
+
+
 #### `allowed_branches =`
   _**[optional]**_<br />
   **default**: None
