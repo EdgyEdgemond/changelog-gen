@@ -9,10 +9,11 @@ homepage="https://github.com/EdgyEdgemond/changelog-gen/"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.5"
+python = "^3.7"
 
 click = "^7.0"
 bump2version = "^0.5.11"
+requests = "^2.27.1"
 
 [tool.poetry.dev-dependencies]
 
@@ -20,11 +21,13 @@ flake8 = "^3.7"
 flake8-commas = "^2.0"
 flake8-isort = "^2.7"
 flake8-quotes = "^2.1"
+freezegun = "^1.2.1"
 isort = "^4.3"
 pytest = "^5.2"
 pytest-cov = "^2.8"
 pytest-git = "^1.7.0"
 pytest-random-order = "^1.0"
+requests-mock = "^1.9.3"
 
 [tool.poetry.scripts]
 changelog-gen = "changelog_gen.cli.command:gen"

@@ -1,6 +1,9 @@
 import pytest
 
-from changelog_gen.config import Config
+from changelog_gen.config import (
+    Config,
+    PostProcessConfig,
+)
 
 
 @pytest.fixture
@@ -19,21 +22,32 @@ def test_config_handles_missing_file(cwd):
 
 def test_config_handles_empty_file(config_factory):
     config_factory()
-    assert Config().read() == {"release": False, "allow_dirty": False, "commit": False}
+    assert Config().read() == {
+        "release": False,
+        "allow_dirty": False,
+        "commit": False,
+        "post_process": PostProcessConfig(),
+    }
 
 
-@pytest.mark.parametrize("release", [
-    "release=true",
-    "release = true",
+@pytest.mark.parametrize("release, exp_value", [
+    ("release=true", True),
+    ("release = true", True),
+    ("release=True", True),
+    ("release = True", True),
+    ("release=false", False),
+    ("release = false", False),
+    ("release=False", False),
+    ("release = False", False),
 ])
-def test_config_picks_up_boolean_values(config_factory, release):
+def test_config_picks_up_boolean_values(config_factory, release, exp_value):
     config_factory("""
 [changelog_gen]
 {}
 """.format(release))
 
     c = Config().read()
-    assert c["release"] is True
+    assert c["release"] is exp_value
 
 
 @pytest.mark.parametrize("issue_link", [
@@ -89,3 +103,33 @@ sections =
 
     c = Config().read()
     assert c["sections"] == {"bug": "Bugfixes", "feat": "New Features", "remove": "Removals"}
+
+
+class TestPostProcessConfig:
+
+    def test_config_picks_up_config(self, config_factory):
+        config_factory("""
+[changelog_gen]
+post_process =
+    url=https://fake_rest_api/
+    verb=PUT
+    body={{"issue": "{issue_ref}", "comment": "Released in {new_version}"}}
+    auth_env=MY_API_AUTH
+        """)
+
+        c = Config().read()
+        assert c["post_process"] == PostProcessConfig(
+            url="https://fake_rest_api/",
+            verb="PUT",
+            body='{{"issue": "{issue_ref}", "comment": "Released in {new_version}"}}',
+            auth_env="MY_API_AUTH",
+        )
+
+    def test_config_rejects_unknown_fields(self, config_factory):
+        config_factory("""
+[changelog_gen]
+post_process =
+    enabled=false
+        """)
+        with pytest.raises(RuntimeError, match="^Failed to create post_process: .*"):
+            Config().read()
