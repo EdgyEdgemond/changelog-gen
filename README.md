@@ -108,6 +108,25 @@ General configuration is grouped in a `[changelog_gen]` section.
 issue_link = http://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}
 ```
 
+#### `date_format =`
+  _**[optional]**_<br />
+  **default**: None
+
+  Add a date on the version line, use [strftime and strptime format codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes).
+  The format string can include any character, a space is included between the version tag and the date tag.
+
+  When using in `setup.cfg` be sure to protect the `%` signs (see example bellow) and be mindful about spacing as the string is taken straight from the `=` sign.
+  
+  Also available as `--date-format` (e.g. `--date-format '%Y-%m-%d'`).
+
+  Example:
+
+```ini
+[changelog_gen]
+date_format =on %%Y-%m-%d
+```
+
+
 #### `allowed_branches =`
   _**[optional]**_<br />
   **default**: None
@@ -159,3 +178,51 @@ section_mapping =
   docs=fix
   new=feat
 ```
+
+#### `post_process =`
+  _**[optional]**_<br />
+  **default**: None
+
+  Configure a REST API to contact when a release is made
+
+  See example on Jira configuration information.
+
+ `.url=`<br />
+  _**[required]**_<br />
+  **default**: None<br />
+  The url to contact. 
+  Can have the variables `{issue_ref}` and `{new_version}`.
+
+  `.verb=`<br />
+  _**[optional]**_<br />
+  **default**: POST<br />
+  HTTP method to use.
+
+  `.body=`<br />
+  _**[optional]**_<br />
+  **default**: `{{"body": "Released on v{new_version}"}}`<br />
+  The text to send to the API.
+  Can have the variables `{issue_ref}` and `{new_version}`.
+
+  `.auth_env =`<br />
+  _**[optional]**_<br />
+  **default**: None<br />
+  Name of the environment variable to use to extract the basic auth information to contact the API.
+  The content of the variable should be `{user}:{api key}`.
+
+  Example to post to JIRA:
+
+```ini
+[changelog_gen]
+post_process = 
+  url=https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-{issue_ref}/comment
+  verb=POST
+  body={{"body": "Released on v{new_version}"}}
+  auth_env=JIRA_AUTH
+```
+  This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
+  See [manage-api-tokens-for-your-atlassian-account](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to generate a key.
+
+  Note: spaces around `=` will not be stripped, be sure to use `<field>=<value>`. 
+
+  Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog-gen --post-process-url 'http://my-api-url.domain/comment{issue_ref}' --post-process-auth-env MY_API_AUTH`)
