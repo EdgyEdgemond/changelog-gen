@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.8.0
+
+### Features and Improvements
+
+- Handle sending data to APIs on release (e.g. jira). [[#42](https://github.com/EdgyEdgemond/changelog-gen/issues/42)]
+- Support python 3.7. [[#43](https://github.com/EdgyEdgemond/changelog-gen/issues/43)]
+- Allow negative command line parameters. [[#44](https://github.com/EdgyEdgemond/changelog-gen/issues/44)]
+- Add the date with the release version. [[#45](https://github.com/EdgyEdgemond/changelog-gen/issues/45)]
+
+### Bug fixes
+
+- Fix release version string. [[#38](https://github.com/EdgyEdgemond/changelog-gen/issues/38)]
+- Fix link generation and old links in changelog file. [[#40](https://github.com/EdgyEdgemond/changelog-gen/issues/40)]
+
 ## v0.7.0
 
 ### Features and Improvements
