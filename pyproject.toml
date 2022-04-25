@@ -34,5 +34,5 @@ changelog-gen = "changelog_gen.cli.command:gen"
 changelog-init = "changelog_gen.cli.command:init"
 
 [build-system]
-requires = ["poetry<1.0"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0"]
+build-backend = "poetry.core.masonry.api"
