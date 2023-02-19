@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import (
     Any,
     Dict,
+    Optional,
 )
 
 import click
@@ -81,10 +82,10 @@ def gen(  # noqa: PLR0913
     allow_dirty: bool = False,
     release: bool = False,
     commit: bool = False,
-    version_tag: str | None = None,
-    post_process_url: str | None = None,
-    post_process_auth_env: str | None = None,
-    date_format: str | None = None,
+    version_tag: Optional[str] = None,
+    post_process_url: Optional[str] = None,
+    post_process_auth_env: Optional[str] = None,
+    date_format: Optional[str] = None,
 ) -> None:
     """Read release notes and generate a new CHANGELOG entry for the current version."""
     config = Config().read()
@@ -113,7 +114,7 @@ def gen(  # noqa: PLR0913
         raise click.Abort from ex
 
 
-def _gen(config: Dict[str, Any], dry_run: bool = False, version_tag: str | None = None) -> None:
+def _gen(config: Dict[str, Any], dry_run: bool = False, version_tag: Optional[str] = None) -> None:
     extension = util.detect_extension()
 
     if extension is None:

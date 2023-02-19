@@ -6,7 +6,7 @@ from configparser import (
     NoOptionError,
 )
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class PostProcessConfig:
     body: str = '{{"body": "Released on v{new_version}"}}'
     # Name of an environment variable to use as HTTP Basic Auth parameters.
     # The variable should contain "{user}:{api_key}"
-    auth_env: str | None = None
+    auth_env: Optional[str] = None
 
 
 class Config:

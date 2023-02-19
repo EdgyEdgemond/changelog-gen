@@ -13,7 +13,7 @@ class BaseWriter:
     file_header = None
     extension = None
 
-    def __init__(self, changelog: Path, dry_run: bool = False, issue_link: str | None = None) -> None:
+    def __init__(self, changelog: Path, dry_run: bool = False, issue_link: typing.Optional[str] = None) -> None:
         self.existing = []
         self.changelog = changelog
         if self.changelog.exists():
@@ -132,7 +132,7 @@ class RstWriter(BaseWriter):
         self._write(self.content)
 
 
-def new_writer(extension: str, dry_run: bool = False, issue_link: str | None = None) -> BaseWriter:
+def new_writer(extension: str, dry_run: bool = False, issue_link: typing.Optional[str] = None) -> BaseWriter:
     changelog = Path(f"CHANGELOG.{extension}")
 
     if extension == "md":

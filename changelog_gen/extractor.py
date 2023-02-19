@@ -3,7 +3,7 @@ from collections import (
     defaultdict,
 )
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from changelog_gen import errors
 from changelog_gen.version import BumpVersion
@@ -21,7 +21,7 @@ class ReleaseNoteExtractor:
             msg = "No release notes directory found."
             raise errors.NoReleaseNotesError(msg)
 
-    def extract(self, section_mapping: Dict[str, str] | None = None) -> SectionDict:
+    def extract(self, section_mapping: Optional[Dict[str, str]] = None) -> SectionDict:
         section_mapping = section_mapping or {}
 
         sections = defaultdict(OrderedDict)
