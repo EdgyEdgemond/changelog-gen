@@ -5,34 +5,37 @@ import pytest
 from changelog_gen import writer
 
 
-@pytest.mark.parametrize("extension,expected_cls", [
-    ("md", writer.MdWriter),
-    ("rst", writer.RstWriter),
-])
+@pytest.mark.parametrize(
+    ("extension", "expected_cls"),
+    [
+        ("md", writer.MdWriter),
+        ("rst", writer.RstWriter),
+    ],
+)
 def test_new_writer(extension, expected_cls):
     assert isinstance(writer.new_writer(extension), expected_cls)
 
 
 def test_new_writer_raises_for_unsupported_extension():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         writer.new_writer("txt")
 
 
-@pytest.fixture
+@pytest.fixture()
 def changelog(tmp_path):
     p = tmp_path / "CHANGELOG"
     p.write_text("")
     return p
 
 
-@pytest.fixture
+@pytest.fixture()
 def changelog_md(tmp_path):
     p = tmp_path / "CHANGELOG.md"
     p.write_text("# Changelog\n")
     return p
 
 
-@pytest.fixture
+@pytest.fixture()
 def changelog_rst(tmp_path):
     p = tmp_path / "CHANGELOG.rst"
     p.write_text("=========\nChangelog\n=========\n")
@@ -58,7 +61,8 @@ class TestBaseWriter:
         assert w.existing == []
 
     def test_init_stores_existing_changelog(self, changelog):
-        changelog.write_text("""
+        changelog.write_text(
+            """
 ## 0.0.1
 
 ### header
@@ -66,7 +70,8 @@ class TestBaseWriter:
 - line1
 - line2
 - line3
-""")
+""",
+        )
         w = writer.BaseWriter(changelog)
 
         assert w.existing == [
@@ -141,7 +146,8 @@ class TestMdWriter:
         assert w.existing == []
 
     def test_init_stores_existing_changelog(self, changelog_md):
-        changelog_md.write_text("""# Changelog
+        changelog_md.write_text(
+            """# Changelog
 
 ## 0.0.1
 
@@ -150,7 +156,8 @@ class TestMdWriter:
 - line1
 - line2
 - line3
-""")
+""",
+        )
 
         w = writer.MdWriter(changelog_md)
 
@@ -207,7 +214,9 @@ class TestMdWriter:
         w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
 
         w.write()
-        assert changelog_md.read_text() == """# Changelog
+        assert (
+            changelog_md.read_text()
+            == """# Changelog
 
 ## 0.0.1
 
@@ -217,9 +226,11 @@ class TestMdWriter:
 - line2 [#2]
 - line3 [#3]
 """
+        )
 
     def test_write_with_existing_content(self, changelog_md):
-        changelog_md.write_text("""# Changelog
+        changelog_md.write_text(
+            """# Changelog
 
 ## 0.0.1
 
@@ -228,7 +239,8 @@ class TestMdWriter:
 - line1
 - line2
 - line3
-""")
+""",
+        )
 
         w = writer.MdWriter(changelog_md)
         w.add_version("0.0.2")
@@ -236,7 +248,9 @@ class TestMdWriter:
 
         w.write()
 
-        assert changelog_md.read_text() == """# Changelog
+        assert (
+            changelog_md.read_text()
+            == """# Changelog
 
 ## 0.0.2
 
@@ -254,6 +268,7 @@ class TestMdWriter:
 - line2
 - line3
 """
+        )
 
 
 class TestRstWriter:
@@ -275,7 +290,8 @@ class TestRstWriter:
         assert w.existing == []
 
     def test_init_stores_existing_changelog(self, changelog_rst):
-        changelog_rst.write_text("""=========
+        changelog_rst.write_text(
+            """=========
 Changelog
 =========
 
@@ -290,7 +306,8 @@ header
 * line2
 
 * line3
-""")
+""",
+        )
 
         w = writer.RstWriter(changelog_rst)
 
@@ -344,7 +361,9 @@ header
         w.add_version("0.0.1")
         w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
 
-        assert str(w) == """
+        assert (
+            str(w)
+            == """
 0.0.1
 =====
 
@@ -361,6 +380,7 @@ header
 .. _`#2`: http://url/issues/2
 .. _`#3`: http://url/issues/3
 """.strip()
+        )
 
     def test_write_dry_run_doesnt_write_to_file(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, dry_run=True)
@@ -368,10 +388,13 @@ header
         w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
 
         w.write()
-        assert changelog_rst.read_text() == """=========
+        assert (
+            changelog_rst.read_text()
+            == """=========
 Changelog
 =========
 """
+        )
 
     def test_write(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)
@@ -379,7 +402,9 @@ Changelog
         w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
 
         w.write()
-        assert changelog_rst.read_text() == """=========
+        assert (
+            changelog_rst.read_text()
+            == """=========
 Changelog
 =========
 
@@ -395,9 +420,11 @@ header
 
 * line3 [#3]
 """
+        )
 
     def test_write_with_existing_content(self, changelog_rst):
-        changelog_rst.write_text("""=========
+        changelog_rst.write_text(
+            """=========
 Changelog
 =========
 
@@ -412,7 +439,8 @@ header
 * line2
 
 * line3
-""")
+""",
+        )
 
         w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/{issue_ref}")
         w.add_version("0.0.2")
@@ -420,7 +448,9 @@ header
 
         w.write()
 
-        assert changelog_rst.read_text() == """=========
+        assert (
+            changelog_rst.read_text()
+            == """=========
 Changelog
 =========
 
@@ -451,3 +481,4 @@ header
 .. _`#4`: http://url/issues/4
 .. _`#5`: http://url/issues/5
 .. _`#6`: http://url/issues/6"""
+        )

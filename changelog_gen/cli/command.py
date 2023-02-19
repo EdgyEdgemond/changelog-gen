@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import (
     Any,
-    Dict,
 )
 
 import click
@@ -21,7 +20,6 @@ from changelog_gen.post_processor import per_issue_post_process
 from changelog_gen.vcs import Git
 from changelog_gen.version import BumpVersion
 
-
 # TODO: use config to support reading from files, or from commits
 # TODO: support ConventionalCommits instead of reading from files?
 
@@ -32,62 +30,62 @@ SUPPORTED_SECTIONS = {
 }
 
 
-def process_info(info, dry_run, allow_dirty, config):
+def process_info(info: dict, dry_run: bool, allow_dirty: bool, config: dict) -> None:
     if dry_run:
         return
 
     if info["dirty"] and not allow_dirty:
         click.echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.")
-        raise click.Abort()
+        raise click.Abort
 
     allowed_branches = config.get("allowed_branches")
     if allowed_branches and info["branch"] not in allowed_branches:
         click.echo("Current branch not in allowed generation branches.")
-        raise click.Abort()
+        raise click.Abort
 
 
 @util.common_options
 @click.option("--file-format", type=str, default="md", help="File format to generate")
 @click.command("changelog-init", help="Generate an empty CHANGELOG file")
-def init(file_format):
-    """
-    Create a new CHANGELOG file.
+def init(file_format: str) -> None:
+    """Create a new CHANGELOG file.
 
     Detect and raise if a CHANGELOG already exists, if not create a new file.
     """
     extension = util.detect_extension()
     if extension is not None:
-        click.echo("CHANGELOG.{extension} detected.".format(extension=extension))
-        raise click.Abort()
+        click.echo(f"CHANGELOG.{extension} detected.")
+        raise click.Abort
 
     w = writer.new_writer(file_format)
     w.write()
 
 
 @util.common_options
-@click.option("--post-process-auth-env", default=None,
-              help="Name of the ENV variable that contains the rest API basic auth content")
+@click.option(
+    "--post-process-auth-env",
+    default=None,
+    help="Name of the ENV variable that contains the rest API basic auth content",
+)
 @click.option("--post-process-url", default=None, help="Rest API endpoint to post release version for each issue")
 @click.option("--version-tag", default=None, help="Provide the desired version tag, skip auto generation.")
 @click.option("--release/--no-release", help="Use bumpversion to tag the release")
 @click.option("--dry-run", is_flag=True, help="Don't write release notes to check for errors")
-@click.option("--allow-dirty/--no-allow-dirty", help="Don't abort if branch contains uncommited changes")
+@click.option("--allow-dirty/--no-allow-dirty", help="Don't abort if branch contains uncommitted changes")
 @click.option("--commit/--no-commit", help="Commit changes made to changelog after writing")
 @click.option("--date-format", default=None, help="The date format for strftime - empty string allowed")
 @click.command("changelog-gen", help="Generate a change log from release_notes/* files")
-def gen(
-    dry_run=False,
-    allow_dirty=False,
-    release=False,
-    commit=False,
-    version_tag=None,
-    post_process_url=None,
-    post_process_auth_env=None,
-    date_format=None,
-):
-    """
-    Read release notes and generate a new CHANGELOG entry for the current version.
-    """
+def gen(  # noqa: PLR0913
+    dry_run: bool = False,
+    allow_dirty: bool = False,
+    release: bool = False,
+    commit: bool = False,
+    version_tag: str | None = None,
+    post_process_url: str | None = None,
+    post_process_auth_env: str | None = None,
+    date_format: str | None = None,
+) -> None:
+    """Read release notes and generate a new CHANGELOG entry for the current version."""
     config = Config().read()
 
     config["release"] = config.get("release") or release
@@ -111,15 +109,15 @@ def gen(
         _gen(config, dry_run, version_tag)
     except errors.ChangelogException as ex:
         click.echo(ex)
-        raise click.Abort()
+        raise click.Abort from ex
 
 
-def _gen(config: Dict[str, Any], dry_run=False, version_tag=None):
+def _gen(config: dict[str, Any], dry_run: bool = False, version_tag: str | None = None) -> None:
     extension = util.detect_extension()
 
     if extension is None:
         click.echo("No CHANGELOG file detected, run changelog-init")
-        raise click.Abort()
+        raise click.Abort
 
     process_info(Git.get_latest_tag_info(), dry_run, config["allow_dirty"], config)
 
@@ -139,7 +137,7 @@ def _gen(config: Dict[str, Any], dry_run=False, version_tag=None):
 
     date_fmt = config.get("date_format")
     if date_fmt:
-        version_string += f" {datetime.now().strftime(date_fmt)}"
+        version_string += f" {datetime.now().strftime(date_fmt)}"  # noqa: DTZ005
 
     w = writer.new_writer(extension, dry_run=dry_run, issue_link=config.get("issue_link"))
 
@@ -156,16 +154,16 @@ def _gen(config: Dict[str, Any], dry_run=False, version_tag=None):
         per_issue_post_process(post_process, sorted(unique_issues), version_tag, dry_run=dry_run)
 
 
-def _finalise(
+def _finalise(  # noqa: PLR0913
     writer: writer.BaseWriter,
     extractor: extractor.ReleaseNoteExtractor,
     version_tag: str,
     extension: str,
     dry_run: bool,
-    config: Dict[str, Any],
-):
+    config: dict[str, Any],
+) -> None:
     if dry_run or click.confirm(
-        "Write CHANGELOG for suggested version {}".format(version_tag),
+        f"Write CHANGELOG for suggested version {version_tag}",
     ):
         writer.write()
         extractor.clean()
@@ -173,7 +171,7 @@ def _finalise(
         if dry_run or not config["commit"]:
             return
 
-        Git.add_path("CHANGELOG.{extension}".format(extension=extension))
+        Git.add_path(f"CHANGELOG.{extension}")
         # TODO: Dont add release notes if using commit messages...
         Git.add_path("release_notes")
         Git.commit(version_tag)

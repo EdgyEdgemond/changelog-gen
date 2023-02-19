@@ -1,3 +1,4 @@
+import contextlib
 import dataclasses
 import logging
 from configparser import (
@@ -5,8 +6,6 @@ from configparser import (
     NoOptionError,
 )
 from pathlib import Path
-from typing import Optional
-
 
 logger = logging.getLogger(__name__)
 
@@ -20,16 +19,16 @@ class PostProcessConfig:
     body: str = '{{"body": "Released on v{new_version}"}}'
     # Name of an environment variable to use as HTTP Basic Auth parameters.
     # The variable should contain "{user}:{api_key}"
-    auth_env: Optional[str] = None
+    auth_env: str | None = None
 
 
 class Config:
-    def __init__(self):
+    def __init__(self) -> None:
         self._config = ConfigParser("")
 
         self._config.add_section("changelog_gen")
 
-    def read(self):  # noqa
+    def read(self) -> dict:  # noqa: C901
         config = {}
         object_map = {
             "post_process": PostProcessConfig,
@@ -38,19 +37,17 @@ class Config:
         if not Path("setup.cfg").exists():
             return config
 
-        with open("setup.cfg", "rt", encoding="utf-8") as config_fp:
+        with Path("setup.cfg").open(encoding="utf-8") as config_fp:
             config_content = config_fp.read()
 
         self._config.read_string(config_content)
 
         for stringvaluename in ("issue_link", "date_format"):
-            try:
+            with contextlib.suppress(NoOptionError):
                 config[stringvaluename] = self._config.get(
                     "changelog_gen",
                     stringvaluename,
                 )
-            except NoOptionError:
-                pass
 
         for listvaluename in ("allowed_branches",):
             listvalue = self.parse_list_value(listvaluename)
@@ -66,20 +63,22 @@ class Config:
             dictvalue = self.parse_dict_value(objectname) or {}
             try:
                 config[objectname] = object_class(**dictvalue)
-            except Exception as e:
-                raise RuntimeError(f"Failed to create {objectname}: {str(e)}")
+            except Exception as e:  # noqa: BLE001
+                msg = f"Failed to create {objectname}: {str(e)}"
+                raise RuntimeError(msg) from e
 
         for boolvaluename in ("release", "commit", "allow_dirty"):
             try:
                 config[boolvaluename] = self._config.getboolean(
-                    "changelog_gen", boolvaluename,
+                    "changelog_gen",
+                    boolvaluename,
                 )
             except NoOptionError:
                 config[boolvaluename] = False
 
         return config
 
-    def parse_dict_value(self, dictvaluename):
+    def parse_dict_value(self, dictvaluename: str) -> dict:
         # TODO(tr) Add unit tests to ensure we handle spaces correctly
         #  At the moment key and value should NOT have spaces as they are copied verbatim.
         try:
@@ -98,7 +97,7 @@ class Config:
 
             return ret
 
-    def parse_list_value(self, listvaluename):
+    def parse_list_value(self, listvaluename: str) -> list:
         try:
             value = self._config.get("changelog_gen", listvaluename)
         except NoOptionError:

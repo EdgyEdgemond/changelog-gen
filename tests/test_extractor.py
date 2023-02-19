@@ -5,7 +5,7 @@ from changelog_gen.cli.command import SUPPORTED_SECTIONS
 from changelog_gen.extractor import ReleaseNoteExtractor
 
 
-@pytest.fixture
+@pytest.fixture()
 def release_notes(cwd):
     r = cwd / "release_notes"
     r.mkdir()
@@ -14,35 +14,36 @@ def release_notes(cwd):
     return r
 
 
-@pytest.fixture
-def valid_release_notes(release_notes):
+@pytest.fixture()
+def _valid_release_notes(release_notes):
     for i, note in enumerate(["1.fix", "2.feat", "3.feat", "4.fix"], 1):
         n = release_notes / note
-        n.write_text("Detail about {}".format(i))
+        n.write_text(f"Detail about {i}")
 
 
-@pytest.fixture
-def breaking_release_notes(release_notes):
+@pytest.fixture()
+def _breaking_release_notes(release_notes):
     for i, note in enumerate(["1.fix!", "2.feat", "3.feat!", "4.fix"], 1):
         n = release_notes / note
-        n.write_text("Detail about {}".format(i))
+        n.write_text(f"Detail about {i}")
 
 
-@pytest.fixture
-def invalid_release_notes(release_notes):
+@pytest.fixture()
+def _invalid_release_notes(release_notes):
     for i, note in enumerate(["1.fix", "2.feat", "3.bug", "4.fix"], 1):
         n = release_notes / note
-        n.write_text("Detail about {}".format(i))
+        n.write_text(f"Detail about {i}")
 
 
-@pytest.fixture
-def remap_release_notes(release_notes):
+@pytest.fixture()
+def _remap_release_notes(release_notes):
     for i, note in enumerate(["1.bugfix", "2.feature", "3.test"]):
         n = release_notes / note
-        n.write_text("Detail about {}".format(i))
+        n.write_text(f"Detail about {i}")
 
 
-def test_init_with_no_release_notes_raises(cwd):
+@pytest.mark.usefixtures("cwd")
+def test_init_with_no_release_notes_raises():
     with pytest.raises(errors.NoReleaseNotesError):
         ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
@@ -55,7 +56,8 @@ def test_init_with_release_notes_non_dir_raises(cwd):
         ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
 
-def test_valid_notes_extraction(valid_release_notes):
+@pytest.mark.usefixtures("_valid_release_notes")
+def test_valid_notes_extraction():
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     sections = e.extract()
@@ -72,7 +74,8 @@ def test_valid_notes_extraction(valid_release_notes):
     }
 
 
-def test_breaking_notes_extraction(breaking_release_notes):
+@pytest.mark.usefixtures("_breaking_release_notes")
+def test_breaking_notes_extraction():
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     sections = e.extract()
@@ -89,14 +92,16 @@ def test_breaking_notes_extraction(breaking_release_notes):
     }
 
 
-def test_invalid_notes_extraction_raises(invalid_release_notes):
+@pytest.mark.usefixtures("_invalid_release_notes")
+def test_invalid_notes_extraction_raises():
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     with pytest.raises(errors.InvalidSectionError):
         e.extract()
 
 
-def test_section_remapping_can_remap_custom_sections(invalid_release_notes):
+@pytest.mark.usefixtures("_invalid_release_notes")
+def test_section_remapping_can_remap_custom_sections():
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     sections = e.extract({"bug": "fix"})
@@ -112,7 +117,8 @@ def test_section_remapping_can_remap_custom_sections(invalid_release_notes):
     }
 
 
-def test_section_mapping_can_handle_new_sections(invalid_release_notes):
+@pytest.mark.usefixtures("_invalid_release_notes")
+def test_section_mapping_can_handle_new_sections():
     e = ReleaseNoteExtractor({"bug": "BugFix", "feat": "Features"})
 
     sections = e.extract({"fix": "bug"})
@@ -128,20 +134,26 @@ def test_section_mapping_can_handle_new_sections(invalid_release_notes):
     }
 
 
-def test_dry_run_clean_keeps_files(valid_release_notes, release_notes):
+@pytest.mark.usefixtures("_valid_release_notes")
+def test_dry_run_clean_keeps_files(release_notes):
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS, dry_run=True)
 
     e.clean()
 
-    assert sorted([f.name for f in release_notes.iterdir()]) == sorted([
-        "1.fix", "2.feat", "3.feat", "4.fix", ".file",
-    ])
+    assert sorted([f.name for f in release_notes.iterdir()]) == sorted(
+        [
+            "1.fix",
+            "2.feat",
+            "3.feat",
+            "4.fix",
+            ".file",
+        ],
+    )
 
 
-def test_clean_removes_all_non_dotfiles(valid_release_notes, release_notes):
-    """
-    Clean should not remove .gitkeep files etc
-    """
+@pytest.mark.usefixtures("_valid_release_notes")
+def test_clean_removes_all_non_dotfiles(release_notes):
+    """Clean should not remove .gitkeep files etc."""
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
     e.clean()

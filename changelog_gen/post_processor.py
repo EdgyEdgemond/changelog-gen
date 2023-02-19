@@ -1,27 +1,28 @@
 import os
+import typing
 from http import HTTPStatus
-from typing import List
 
 import click
 import requests
 from requests.auth import HTTPBasicAuth
 
-from changelog_gen.config import PostProcessConfig
+if typing.TYPE_CHECKING:
+    from changelog_gen.config import PostProcessConfig
 
 
-def make_session(cfg: PostProcessConfig) -> requests.Session:
+def make_session(cfg: "PostProcessConfig") -> requests.Session:
     connection = requests.Session()
     if cfg.auth_env:
         user_auth = os.environ.get(cfg.auth_env)
         if not user_auth:
             click.echo(f'Missing environment variable "{cfg.auth_env}"')
-            raise click.Abort()
+            raise click.Abort
 
         try:
             username, api_key = user_auth.split(":")
-        except ValueError:
+        except ValueError as e:
             click.echo(f'Unexpected content in {cfg.auth_env}, need "{{username}}:{{api_key}}"')
-            raise click.Abort()
+            raise click.Abort from e
         else:
             connection.auth = HTTPBasicAuth(username, api_key)
 
@@ -31,11 +32,11 @@ def make_session(cfg: PostProcessConfig) -> requests.Session:
 
 
 def per_issue_post_process(
-    cfg: PostProcessConfig,
-    issue_refs: List[str],
+    cfg: "PostProcessConfig",
+    issue_refs: list[str],
     version_tag: str,
     dry_run: bool = False,
-):
+) -> None:
     if not cfg.url:
         return
 

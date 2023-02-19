@@ -8,7 +8,7 @@ from changelog_gen.cli import command
 from changelog_gen.config import PostProcessConfig
 
 
-@pytest.fixture
+@pytest.fixture()
 def git_repo(git_repo):
     path = git_repo.workspace
     f = path / "hello.txt"
@@ -28,7 +28,7 @@ def git_repo(git_repo):
     return git_repo
 
 
-@pytest.fixture
+@pytest.fixture()
 def changelog(git_repo):
     p = git_repo.workspace / "CHANGELOG.md"
     p.write_text("# Changelog\n")
@@ -37,8 +37,8 @@ def changelog(git_repo):
     return p
 
 
-@pytest.fixture
-def release_notes(git_repo):
+@pytest.fixture()
+def _release_notes(git_repo):
     r = git_repo.workspace / "release_notes"
     r.mkdir()
     f = r / ".file"
@@ -46,14 +46,14 @@ def release_notes(git_repo):
 
     for i, note in enumerate(["1.fix", "2.feat", "3.feat", "4.fix"], 1):
         n = r / note
-        n.write_text("Detail about {}".format(i))
+        n.write_text(f"Detail about {i}")
 
     git_repo.run("git add release_notes")
     git_repo.api.index.commit("commit release_notes")
 
 
-@pytest.fixture
-def breaking_release_notes(git_repo):
+@pytest.fixture()
+def _breaking_release_notes(git_repo):
     r = git_repo.workspace / "release_notes"
     r.mkdir()
     f = r / ".file"
@@ -61,21 +61,23 @@ def breaking_release_notes(git_repo):
 
     for i, note in enumerate(["1.fix", "2.feat!", "3.feat", "4.fix"], 1):
         n = r / note
-        n.write_text("Detail about {}".format(i))
+        n.write_text(f"Detail about {i}")
 
     git_repo.run("git add release_notes")
     git_repo.api.index.commit("commit release_notes")
 
 
-@pytest.fixture
+@pytest.fixture()
 def setup(git_repo):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
 tag = true
-""")
+""",
+    )
 
     git_repo.run("git add setup.cfg")
     git_repo.api.index.commit("commit setup.cfg")
@@ -83,10 +85,11 @@ tag = true
     return p
 
 
-@pytest.fixture
+@pytest.fixture()
 def post_process_setup(git_repo):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
@@ -96,7 +99,8 @@ tag = true
 post_process =
     url=https://my-api/{issue_ref}/release
     auth_env=MY_API_AUTH
-""")
+""",
+    )
 
     git_repo.run("git add setup.cfg")
     git_repo.api.index.commit("commit setup.cfg")
@@ -104,23 +108,27 @@ post_process =
     return p
 
 
-def test_generate_aborts_if_changelog_missing(cli_runner, cwd):
+@pytest.mark.usefixtures("cwd")
+def test_generate_aborts_if_changelog_missing(cli_runner):
     result = cli_runner.invoke()
 
     assert result.exit_code == 1
     assert result.output == "No CHANGELOG file detected, run changelog-init\nAborted!\n"
 
 
-def test_generate_aborts_if_no_release_notes_directory(cli_runner, changelog):
+@pytest.mark.usefixtures("changelog")
+def test_generate_aborts_if_no_release_notes_directory(cli_runner):
     result = cli_runner.invoke()
 
     assert result.exit_code == 1
     assert result.output == "No release notes directory found.\nAborted!\n"
 
 
-def test_generate_aborts_if_dirty(cli_runner, changelog, release_notes, git_repo, setup):
+@pytest.mark.usefixtures("changelog", "_release_notes", "setup")
+def test_generate_aborts_if_dirty(cli_runner, git_repo):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
@@ -128,16 +136,19 @@ tag = true
 
 [changelog_gen]
 allow_dirty = false
-""")
+""",
+    )
     result = cli_runner.invoke()
 
     assert result.exit_code == 1
     assert result.output == "Working directory is not clean. Use `allow_dirty` configuration to ignore.\nAborted!\n"
 
 
-def test_generate_allows_dirty(cli_runner, changelog, release_notes, git_repo, setup):
+@pytest.mark.usefixtures("changelog", "_release_notes", "setup")
+def test_generate_allows_dirty(cli_runner, git_repo):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
@@ -145,15 +156,18 @@ tag = true
 
 [changelog_gen]
 allow_dirty = false
-""")
+""",
+    )
     result = cli_runner.invoke(["--allow-dirty"])
 
     assert result.exit_code == 0
 
 
-def test_generate_continues_if_allow_dirty_configured(cli_runner, changelog, release_notes, git_repo, setup):
+@pytest.mark.usefixtures("changelog", "_release_notes", "setup")
+def test_generate_continues_if_allow_dirty_configured(cli_runner, git_repo):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
@@ -161,15 +175,18 @@ tag = true
 
 [changelog_gen]
 allow_dirty = true
-""")
+""",
+    )
     result = cli_runner.invoke()
 
     assert result.exit_code == 0
 
 
-def test_generate_aborts_if_unsupported_current_branch(cli_runner, changelog, release_notes, git_repo, setup):
+@pytest.mark.usefixtures("changelog", "_release_notes", "setup")
+def test_generate_aborts_if_unsupported_current_branch(cli_runner, git_repo):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
@@ -178,16 +195,19 @@ tag = true
 [changelog_gen]
 allow_dirty = true
 allowed_branches = release_candidate
-""")
+""",
+    )
     result = cli_runner.invoke()
 
     assert result.exit_code == 1
     assert result.output == "Current branch not in allowed generation branches.\nAborted!\n"
 
 
-def test_generate_allows_supported_branch(cli_runner, changelog, release_notes, git_repo, setup):
+@pytest.mark.usefixtures("changelog", "_release_notes", "setup")
+def test_generate_allows_supported_branch(cli_runner, git_repo):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
@@ -196,24 +216,29 @@ tag = true
 [changelog_gen]
 allow_dirty = true
 allowed_branches = master
-""")
+""",
+    )
     result = cli_runner.invoke()
 
     assert result.exit_code == 0
 
 
-def test_generate_wraps_errors(cli_runner, changelog, release_notes):
+@pytest.mark.usefixtures("changelog", "_release_notes")
+def test_generate_wraps_errors(cli_runner):
     result = cli_runner.invoke()
 
     assert result.exit_code == 1
-    assert result.output == "Unable to get version data from bumpversion\nAborted!\n"
+    assert result.output == "Unable to get version data from bumpversion.\nAborted!\n"
 
 
-def test_generate_confirms_suggested_changes(cli_runner, changelog, release_notes, setup):
+@pytest.mark.usefixtures("changelog", "_release_notes", "setup")
+def test_generate_confirms_suggested_changes(cli_runner):
     result = cli_runner.invoke()
 
     assert result.exit_code == 0
-    assert result.output == """
+    assert (
+        result.output
+        == """
 ## v0.1.0
 
 ### Features and Improvements
@@ -227,11 +252,14 @@ def test_generate_confirms_suggested_changes(cli_runner, changelog, release_note
 - Detail about 4 [#4]
 
 Write CHANGELOG for suggested version 0.1.0 [y/N]: \n""".lstrip()
+    )
 
 
-def test_generate_with_section_mapping(cli_runner, changelog, release_notes, setup, git_repo):
+@pytest.mark.usefixtures("changelog", "_release_notes", "setup")
+def test_generate_with_section_mapping(cli_runner, git_repo):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
@@ -241,11 +269,14 @@ tag = true
 allow_dirty = true
 section_mapping =
   feat=fix
-""")
+""",
+    )
     result = cli_runner.invoke()
 
     assert result.exit_code == 0
-    assert result.output == """
+    assert (
+        result.output
+        == """
 ## v0.0.1
 
 ### Bug fixes
@@ -256,11 +287,14 @@ section_mapping =
 - Detail about 4 [#4]
 
 Write CHANGELOG for suggested version 0.0.1 [y/N]: \n""".lstrip()
+    )
 
 
-def test_generate_with_custom_sections(cli_runner, changelog, release_notes, setup, git_repo):
+@pytest.mark.usefixtures("changelog", "_release_notes", "setup")
+def test_generate_with_custom_sections(cli_runner, git_repo):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
@@ -271,11 +305,14 @@ allow_dirty = true
 sections =
   feat=My Features
   fix=My Fixes
-""")
+""",
+    )
     result = cli_runner.invoke()
 
     assert result.exit_code == 0
-    assert result.output == """
+    assert (
+        result.output
+        == """
 ## v0.1.0
 
 ### My Features
@@ -289,14 +326,13 @@ sections =
 - Detail about 4 [#4]
 
 Write CHANGELOG for suggested version 0.1.0 [y/N]: \n""".lstrip()
+    )
 
 
+@pytest.mark.usefixtures("git_repo", "_release_notes", "setup")
 def test_generate_writes_to_file(
     cli_runner,
-    git_repo,
     changelog,
-    release_notes,
-    setup,
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -304,7 +340,9 @@ def test_generate_writes_to_file(
 
     assert result.exit_code == 0
 
-    assert changelog.read_text() == """
+    assert (
+        changelog.read_text()
+        == """
 # Changelog
 
 ## v0.1.0
@@ -319,14 +357,14 @@ def test_generate_writes_to_file(
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 """.lstrip()
+    )
 
 
+@pytest.mark.usefixtures("_breaking_release_notes", "setup")
 def test_generate_suggests_major_version_for_breaking_change(
     cli_runner,
     git_repo,
     changelog,
-    breaking_release_notes,
-    setup,
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -334,7 +372,9 @@ def test_generate_suggests_major_version_for_breaking_change(
 
     assert result.exit_code == 0
 
-    assert changelog.read_text() == """
+    assert (
+        changelog.read_text()
+        == """
 # Changelog
 
 ## v1.0.0
@@ -349,15 +389,14 @@ def test_generate_suggests_major_version_for_breaking_change(
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 """.lstrip()
+    )
     assert git_repo.api.head.commit.message == "Update CHANGELOG for 1.0.0\n"
 
 
+@pytest.mark.usefixtures("changelog", "_release_notes", "setup")
 def test_generate_creates_release(
     cli_runner,
     git_repo,
-    changelog,
-    release_notes,
-    setup,
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -367,15 +406,15 @@ def test_generate_creates_release(
     assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
 
 
+@pytest.mark.usefixtures("changelog", "_release_notes")
 def test_generate_creates_release_using_config(
     cli_runner,
     git_repo,
-    changelog,
-    release_notes,
     monkeypatch,
 ):
     p = git_repo.workspace / "setup.cfg"
-    p.write_text("""
+    p.write_text(
+        """
 [bumpversion]
 current_version = 0.0.0
 commit = true
@@ -384,7 +423,8 @@ tag = true
 [changelog_gen]
 commit = true
 release = true
-""")
+""",
+    )
 
     git_repo.run("git add setup.cfg")
     git_repo.api.index.commit("commit setup.cfg")
@@ -396,19 +436,20 @@ release = true
     assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
 
 
+@pytest.mark.usefixtures("setup", "_release_notes")
 def test_generate_uses_supplied_version_tag(
     cli_runner,
     git_repo,
     changelog,
-    release_notes,
-    setup,
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
     result = cli_runner.invoke(["--version-tag", "0.3.2", "--commit"])
 
     assert result.exit_code == 0
-    assert changelog.read_text() == """
+    assert (
+        changelog.read_text()
+        == """
 # Changelog
 
 ## v0.3.2
@@ -423,15 +464,14 @@ def test_generate_uses_supplied_version_tag(
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 """.lstrip()
+    )
     assert git_repo.api.head.commit.message == "Update CHANGELOG for 0.3.2\n"
 
 
+@pytest.mark.usefixtures("git_repo", "_release_notes", "setup")
 def test_generate_dry_run(
     cli_runner,
-    git_repo,
     changelog,
-    release_notes,
-    setup,
     monkeypatch,
 ):
     monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -439,21 +479,21 @@ def test_generate_dry_run(
 
     assert result.exit_code == 0
 
-    assert changelog.read_text() == """
+    assert (
+        changelog.read_text()
+        == """
 # Changelog
 """.lstrip()
+    )
 
 
 class TestDelegatesToPerIssuePostProcess:
     # The behaviour of per_issue_post_process are tested in test_post_processor
 
+    @pytest.mark.usefixtures("git_repo", "_release_notes", "changelog", "post_process_setup")
     def test_load_config(
         self,
         cli_runner,
-        git_repo,
-        changelog,
-        release_notes,
-        post_process_setup,
         monkeypatch,
     ):
         monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -475,13 +515,10 @@ class TestDelegatesToPerIssuePostProcess:
             ),
         ]
 
+    @pytest.mark.usefixtures("git_repo", "_release_notes", "changelog", "post_process_setup")
     def test_generate_post_process_url(
         self,
         cli_runner,
-        git_repo,
-        changelog,
-        release_notes,
-        post_process_setup,
         monkeypatch,
     ):
         monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -504,13 +541,10 @@ class TestDelegatesToPerIssuePostProcess:
             ),
         ]
 
+    @pytest.mark.usefixtures("git_repo", "_release_notes", "changelog", "post_process_setup")
     def test_generate_post_process_auth_env(
         self,
         cli_runner,
-        git_repo,
-        changelog,
-        release_notes,
-        post_process_setup,
         monkeypatch,
     ):
         monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -532,13 +566,10 @@ class TestDelegatesToPerIssuePostProcess:
             ),
         ]
 
+    @pytest.mark.usefixtures("git_repo", "_release_notes", "changelog", "post_process_setup")
     def test_generate_dry_run(
         self,
         cli_runner,
-        git_repo,
-        changelog,
-        release_notes,
-        post_process_setup,
         monkeypatch,
     ):
         monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
@@ -563,10 +594,11 @@ class TestDelegatesToPerIssuePostProcess:
 
 @freeze_time("2022-04-14T16:45:03")
 class TestGenerateWithDate:
-
-    def test_using_config(self, cli_runner, git_repo, changelog, release_notes, monkeypatch):
+    @pytest.mark.usefixtures("_release_notes", "changelog")
+    def test_using_config(self, cli_runner, git_repo, monkeypatch):
         p = git_repo.workspace / "setup.cfg"
-        p.write_text("""
+        p.write_text(
+            """
             [bumpversion]
             current_version = 0.0.0
             commit = true
@@ -576,7 +608,8 @@ class TestGenerateWithDate:
             commit = true
             release = true
             date_format =on %%Y-%%m-%%d
-        """.strip())
+        """.strip(),
+        )
 
         git_repo.run("git add setup.cfg")
         git_repo.api.index.commit("commit setup.cfg")
@@ -589,7 +622,8 @@ class TestGenerateWithDate:
 
         assert writer_mock.add_version.call_args == mock.call("v0.1.0 on 2022-04-14")
 
-    def test_using_cli(self, cli_runner, changelog, release_notes, setup, monkeypatch):
+    @pytest.mark.usefixtures("_release_notes", "changelog", "setup")
+    def test_using_cli(self, cli_runner, monkeypatch):
         monkeypatch.setattr(click, "confirm", mock.MagicMock(return_value=True))
         writer_mock = mock.MagicMock()
         monkeypatch.setattr(command.writer, "new_writer", mock.MagicMock(return_value=writer_mock))
@@ -598,9 +632,11 @@ class TestGenerateWithDate:
 
         assert writer_mock.add_version.call_args == mock.call("v0.1.0 (2022-04-14 at 16:45)")
 
-    def test_override_config(self, cli_runner, git_repo, changelog, release_notes, monkeypatch):
+    @pytest.mark.usefixtures("_release_notes", "changelog")
+    def test_override_config(self, cli_runner, git_repo, monkeypatch):
         p = git_repo.workspace / "setup.cfg"
-        p.write_text("""
+        p.write_text(
+            """
             [bumpversion]
             current_version = 0.0.0
             commit = true
@@ -610,7 +646,8 @@ class TestGenerateWithDate:
             commit = true
             release = true
             date_format =on %%Y-%%m-%%d
-        """.strip())
+        """.strip(),
+        )
 
         git_repo.run("git add setup.cfg")
         git_repo.api.index.commit("commit setup.cfg")
@@ -623,9 +660,11 @@ class TestGenerateWithDate:
 
         assert writer_mock.add_version.call_args == mock.call("v0.1.0 (2022-04-14 at 16:45)")
 
-    def test_override_config_and_disable(self, cli_runner, git_repo, changelog, release_notes, monkeypatch):
+    @pytest.mark.usefixtures("_release_notes", "changelog")
+    def test_override_config_and_disable(self, cli_runner, git_repo, monkeypatch):
         p = git_repo.workspace / "setup.cfg"
-        p.write_text("""
+        p.write_text(
+            """
             [bumpversion]
             current_version = 0.0.0
             commit = true
@@ -635,7 +674,8 @@ class TestGenerateWithDate:
             commit = true
             release = true
             date_format =on %%Y-%%m-%%d
-        """.strip())
+        """.strip(),
+        )
 
         git_repo.run("git add setup.cfg")
         git_repo.api.index.commit("commit setup.cfg")

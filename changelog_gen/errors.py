@@ -1,4 +1,4 @@
-class ChangelogException(Exception):
+class ChangelogException(Exception):  # noqa: N818
     pass
 
 

@@ -7,7 +7,7 @@ from changelog_gen import errors
 from changelog_gen.vcs import Git
 
 
-@pytest.fixture
+@pytest.fixture()
 def multiversion_repo(git_repo):
     path = git_repo.workspace
     f = path / "hello.txt"
@@ -27,7 +27,7 @@ def multiversion_repo(git_repo):
     return git_repo
 
 
-@pytest.fixture
+@pytest.fixture()
 def multiversion_v_repo(git_repo):
     path = git_repo.workspace
     f = path / "hello.txt"
@@ -58,7 +58,8 @@ def test_get_latest_info_branch(multiversion_repo):
     assert info["branch"] == "master"
 
 
-def test_get_latest_info_clean(multiversion_repo):
+@pytest.mark.usefixtures("multiversion_repo")
+def test_get_latest_info_clean():
     info = Git.get_latest_tag_info()
 
     assert info["dirty"] is False
@@ -89,13 +90,15 @@ def test_get_latest_info_untagged(multiversion_repo):
     assert info["distance_to_latest_tag"] == 1
 
 
-def test_get_latest_info_current_version(multiversion_repo):
+@pytest.mark.usefixtures("multiversion_repo")
+def test_get_latest_info_current_version():
     info = Git.get_latest_tag_info()
 
     assert info["current_version"] == "0.0.2"
 
 
-def test_get_latest_info_current_version_vtag(multiversion_v_repo):
+@pytest.mark.usefixtures("multiversion_v_repo")
+def test_get_latest_info_current_version_vtag():
     info = Git.get_latest_tag_info()
 
     assert info["current_version"] == "0.0.2"
@@ -109,14 +112,16 @@ def test_get_latest_info_commit_sha(multiversion_repo):
     assert info["commit_sha"] == str(head_hash)[:7]
 
 
-def test_get_latest_info_raises_if_no_tags_found(git_repo):
+@pytest.mark.usefixtures("git_repo")
+def test_get_latest_info_raises_if_no_tags_found():
     with pytest.raises(errors.VcsError) as ex:
         Git.get_latest_tag_info()
 
-    assert str(ex.value) == "Unable to get version number from git tags"
+    assert str(ex.value) == "Unable to get version number from git tags."
 
 
-def test_get_latest_info_raises_if_rev_parse_fails(git_repo, monkeypatch):
+@pytest.mark.usefixtures("git_repo")
+def test_get_latest_info_raises_if_rev_parse_fails(monkeypatch):
     monkeypatch.setattr(
         subprocess,
         "check_output",
@@ -125,7 +130,7 @@ def test_get_latest_info_raises_if_rev_parse_fails(git_repo, monkeypatch):
     with pytest.raises(errors.VcsError) as ex:
         Git.get_latest_tag_info()
 
-    assert str(ex.value) == "Unable to get current git branch"
+    assert str(ex.value) == "Unable to get current git branch."
 
 
 def test_add_path_stages_changes_for_commit(multiversion_repo):

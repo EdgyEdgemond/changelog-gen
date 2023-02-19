@@ -5,7 +5,7 @@ from changelog_gen import errors
 
 class Git:
     @classmethod
-    def get_latest_tag_info(cls):
+    def get_latest_tag_info(cls) -> dict[str, str | int]:
         describe_out = None
         for tags in ["[0-9]*", "v[0-9]*"]:
             try:
@@ -31,7 +31,8 @@ class Git:
             else:
                 break
         else:
-            raise errors.VcsError("Unable to get version number from git tags")
+            msg = "Unable to get version number from git tags."
+            raise errors.VcsError(msg)
 
         try:
             rev_parse_out = (
@@ -49,8 +50,9 @@ class Git:
                 .strip()
                 .split("\n")
             )
-        except subprocess.CalledProcessError:
-            raise errors.VcsError("Unable to get current git branch")
+        except subprocess.CalledProcessError as e:
+            msg = "Unable to get current git branch."
+            raise errors.VcsError(msg) from e
 
         info = {
             "dirty": False,
@@ -68,11 +70,11 @@ class Git:
         return info
 
     @classmethod
-    def add_path(cls, path):
+    def add_path(cls, path: str) -> None:
         subprocess.check_output(["git", "add", "--update", path])
 
     @classmethod
-    def commit(cls, version):
+    def commit(cls, version: str) -> None:
         subprocess.check_output(
-            ["git", "commit", "-m", "Update CHANGELOG for {}".format(version)],
+            ["git", "commit", "-m", f"Update CHANGELOG for {version}"],
         )

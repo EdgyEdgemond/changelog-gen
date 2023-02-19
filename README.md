@@ -16,8 +16,7 @@ changelogs and create release tags.
 pip install changelog-gen
 ```
 
-or clone this repo and install with poetry, currently depends on poetry < 1.0.0
-due to other personal projects being stuck.
+or clone this repo and install with poetry.
 
 ```bash
 poetry install
@@ -90,7 +89,7 @@ General configuration is grouped in a `[changelog_gen]` section.
   _**[optional]**_<br />
   **default**: False
 
-  Don't abort if the current branch contains uncommited changes
+  Don't abort if the current branch contains uncommitted changes
 
   Also available as `--allow-dirty` (e.g. `changelog-gen --allow-dirty`)
 
@@ -115,8 +114,8 @@ issue_link = http://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}
   Add a date on the version line, use [strftime and strptime format codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes).
   The format string can include any character, a space is included between the version tag and the date tag.
 
-  When using in `setup.cfg` be sure to protect the `%` signs (see example bellow) and be mindful about spacing as the string is taken straight from the `=` sign.
-  
+  When using in `setup.cfg` be sure to protect the `%` signs (see example below) and be mindful about spacing as the string is taken straight from the `=` sign.
+
   Also available as `--date-format` (e.g. `--date-format '%Y-%m-%d'`).
 
   Example:
@@ -138,7 +137,7 @@ date_format =on %%Y-%m-%d
 
 ```ini
 [changelog_gen]
-allowed_branches = 
+allowed_branches =
   master
   develop
 ```
@@ -154,7 +153,7 @@ allowed_branches =
 
 ```ini
 [changelog_gen]
-sections = 
+sections =
   feat=New Features
   change=Changes
   remove=Removals
@@ -172,7 +171,7 @@ sections =
 
 ```ini
 [changelog_gen]
-section_mapping = 
+section_mapping =
   test=fix
   bugfix=fix
   docs=fix
@@ -190,7 +189,7 @@ section_mapping =
  `.url=`<br />
   _**[required]**_<br />
   **default**: None<br />
-  The url to contact. 
+  The url to contact.
   Can have the variables `{issue_ref}` and `{new_version}`.
 
   `.verb=`<br />
@@ -214,7 +213,7 @@ section_mapping =
 
 ```ini
 [changelog_gen]
-post_process = 
+post_process =
   url=https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-{issue_ref}/comment
   verb=POST
   body={{"body": "Released on v{new_version}"}}
@@ -223,6 +222,10 @@ post_process =
   This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
   See [manage-api-tokens-for-your-atlassian-account](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to generate a key.
 
-  Note: spaces around `=` will not be stripped, be sure to use `<field>=<value>`. 
+  Note: spaces around `=` will not be stripped, be sure to use `<field>=<value>`.
 
   Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog-gen --post-process-url 'http://my-api-url.domain/comment{issue_ref}' --post-process-auth-env MY_API_AUTH`)
+
+## Contributing
+
+This project uses pre-commit hooks, please run `pre-commit install` after cloning and installing dev dependencies.

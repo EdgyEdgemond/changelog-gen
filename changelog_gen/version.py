@@ -5,7 +5,7 @@ from changelog_gen import errors
 
 class BumpVersion:
     @classmethod
-    def get_version_info(cls, semver):
+    def get_version_info(cls, semver: str) -> dict[str, str]:
         try:
             describe_out = (
                 subprocess.check_output(
@@ -16,8 +16,9 @@ class BumpVersion:
                 .strip()
                 .split("\n")
             )
-        except subprocess.CalledProcessError:
-            raise errors.VersionDetectionError("Unable to get version data from bumpversion")
+        except subprocess.CalledProcessError as e:
+            msg = "Unable to get version data from bumpversion."
+            raise errors.VersionDetectionError(msg) from e
 
         bumpversion_data = {v.split("=")[0]: v.split("=")[1] for v in describe_out}
 
@@ -27,5 +28,5 @@ class BumpVersion:
         }
 
     @classmethod
-    def release(cls, version):
+    def release(cls, version: str) -> None:
         subprocess.check_output(["bumpversion", "--new-version", version, "patch"])

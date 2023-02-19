@@ -6,16 +6,18 @@ import changelog_gen
 from changelog_gen.writer import SUPPORTED_EXTENSIONS
 
 
-def common_options(command):
-    """
-    Mark ``cli`` commands with common flags.
+def common_options(command: click.Command) -> click.Command:
+    """Mark ``cli`` commands with common flags.
 
     Used to mark ``cli`` commands with the flags that add the option
     flags that we want to include in all of them.
     """
     options = [
         click.version_option(
-            changelog_gen.VERSION, "-v", "--version", prog_name="changelog-gen",
+            changelog_gen.VERSION,
+            "-v",
+            "--version",
+            prog_name="changelog-gen",
         ),
         click.help_option("--help", help="Show this message and exit."),
     ]
@@ -26,7 +28,8 @@ def common_options(command):
     return command
 
 
-def detect_extension():
+def detect_extension() -> str | None:
     for ext in SUPPORTED_EXTENSIONS:
-        if Path("CHANGELOG.{ext}".format(ext=ext)).exists():
+        if Path(f"CHANGELOG.{ext}").exists():
             return ext
+    return None

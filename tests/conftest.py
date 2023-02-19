@@ -1,11 +1,12 @@
 import os
+import pathlib
 
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture()
 def cwd(tmp_path):
-    orig = os.getcwd()
+    orig = pathlib.Path.cwd()
 
     try:
         os.chdir(str(tmp_path))
@@ -16,12 +17,12 @@ def cwd(tmp_path):
         os.chdir(orig)
 
 
-@pytest.fixture
+@pytest.fixture()
 def git_repo(git_repo):
     git_repo.run("git config user.email 'you@example.com'")
     git_repo.run("git config user.name 'Your Name'")
 
-    orig = os.getcwd()
+    orig = pathlib.Path.cwd()
 
     try:
         os.chdir(str(git_repo.workspace))

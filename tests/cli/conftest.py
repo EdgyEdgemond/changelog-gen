@@ -12,7 +12,7 @@ class GenCliRunner(click.testing.CliRunner):
         if result.exception:
             if isinstance(result.exception, SystemExit):
                 # The error is already properly handled. Print it and return.
-                print(result.output)
+                print(result.output)  # noqa: T201
             else:
                 raise result.exception.with_traceback(result.exc_info[2])
         return result
@@ -22,11 +22,11 @@ class InitCliRunner(GenCliRunner):
     target = changelog_gen.cli.command.init
 
 
-@pytest.fixture
+@pytest.fixture()
 def cli_runner():
     return GenCliRunner()
 
 
-@pytest.fixture
+@pytest.fixture()
 def init_cli_runner():
     return InitCliRunner()
