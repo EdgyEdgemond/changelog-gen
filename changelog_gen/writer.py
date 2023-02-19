@@ -29,7 +29,7 @@ class BaseWriter:
     def _add_version(self, version: str) -> None:
         raise NotImplementedError
 
-    def consume(self, supported_sections: dict[str, str], sections: "SectionDict") -> None:
+    def consume(self, supported_sections: typing.Dict[str, str], sections: "SectionDict") -> None:
         for section in sorted(supported_sections):
             if section not in sections:
                 continue
@@ -37,7 +37,7 @@ class BaseWriter:
             header = supported_sections[section]
             self.add_section(header, {k: v["description"] for k, v in sections[section].items()})
 
-    def add_section(self, header: str, lines: list[str]) -> None:
+    def add_section(self, header: str, lines: typing.List[str]) -> None:
         self._add_section_header(header)
         for issue_ref, description in sorted(lines.items()):
             self._add_section_line(description, issue_ref)
@@ -59,7 +59,7 @@ class BaseWriter:
         self.content = [self.file_header, *self.content, *self.existing]
         self._write(self.content)
 
-    def _write(self, content: list[str]) -> None:
+    def _write(self, content: typing.List[str]) -> None:
         if self.dry_run:
             with NamedTemporaryFile("wb") as output_file:
                 output_file.write(("\n".join(content)).encode("utf-8"))
@@ -108,7 +108,7 @@ class RstWriter(BaseWriter):
         return "\n".join(self.content + self.links)
 
     @property
-    def links(self) -> list[str]:
+    def links(self) -> typing.List[str]:
         return [f".. _`{ref}`: {link}" for ref, link in sorted(self._links.items())]
 
     def _add_version(self, version: str) -> None:

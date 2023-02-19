@@ -33,7 +33,7 @@ def make_session(cfg: "PostProcessConfig") -> requests.Session:
 
 def per_issue_post_process(
     cfg: "PostProcessConfig",
-    issue_refs: list[str],
+    issue_refs: typing.List[str],
     version_tag: str,
     dry_run: bool = False,
 ) -> None:

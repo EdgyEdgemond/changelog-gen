@@ -6,6 +6,7 @@ from configparser import (
     NoOptionError,
 )
 from pathlib import Path
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class Config:
 
         self._config.add_section("changelog_gen")
 
-    def read(self) -> dict:  # noqa: C901
+    def read(self) -> Dict:  # noqa: C901
         config = {}
         object_map = {
             "post_process": PostProcessConfig,
@@ -78,7 +79,7 @@ class Config:
 
         return config
 
-    def parse_dict_value(self, dictvaluename: str) -> dict:
+    def parse_dict_value(self, dictvaluename: str) -> Dict:
         # TODO(tr) Add unit tests to ensure we handle spaces correctly
         #  At the moment key and value should NOT have spaces as they are copied verbatim.
         try:
@@ -97,7 +98,7 @@ class Config:
 
             return ret
 
-    def parse_list_value(self, listvaluename: str) -> list:
+    def parse_list_value(self, listvaluename: str) -> List:
         try:
             value = self._config.get("changelog_gen", listvaluename)
         except NoOptionError:

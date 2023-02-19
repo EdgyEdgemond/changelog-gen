@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import (
     Any,
+    Dict,
 )
 
 import click
@@ -30,7 +31,7 @@ SUPPORTED_SECTIONS = {
 }
 
 
-def process_info(info: dict, dry_run: bool, allow_dirty: bool, config: dict) -> None:
+def process_info(info: Dict, dry_run: bool, allow_dirty: bool, config: Dict) -> None:
     if dry_run:
         return
 
@@ -112,7 +113,7 @@ def gen(  # noqa: PLR0913
         raise click.Abort from ex
 
 
-def _gen(config: dict[str, Any], dry_run: bool = False, version_tag: str | None = None) -> None:
+def _gen(config: Dict[str, Any], dry_run: bool = False, version_tag: str | None = None) -> None:
     extension = util.detect_extension()
 
     if extension is None:
@@ -160,7 +161,7 @@ def _finalise(  # noqa: PLR0913
     version_tag: str,
     extension: str,
     dry_run: bool,
-    config: dict[str, Any],
+    config: Dict[str, Any],
 ) -> None:
     if dry_run or click.confirm(
         f"Write CHANGELOG for suggested version {version_tag}",
