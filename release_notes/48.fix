@@ -1,0 +1,1 @@
+Introduce ruff instead of flake8 and pre-commit hooks.
