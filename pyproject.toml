@@ -9,25 +9,86 @@ homepage="https://github.com/EdgyEdgemond/changelog-gen/"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 
-click = "^7.0"
+click = "^8.0"
 bump2version = "^0.5.11"
 requests = "^2.27.1"
 
 [tool.poetry.dev-dependencies]
 
-flake8 = "^3.7"
-flake8-commas = "^2.0"
-flake8-isort = "^2.7"
-flake8-quotes = "^2.1"
+# Tests
 freezegun = "^1.2.1"
-isort = "^4.3"
 pytest = "^6.2"
 pytest-cov = "^2.8"
 pytest-git = "^1.7.0"
 pytest-random-order = "^1.0"
 requests-mock = "^1.9.3"
+
+# Style
+ruff = "^0.0"
+pre-commit = "^3.0.2"
+black = "^22.12.0"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--random-order"
+
+
+[tool.coverage.report]
+sort = "cover"
+fail_under = 95
+show_missing = true
+skip_covered = true
+# exclude_lines = [
+#     "pragma: no cover",
+#     "if __name__ == '__main__':",
+#     "@abc.abstractmethod",
+#     "if typing.TYPE_CHECKING:",
+# ]
+
+[tool.coverage.run]
+branch = true
+source = ["changelog_gen"]
+
+
+[tool.bandit]
+exclude_dirs = ["tasks.py"]
+skips = [
+    # "B101",  # use of asserts
+    # "B608",  # use of hardcoded sql
+]
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+line-length = 120
+select = ["ALL"]
+ignore = [
+    # "ANN002",  # type annotation on *args
+    # "ANN003",  # type annotation on **kwargs
+    # "ANN101",  # annotate self
+    # "ANN102",  # annotate cls
+    # "B008",  # fastapi involves a lot of function calls in function definitions
+    # "D203",  # No blankline before docstring
+    # "D213",  # docstring starts on opening line
+    # "FBT",  # boolean trap? no documentation
+    # "G",  # logging(.., extra={}) does not appear to work
+    # "PLR0913",  # too many arguments to a function call
+    # "S",  # bandit is run as a full commit hook
+]
+
+[tool.ruff.per-file-ignores]
+"tasks.py" = ["ANN", "E501", "INP001"]
+# "tests/*" = ["ANN", "D", "S105", "S106"]
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.ruff.pydocstyle]
+convention = "google"
 
 [tool.poetry.scripts]
 changelog-gen = "changelog_gen.cli.command:gen"
