@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.8.1
+
+### Bug fixes
+
+- Introduce ruff instead of flake8 and pre-commit hooks. [[#48](https://github.com/EdgyEdgemond/changelog-gen/issues/48)]
+
 ## v0.8.0
 
 ### Features and Improvements
