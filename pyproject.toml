@@ -12,7 +12,7 @@ readme = "README.md"
 python = "^3.8"
 
 click = "^8.0"
-bump2version = "^0.5.11"
+bump2version = "^1.0.1"
 requests = "^2.27.1"
 
 [tool.poetry.dev-dependencies]
