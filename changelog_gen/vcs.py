@@ -1,12 +1,12 @@
 import subprocess
-from typing import Dict
+from typing import Dict, Union
 
 from changelog_gen import errors
 
 
 class Git:
     @classmethod
-    def get_latest_tag_info(cls) -> Dict[str, str | int]:
+    def get_latest_tag_info(cls) -> Dict[str, Union[str, int]]:
         describe_out = None
         for tags in ["[0-9]*", "v[0-9]*"]:
             try:
