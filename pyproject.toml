@@ -11,7 +11,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.9"
 
-click = "^8.0"
+typer = "^0.9.0"
 bump2version = "^1.0.1"
 requests = "^2.27.1"
 httpx = "^0.25.0"
@@ -65,7 +65,7 @@ ignore = [
 
 [tool.ruff.per-file-ignores]
 "tasks.py" = ["ANN", "E501", "INP001"]
-"tests/*" = ["ANN", "D", "S105", "S106", "SLF001", "S101"]
+"tests/*" = ["ANN", "D", "S105", "S106", "SLF001", "S101", "PLR0913"]
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"

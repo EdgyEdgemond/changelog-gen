@@ -30,11 +30,11 @@ SUPPORTED_SECTIONS = {
 }
 
 
-def process_info(info: dict, *, dry_run: bool, allow_dirty: bool, config: dict) -> None:
+def process_info(info: dict, config: dict, *, dry_run: bool) -> None:
     if dry_run:
         return
 
-    if info["dirty"] and not allow_dirty:
+    if info["dirty"] and not config.get("allow_dirty", False):
         click.echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.")
         raise click.Abort
 
@@ -107,7 +107,7 @@ def gen(  # noqa: PLR0913
         config["post_process"] = post_process
 
     try:
-        _gen(config, dry_run, version_tag)
+        _gen(config, version_tag, dry_run=dry_run)
     except errors.ChangelogException as ex:
         click.echo(ex)
         raise click.Abort from ex
@@ -120,7 +120,7 @@ def _gen(config: dict[str, Any], version_tag: str | None = None, *, dry_run: boo
         click.echo("No CHANGELOG file detected, run changelog-init")
         raise click.Abort
 
-    process_info(Git.get_latest_tag_info(), dry_run, config["allow_dirty"], config)
+    process_info(Git.get_latest_tag_info(), config, dry_run=dry_run)
 
     # TODO(edgy): supported default extensions (steal from conventional commits)
     # TODO(edgy): support multiple extras by default (the usuals)
@@ -147,7 +147,7 @@ def _gen(config: dict[str, Any], version_tag: str | None = None, *, dry_run: boo
 
     click.echo(w)
 
-    _finalise(w, e, version_tag, extension, dry_run, config)
+    _finalise(w, e, version_tag, extension, config, dry_run=dry_run)
 
     post_process = config.get("post_process")
     if post_process:
