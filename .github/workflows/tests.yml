@@ -40,85 +40,20 @@ jobs:
         yml: ./codecov.yml
         fail_ci_if_error: true
 
-  test-39:
+  test-python-versions:
 
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        version: [3.9.18, 3.10.13, 3.11, 3.12]
 
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.9
       uses: actions/setup-python@v1
       with:
-        python-version: 3.9.18
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip poetry
-        poetry config virtualenvs.create false
-        poetry install
-    - name: Test with pytest
-      run: |
-        pytest
-
-  test-310:
-
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.10.13
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip poetry
-        poetry config virtualenvs.create false
-        poetry install
-    - name: Test with pytest
-      run: |
-        pytest
-
-  test-311:
-
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.11.8
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip poetry
-        poetry config virtualenvs.create false
-        poetry install
-    - name: Test with pytest
-      run: |
-        pytest
-
-  test-312:
-
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.12.2
+        python-version: ${{ matrix.version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip poetry
