@@ -52,10 +52,15 @@ jobs:
             os: windows-latest
           - version: 3.10.11
             os: windows-latest
+        exclude:
+          - os: windows-latest
+            version: 3.9.18
+          - os: windows-latest
+            version: 3.10.13
 
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.9
+    - name: Set up Python ${{ matrix.version }}
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.version }}
