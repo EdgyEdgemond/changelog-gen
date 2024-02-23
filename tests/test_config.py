@@ -1,9 +1,6 @@
 import pytest
 
-from changelog_gen.config import (
-    Config,
-    PostProcessConfig,
-)
+from changelog_gen import config
 
 
 @pytest.fixture()
@@ -17,19 +14,19 @@ def config_factory(cwd):
     return factory
 
 
-@pytest.mark.usefixtures("cwd")
-def test_config_handles_missing_file():
-    assert Config().read() == {}
-
-
-def test_config_handles_empty_file(config_factory):
+@pytest.fixture()
+def _empty_config(config_factory):
     config_factory()
-    assert Config().read() == {
-        "release": False,
-        "allow_dirty": False,
-        "commit": False,
-        "post_process": PostProcessConfig(),
-    }
+
+
+@pytest.mark.usefixtures("cwd")
+def test_read_handles_missing_file():
+    assert config.read() == config.Config()
+
+
+@pytest.mark.usefixtures("_empty_config")
+def test_read_handles_empty_file():
+    assert config.read() == config.Config()
 
 
 @pytest.mark.parametrize(
@@ -45,7 +42,7 @@ def test_config_handles_empty_file(config_factory):
         ("release = False", False),
     ],
 )
-def test_config_picks_up_boolean_values(config_factory, release, exp_value):
+def test_read_picks_up_boolean_values(config_factory, release, exp_value):
     config_factory(
         f"""
 [changelog_gen]
@@ -53,8 +50,8 @@ def test_config_picks_up_boolean_values(config_factory, release, exp_value):
 """,
     )
 
-    c = Config().read()
-    assert c["release"] is exp_value
+    c = config.read()
+    assert c.release is exp_value
 
 
 @pytest.mark.parametrize(
@@ -64,7 +61,7 @@ def test_config_picks_up_boolean_values(config_factory, release, exp_value):
         "issue_link=https://github.com/EdgyEdgemond/changelog-gen/issues/{}",
     ],
 )
-def test_config_picks_up_strings_values(config_factory, issue_link):
+def test_read_picks_up_strings_values(config_factory, issue_link):
     config_factory(
         f"""
 [changelog_gen]
@@ -72,8 +69,8 @@ def test_config_picks_up_strings_values(config_factory, issue_link):
 """,
     )
 
-    c = Config().read()
-    assert c["issue_link"] == "https://github.com/EdgyEdgemond/changelog-gen/issues/{}"
+    c = config.read()
+    assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/{}"
 
 
 @pytest.mark.parametrize(
@@ -84,7 +81,7 @@ def test_config_picks_up_strings_values(config_factory, issue_link):
         "allowed_branches = \n  master\n  feature/11",
     ],
 )
-def test_config_picks_up_list_values(config_factory, branches):
+def test_read_picks_up_list_values(config_factory, branches):
     config_factory(
         f"""
 [changelog_gen]
@@ -92,11 +89,11 @@ def test_config_picks_up_list_values(config_factory, branches):
 """,
     )
 
-    c = Config().read()
-    assert c["allowed_branches"] == ["master", "feature/11"]
+    c = config.read()
+    assert c.allowed_branches == ["master", "feature/11"]
 
 
-def test_config_picks_up_section_mapping(config_factory):
+def test_read_picks_up_section_mapping(config_factory):
     config_factory(
         """
 [changelog_gen]
@@ -107,27 +104,39 @@ section_mapping =
 """,
     )
 
-    c = Config().read()
-    assert c["section_mapping"] == {"feature": "feat", "bug": "fix", "test": "fix"}
+    c = config.read()
+    assert c.section_mapping == {"feature": "feat", "bug": "fix", "test": "fix"}
 
 
-def test_config_picks_up_custom_sections(config_factory):
+def test_read_picks_up_custom_sections(config_factory):
     config_factory(
         """
 [changelog_gen]
 sections =
-  bug=Bugfixes
-  feat=New Features
-  remove=Removals
+  bug= Bugfixes
+  feat =New Features
+  remove = Chore
+  ci=Chore
 """,
     )
 
-    c = Config().read()
-    assert c["sections"] == {"bug": "Bugfixes", "feat": "New Features", "remove": "Removals"}
+    c = config.read()
+    assert c.sections == {"bug": "Bugfixes", "feat": "New Features", "remove": "Chore", "ci": "Chore"}
 
 
 class TestPostProcessConfig:
-    def test_config_picks_up_config(self, config_factory):
+    def test_read_picks_up_no_post_process_config(self, config_factory):
+        config_factory(
+            """
+[changelog_gen]
+release = true
+        """,
+        )
+
+        c = config.read()
+        assert c.post_process is None
+
+    def test_read_picks_up_post_process_config(self, config_factory):
         config_factory(
             """
 [changelog_gen]
@@ -139,15 +148,15 @@ post_process =
         """,
         )
 
-        c = Config().read()
-        assert c["post_process"] == PostProcessConfig(
+        c = config.read()
+        assert c.post_process == config.PostProcessConfig(
             url="https://fake_rest_api/",
             verb="PUT",
             body='{{"issue": "{issue_ref}", "comment": "Released in {new_version}"}}',
             auth_env="MY_API_AUTH",
         )
 
-    def test_config_rejects_unknown_fields(self, config_factory):
+    def test_read_rejects_unknown_fields(self, config_factory):
         config_factory(
             """
 [changelog_gen]
@@ -156,4 +165,25 @@ post_process =
         """,
         )
         with pytest.raises(RuntimeError, match="^Failed to create post_process: .*"):
-            Config().read()
+            config.read()
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("release", True),
+        ("commit", True),
+        ("allow_dirty", True),
+        ("date_format", "%Y-%m-%d"),
+    ],
+)
+def test_read_overrides(config_factory, key, value):
+    config_factory(
+        """
+[changelog_gen]
+place=holder
+""",
+    )
+
+    c = config.read(**{key: value})
+    assert getattr(c, key) == value

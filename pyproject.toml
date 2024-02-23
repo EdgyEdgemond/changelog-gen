@@ -13,7 +13,6 @@ python = "^3.9"
 
 typer = "^0.9.0"
 bump2version = "^1.0.1"
-requests = "^2.27.1"
 httpx = "^0.25.0"
 
 [tool.poetry.dev-dependencies]
@@ -54,11 +53,9 @@ line-length = 120
 target-version = "py39"
 select = ["ALL"]
 ignore = [
-    "ANN002",  # type annotation on *args
-    "ANN003",  # type annotation on **kwargs
-    "ANN101",  # annotate self
-    "ANN102",  # annotate cls
-    "D",
+    "D100",
+    "D104",
+    "D107",
     "FIX",  # allow TODO
     "TD003",  # TODO without issue link for now
 ]

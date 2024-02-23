@@ -1,0 +1,2 @@
+Clean up dependencies, replace `requests` with `httpx` and `black` with `ruff
+format`.  Upgrade lowest supported version of python to 3.9.

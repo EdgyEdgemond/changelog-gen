@@ -1,18 +1,18 @@
 class ChangelogException(Exception):  # noqa: N818
-    pass
+    """Base exception class."""
 
 
 class NoReleaseNotesError(ChangelogException):
-    pass
+    """No release notes directory found."""
 
 
 class InvalidSectionError(ChangelogException):
-    pass
+    """Unsupported section detected."""
 
 
 class VcsError(ChangelogException):
-    pass
+    """Version control error."""
 
 
 class VersionDetectionError(ChangelogException):
-    pass
+    """Bumpversion error."""

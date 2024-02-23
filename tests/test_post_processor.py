@@ -1,9 +1,9 @@
 from http import HTTPStatus
 from unittest import mock
 
-import click
 import httpx
 import pytest
+import typer
 
 from changelog_gen import post_processor
 from changelog_gen.config import PostProcessConfig
@@ -29,17 +29,17 @@ class TestMakeClient:
 
     def test_handle_no_auth_data_gracefully(self, monkeypatch):
         monkeypatch.setattr(
-            post_processor.click,
+            post_processor.typer,
             "echo",
             mock.Mock(),
         )
 
         cfg = PostProcessConfig(auth_env="MY_API_AUTH")
 
-        with pytest.raises(click.Abort):
+        with pytest.raises(typer.Exit):
             post_processor.make_client(cfg)
 
-        assert post_processor.click.echo.call_args == mock.call(
+        assert post_processor.typer.echo.call_args == mock.call(
             'Missing environment variable "MY_API_AUTH"',
         )
 
@@ -52,7 +52,7 @@ class TestMakeClient:
     )
     def test_handle_bad_auth_gracefully(self, monkeypatch, env_value):
         monkeypatch.setattr(
-            post_processor.click,
+            post_processor.typer,
             "echo",
             mock.Mock(),
         )
@@ -60,10 +60,10 @@ class TestMakeClient:
 
         cfg = PostProcessConfig(auth_env="MY_API_AUTH")
 
-        with pytest.raises(click.Abort):
+        with pytest.raises(typer.Exit):
             post_processor.make_client(cfg)
 
-        assert post_processor.click.echo.call_args == mock.call(
+        assert post_processor.typer.echo.call_args == mock.call(
             'Unexpected content in MY_API_AUTH, need "{username}:{api_key}"',
         )
 
@@ -126,13 +126,13 @@ class TestPerIssuePostPrequest:
             status_code=HTTPStatus.OK,
         )
 
-        monkeypatch.setattr(post_processor.click, "echo", mock.Mock())
+        monkeypatch.setattr(post_processor.typer, "echo", mock.Mock())
 
         post_processor.per_issue_post_process(cfg, issue_refs, "1.0.0")
 
         # 1 line for each successful post and 2 lines for the failure
-        assert post_processor.click.echo.call_count == 4  # noqa: PLR2004
-        assert post_processor.click.echo.call_args_list == [
+        assert post_processor.typer.echo.call_count == 4  # noqa: PLR2004
+        assert post_processor.typer.echo.call_args_list == [
             mock.call(f"POST {ep0}: OK"),
             mock.call(f"POST {ep1}: NOT_FOUND"),
             mock.call(not_found_txt),
@@ -194,7 +194,7 @@ class TestPerIssuePostPrequest:
             **kwargs,
         )
         monkeypatch.setattr(
-            post_processor.click,
+            post_processor.typer,
             "echo",
             mock.Mock(),
         )
@@ -206,7 +206,7 @@ class TestPerIssuePostPrequest:
             dry_run=True,
         )
 
-        assert post_processor.click.echo.call_args_list == [
+        assert post_processor.typer.echo.call_args_list == [
             mock.call(f"{cfg_verb} {cfg.url.format(issue_ref=issue)} {exp_body.format(issue_ref=issue)}")
             for issue in issue_refs
         ]

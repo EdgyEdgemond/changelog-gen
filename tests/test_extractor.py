@@ -1,7 +1,7 @@
 import pytest
 
 from changelog_gen import errors
-from changelog_gen.cli.command import SUPPORTED_SECTIONS
+from changelog_gen.config import SUPPORTED_SECTIONS
 from changelog_gen.extractor import ReleaseNoteExtractor
 
 

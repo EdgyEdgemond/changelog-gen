@@ -1,3 +1,5 @@
+"""Writer implementations for different changelog extensions."""
+
 from __future__ import annotations
 
 import typing
@@ -8,18 +10,24 @@ from tempfile import NamedTemporaryFile
 if typing.TYPE_CHECKING:
     from changelog_gen.extractor import SectionDict
 
+P = typing.ParamSpec("P")
+
 
 class Extension(Enum):
+    """Supported changelog file extensions."""
+
     MD = "md"
     RST = "rst"
 
 
 class BaseWriter:
+    """Base implementation for a changelog file writer."""
+
     file_header_line_count = 0
     file_header = None
     extension = None
 
-    def __init__(self, changelog: Path, issue_link: str | None = None, *, dry_run: bool = False) -> None:
+    def __init__(self: typing.Self, changelog: Path, issue_link: str | None = None, *, dry_run: bool = False) -> None:
         self.existing = []
         self.changelog = changelog
         if self.changelog.exists():
@@ -29,13 +37,15 @@ class BaseWriter:
         self.dry_run = dry_run
         self.issue_link = issue_link
 
-    def add_version(self, version: str) -> None:
+    def add_version(self: typing.Self, version: str) -> None:
+        """Add a version string to changelog file."""
         self._add_version(version)
 
-    def _add_version(self, version: str) -> None:
+    def _add_version(self: typing.Self, version: str) -> None:
         raise NotImplementedError
 
-    def consume(self, supported_sections: dict[str, str], sections: SectionDict) -> None:
+    def consume(self: typing.Self, supported_sections: dict[str, str], sections: SectionDict) -> None:
+        """Process sections and generate changelog file entries."""
         for section in sorted(supported_sections):
             if section not in sections:
                 continue
@@ -43,29 +53,31 @@ class BaseWriter:
             header = supported_sections[section]
             self.add_section(header, {k: v["description"] for k, v in sections[section].items()})
 
-    def add_section(self, header: str, lines: list[str]) -> None:
+    def add_section(self: typing.Self, header: str, lines: list[str]) -> None:
+        """Add a section to changelog file."""
         self._add_section_header(header)
         for issue_ref, description in sorted(lines.items()):
             self._add_section_line(description, issue_ref)
         self._post_section()
 
-    def _add_section_header(self, header: str) -> None:
+    def _add_section_header(self: typing.Self, header: str) -> None:
         raise NotImplementedError
 
-    def _add_section_line(self, description: str, issue_ref: str) -> None:
+    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
         raise NotImplementedError
 
-    def _post_section(self) -> None:
+    def _post_section(self: typing.Self) -> None:
         pass
 
-    def __str__(self) -> str:
+    def __str__(self: typing.Self) -> str:  # noqa: D105
         return "\n".join(self.content)
 
-    def write(self) -> None:
+    def write(self: typing.Self) -> None:
+        """Write file contents to destination."""
         self.content = [self.file_header, *self.content, *self.existing]
         self._write(self.content)
 
-    def _write(self, content: list[str]) -> None:
+    def _write(self: typing.Self, content: list[str]) -> None:
         if self.dry_run:
             with NamedTemporaryFile("wb") as output_file:
                 output_file.write(("\n".join(content)).encode("utf-8"))
@@ -74,17 +86,19 @@ class BaseWriter:
 
 
 class MdWriter(BaseWriter):
+    """Markdown writer implementation."""
+
     file_header_line_count = 1
     file_header = "# Changelog\n"
     extension = Extension.MD
 
-    def _add_version(self, version: str) -> None:
+    def _add_version(self: typing.Self, version: str) -> None:
         self.content.extend([f"## {version}", ""])
 
-    def _add_section_header(self, header: str) -> None:
+    def _add_section_header(self: typing.Self, header: str) -> None:
         self.content.extend([f"### {header}", ""])
 
-    def _add_section_line(self, description: str, issue_ref: str) -> None:
+    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
         if self.issue_link:
             line = f"- {description} [[#{issue_ref}]({self.issue_link})]"
         else:
@@ -93,33 +107,36 @@ class MdWriter(BaseWriter):
 
         self.content.append(line)
 
-    def _post_section(self) -> None:
+    def _post_section(self: typing.Self) -> None:
         self.content.append("")
 
 
 class RstWriter(BaseWriter):
+    """RST writer implementation."""
+
     file_header_line_count = 3
     file_header = "=========\nChangelog\n=========\n"
     extension = Extension.RST
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self: typing.Self, *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._links = {}
 
-    def __str__(self) -> str:
+    def __str__(self: typing.Self) -> str:  # noqa: D105
         return "\n".join(self.content + self.links)
 
     @property
-    def links(self) -> list[str]:
+    def links(self: typing.Self) -> list[str]:
+        """Generate RST supported links for inclusion in changelog."""
         return [f".. _`{ref}`: {link}" for ref, link in sorted(self._links.items())]
 
-    def _add_version(self, version: str) -> None:
+    def _add_version(self: typing.Self, version: str) -> None:
         self.content.extend([version, "=" * len(version), ""])
 
-    def _add_section_header(self, header: str) -> None:
+    def _add_section_header(self: typing.Self, header: str) -> None:
         self.content.extend([header, "-" * len(header), ""])
 
-    def _add_section_line(self, description: str, issue_ref: str) -> None:
+    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
         if self.issue_link:
             line = f"* {description} [`#{issue_ref}`_]"
             self._links[f"#{issue_ref}"] = self.issue_link.format(issue_ref=issue_ref)
@@ -129,12 +146,14 @@ class RstWriter(BaseWriter):
 
         self.content.extend([line, ""])
 
-    def write(self) -> None:
+    def write(self: typing.Self) -> None:
+        """Write contents to destination."""
         self.content = [self.file_header, *self.content, *self.existing, *self.links]
         self._write(self.content)
 
 
 def new_writer(extension: Extension, issue_link: str | None = None, *, dry_run: bool = False) -> BaseWriter:
+    """Generate a new writer based on the required extension."""
     changelog = Path(f"CHANGELOG.{extension.value}")
 
     if extension == Extension.MD:

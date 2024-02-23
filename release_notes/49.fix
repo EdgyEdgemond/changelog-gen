@@ -1,1 +1,0 @@
-Clean up dependencies, replace `requests` with `httpx` and `black` with `ruff format`.

@@ -21,11 +21,10 @@ Options:
                                   [default: no-dry-run]
   --allow-dirty / --no-allow-dirty
                                   Don't abort if branch contains uncommitted
-                                  changes.  [default: no-allow-dirty]
-  --release / --no-release        Use bumpversion to tag the release.  [default:
-                                  no-release]
+                                  changes.
+  --release / --no-release        Use bumpversion to tag the release.
   --commit / --no-commit          Commit changes made to changelog after
-                                  writing.  [default: no-commit]
+                                  writing.
   -v, --version                   Print version and exit.
   --help                          Show this message and exit.
 """

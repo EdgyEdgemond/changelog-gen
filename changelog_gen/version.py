@@ -1,11 +1,15 @@
 import subprocess
+from typing import TypeVar
 
 from changelog_gen import errors
 
+T = TypeVar("T", bound="BumpVersion")
 
-class BumpVersion:
+
+class BumpVersion:  # noqa: D101
     @classmethod
-    def get_version_info(cls, semver: str) -> dict[str, str]:
+    def get_version_info(cls: type[T], semver: str) -> dict[str, str]:
+        """Get version info for a semver release."""
         try:
             describe_out = (
                 subprocess.check_output(
@@ -28,5 +32,6 @@ class BumpVersion:
         }
 
     @classmethod
-    def release(cls, version: str) -> None:
+    def release(cls: type[T], version: str) -> None:
+        """Generate new release."""
         subprocess.check_output(["bumpversion", "--new-version", version, "patch"])  # noqa: S603, S607
