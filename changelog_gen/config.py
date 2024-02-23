@@ -3,7 +3,6 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import logging
-import typing
 from configparser import (
     ConfigParser,
     NoOptionError,
@@ -121,12 +120,9 @@ def _process_overrides(overrides: dict) -> tuple[dict, PostProcessConfig | None]
     return overrides, post_process
 
 
-P = typing.ParamSpec("P")
-
-
 # TODO(edgy): Support pyproject.toml configuration
 # https://github.com/EdgyEdgemond/changelog-gen/issues/50
-def read(**kwargs: P.kwargs) -> Config:
+def read(**kwargs) -> Config:
     """Read configuration from local environment.
 
     Supported configuration locations:

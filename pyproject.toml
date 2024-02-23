@@ -56,6 +56,8 @@ ignore = [
     "D100",
     "D104",
     "D107",
+    "ANN002",  # ParamSpec not available in 3.9
+    "ANN003",  # ParamSpec not available in 3.9
     "FIX",  # allow TODO
     "TD003",  # TODO without issue link for now
 ]

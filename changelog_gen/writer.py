@@ -10,8 +10,6 @@ from tempfile import NamedTemporaryFile
 if typing.TYPE_CHECKING:
     from changelog_gen.extractor import SectionDict
 
-P = typing.ParamSpec("P")
-
 
 class Extension(Enum):
     """Supported changelog file extensions."""
@@ -118,7 +116,7 @@ class RstWriter(BaseWriter):
     file_header = "=========\nChangelog\n=========\n"
     extension = Extension.RST
 
-    def __init__(self: typing.Self, *args: P.args, **kwargs: P.kwargs) -> None:
+    def __init__(self: typing.Self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._links = {}
 
