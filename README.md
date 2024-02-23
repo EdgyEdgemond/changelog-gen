@@ -24,7 +24,7 @@ poetry install
 
 ## Usage
 
-`changelog-gen` currently only supports reading changes from a `release_notes` folder.
+`changelog` currently only supports reading changes from a `release_notes` folder.
 
 Files in the folder should use the format `{issue_number}.{type}`.
 
@@ -39,7 +39,7 @@ major release being suggested.
 $ ls release_notes
   4.fix  7.fix
 
-$ changelog-gen
+$ changelog generate
 
 ## v0.2.1
 
