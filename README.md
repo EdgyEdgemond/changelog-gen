@@ -75,7 +75,7 @@ General configuration is grouped in a `[changelog_gen]` section.
 
   Commit changes to the changelog after writing.
 
-  Also available as `--commit` (e.g. `changelog-gen --commit`)
+  Also available as `--commit` (e.g. `changelog generate --commit`)
 
 #### `release = (True | False)`
   _**[optional]**_<br />
@@ -83,7 +83,7 @@ General configuration is grouped in a `[changelog_gen]` section.
 
   Use bumpversion to tag the release
 
-  Also available as `--release` (e.g. `changelog-gen --release`)
+  Also available as `--release` (e.g. `changelog generate --release`)
 
 #### `allow_dirty = (True | False)`
   _**[optional]**_<br />
@@ -91,7 +91,15 @@ General configuration is grouped in a `[changelog_gen]` section.
 
   Don't abort if the current branch contains uncommitted changes
 
-  Also available as `--allow-dirty` (e.g. `changelog-gen --allow-dirty`)
+  Also available as `--allow-dirty` (e.g. `changelog generate --allow-dirty`)
+
+#### `reject_empty = (True | False)`
+  _**[optional]**_<br />
+  **default**: False
+
+  Abort if there are no release notes to add to the change log.
+
+  Also available as `--reject-empty` (e.g. `changelog generate --reject-empty`)
 
 #### `issue_link =`
   _**[optional]**_<br />
@@ -220,11 +228,13 @@ post_process =
   auth_env=JIRA_AUTH
 ```
   This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
-  See [manage-api-tokens-for-your-atlassian-account](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) to generate a key.
+  See
+  [manage-api-tokens-for-your-atlassian-account](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
+  to generate a key.
 
   Note: spaces around `=` will not be stripped, be sure to use `<field>=<value>`.
 
-  Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog-gen --post-process-url 'http://my-api-url.domain/comment{issue_ref}' --post-process-auth-env MY_API_AUTH`)
+  Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog generate --post-process-url 'http://my-api-url.domain/comment{issue_ref}' --post-process-auth-env MY_API_AUTH`)
 
 ## Contributing
 
