@@ -49,19 +49,19 @@ class BaseWriter:
                 continue
 
             header = supported_sections[section]
-            self.add_section(header, {k: v["description"] for k, v in sections[section].items()})
+            self.add_section(header, sections[section])
 
-    def add_section(self: typing.Self, header: str, lines: list[str]) -> None:
+    def add_section(self: typing.Self, header: str, lines: dict[str, dict]) -> None:
         """Add a section to changelog file."""
         self._add_section_header(header)
-        for issue_ref, description in sorted(lines.items()):
-            self._add_section_line(description, issue_ref)
+        for issue_ref, details in sorted(lines.items()):
+            self._add_section_line(details["description"], issue_ref, details.get("scope"))
         self._post_section()
 
     def _add_section_header(self: typing.Self, header: str) -> None:
         raise NotImplementedError
 
-    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
+    def _add_section_line(self: typing.Self, description: str, issue_ref: str, scope: str | None = None) -> None:
         raise NotImplementedError
 
     def _post_section(self: typing.Self) -> None:
@@ -96,8 +96,12 @@ class MdWriter(BaseWriter):
     def _add_section_header(self: typing.Self, header: str) -> None:
         self.content.extend([f"### {header}", ""])
 
-    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
-        if self.issue_link:
+    def _add_section_line(self: typing.Self, description: str, issue_ref: str, scope: str | None = None) -> None:
+        description = f"{scope} {description}" if scope else description
+        # Skip __{i}__ placeholder refs
+        if issue_ref.startswith("__"):
+            line = f"- {description}"
+        elif self.issue_link:
             line = f"- {description} [[#{issue_ref}]({self.issue_link})]"
         else:
             line = f"- {description} [#{issue_ref}]"
@@ -134,8 +138,12 @@ class RstWriter(BaseWriter):
     def _add_section_header(self: typing.Self, header: str) -> None:
         self.content.extend([header, "-" * len(header), ""])
 
-    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
-        if self.issue_link:
+    def _add_section_line(self: typing.Self, description: str, issue_ref: str, scope: str | None = None) -> None:
+        description = f"{scope} {description}" if scope else description
+        # Skip __{i}__ placeholder refs
+        if issue_ref.startswith("__"):
+            line = f"* {description}"
+        elif self.issue_link:
             line = f"* {description} [`#{issue_ref}`_]"
             self._links[f"#{issue_ref}"] = self.issue_link.format(issue_ref=issue_ref)
         else:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import typing
 from collections import defaultdict
 from pathlib import Path
@@ -50,7 +51,34 @@ class ReleaseNoteExtractor:
                     }
 
         latest_info = Git.get_latest_tag_info()
-        _logs = Git.get_logs(latest_info["current_tag"])
+        logs = Git.get_logs(latest_info["current_tag"])
+
+        # Build a conventional commit regex based on configured sections
+        #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
+        reg = re.compile(f"^({'|'.join(self.supported_sections.keys())}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")  # noqa: W605
+
+        for i, log in enumerate(logs):
+            m = reg.match(log)
+            if m:
+                section = m[1]
+                scope = m[2]
+                breaking = m[3] is not None
+                message = m[4]
+                details = m[5] or ""
+
+                # Handle missing refs in commit message, skip link generation in writer
+                issue_ref = f"__{i}__"
+                breaking = breaking or "BREAKING CHANGE" in details
+                for line in details.split("\n"):
+                    m = re.match(r"Refs: #?([\w-]+)", line)
+                    if m:
+                        issue_ref = m[1]
+
+                sections[section][issue_ref] = {
+                    "description": message,
+                    "breaking": breaking,
+                    "scope": scope,
+                }
         return sections
 
     def unique_issues(self: typing.Self, sections: SectionDict) -> list[str]:

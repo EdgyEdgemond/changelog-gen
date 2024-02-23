@@ -180,5 +180,12 @@ def test_get_logs(multiversion_repo):
     multiversion_repo.run("git add hello.txt")
     multiversion_repo.api.index.commit("commit log 2")
 
+    f.write_text("hello world! v5")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("""Commit message 3
+
+Formatted
+""")
+
     logs = Git.get_logs("0.0.2")
-    assert logs == []
+    assert logs == ["Commit message 3\n\nFormatted\n", "commit log 2", "commit log"]

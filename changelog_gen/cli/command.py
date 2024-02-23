@@ -175,7 +175,7 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
 
     post_process = cfg.post_process
     if post_process and processed:
-        unique_issues = e.unique_issues(sections)
+        unique_issues = [r for r in e.unique_issues(sections) if not r.startswith("__")]
         per_issue_post_process(post_process, sorted(unique_issues), version_tag, dry_run=dry_run)
 
 

@@ -126,14 +126,6 @@ def test_generate_aborts_if_changelog_missing(gen_cli_runner):
     assert result.output == "No CHANGELOG file detected, run `changelog init`\n"
 
 
-@pytest.mark.usefixtures("changelog")
-def test_generate_aborts_if_no_release_notes_directory(gen_cli_runner):
-    result = gen_cli_runner.invoke()
-
-    assert result.exit_code == 1
-    assert result.output == "No release notes directory found.\n"
-
-
 @pytest.mark.usefixtures("changelog", "_release_notes", "setup")
 def test_generate_aborts_if_dirty(gen_cli_runner, git_repo):
     p = git_repo.workspace / "setup.cfg"

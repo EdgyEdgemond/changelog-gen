@@ -115,6 +115,54 @@ def test_breaking_notes_extraction():
     }
 
 
+def test_git_commit_extraction(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    for msg in [
+        """fix(config): Detail about 4
+
+Refs: #4
+""",
+        """feat(docs)!: Detail about 3
+
+Refs: #3
+""",
+        """fix: Detail about 1
+
+With some details
+
+BREAKING CHANGE:
+Refs: #1
+""",
+        """feat: Detail about 2
+
+Refs: #2
+""",
+    ]:
+        f.write_text(msg)
+        multiversion_repo.run("git add hello.txt")
+        multiversion_repo.api.index.commit(msg)
+    multiversion_repo.api.index.commit("""Commit message 3
+
+Formatted
+""")
+
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+
+    sections = e.extract()
+
+    assert sections == {
+        "feat": {
+            "2": {"description": "Detail about 2", "breaking": False, "scope": None},
+            "3": {"description": "Detail about 3", "breaking": True, "scope": "(docs)"},
+        },
+        "fix": {
+            "1": {"description": "Detail about 1", "breaking": True, "scope": None},
+            "4": {"description": "Detail about 4", "breaking": False, "scope": "(config)"},
+        },
+    }
+
+
 @pytest.mark.usefixtures("_invalid_release_notes")
 def test_invalid_notes_extraction_raises():
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)

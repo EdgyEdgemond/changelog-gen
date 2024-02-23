@@ -82,14 +82,24 @@ class Git:
     @classmethod
     def get_logs(cls: type[T], tag: str) -> list:
         """Fetch logs since last tag."""
-        return (
-            subprocess.check_output(
-                ["git", "log", f"{tag}..HEAD", "--"],  # noqa: S603, S607
+        return [
+            m
+            for m in (
+                subprocess.check_output(
+                    [  # noqa: S603, S607
+                        "git",
+                        "log",
+                        f"{tag}..HEAD",  # between last tag and HEAd
+                        "--format=%B",  # message only
+                        "-z",  # separate with \x00 rather than \n to differentiate multiline commits
+                    ],
+                )
+                .decode()
+                .strip()
+                .split("\x00")
             )
-            .decode()
-            .strip()
-            .split("\n")
-        )
+            if m
+        ]
 
     @classmethod
     def add_path(cls: type[T], path: str) -> None:
