@@ -1,6 +1,14 @@
-name: style
+name: Style
 
-on: [push]
+on:
+  push:
+    branches:
+      # Push will only build on branches that match this name
+      # Pull requests will override this, so pushes to pull requests will still build
+      - tescovalue
+  pull_request:
+    branches:
+      - main
 
 jobs:
   check-style:
@@ -20,4 +28,4 @@ jobs:
         poetry install
     - name: Lint with ruff
       run: |
-        ruff .
+        pre-commit run --all-files
