@@ -6,8 +6,29 @@ from changelog_gen.extractor import ReleaseNoteExtractor
 
 
 @pytest.fixture()
-def release_notes(cwd):
-    r = cwd / "release_notes"
+def multiversion_repo(git_repo):
+    path = git_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world!")
+
+    git_repo.run("git add hello.txt")
+    git_repo.api.index.commit("initial commit")
+
+    git_repo.api.create_tag("v0.0.1")
+
+    f.write_text("hello world! v2")
+    git_repo.run("git add hello.txt")
+    git_repo.api.index.commit("update")
+
+    git_repo.api.create_tag("v0.0.2")
+
+    return git_repo
+
+
+@pytest.fixture()
+def release_notes(multiversion_repo):
+    path = multiversion_repo.workspace
+    r = path / "release_notes"
     r.mkdir()
     f = r / ".file"
     f.write_text("")
@@ -42,18 +63,20 @@ def _remap_release_notes(release_notes):
         n.write_text(f"Detail about {i}")
 
 
-@pytest.mark.usefixtures("cwd")
-def test_init_with_no_release_notes_raises():
-    with pytest.raises(errors.NoReleaseNotesError):
-        ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+@pytest.mark.usefixtures("multiversion_repo")
+def test_init_with_no_release_notes():
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    assert e.has_release_notes is False
 
 
-def test_init_with_release_notes_non_dir_raises(cwd):
-    r = cwd / "release_notes"
+def test_init_with_release_notes_non_dir(multiversion_repo):
+    path = multiversion_repo.workspace
+    r = path / "release_notes"
     r.write_text("not a dir")
 
-    with pytest.raises(errors.NoReleaseNotesError):
-        ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+
+    assert e.has_release_notes is False
 
 
 @pytest.mark.usefixtures("_valid_release_notes")
