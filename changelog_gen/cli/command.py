@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import typer
@@ -156,7 +156,7 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
 
     date_fmt = cfg.date_format
     if date_fmt:
-        version_string += f" {datetime.now(UTC).strftime(date_fmt)}"
+        version_string += f" {datetime.now(timezone.utc).strftime(date_fmt)}"
 
     w = writer.new_writer(extension, dry_run=dry_run, issue_link=cfg.issue_link)
 
