@@ -11,8 +11,6 @@ def cwd(tmp_path):
     try:
         os.chdir(str(tmp_path))
         yield tmp_path
-    except Exception:
-        raise
     finally:
         os.chdir(orig)
 
@@ -27,7 +25,5 @@ def git_repo(git_repo):
     try:
         os.chdir(str(git_repo.workspace))
         yield git_repo
-    except Exception:
-        raise
     finally:
         os.chdir(orig)

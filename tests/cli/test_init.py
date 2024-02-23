@@ -15,7 +15,7 @@ def test_init_aborts_if_file_exists(cwd, init_cli_runner, filename, ext):
     result = init_cli_runner.invoke(["--file-format", ext])
 
     assert result.exit_code == 1
-    assert result.output == f"{filename} detected.\nAborted!\n"
+    assert result.output == f"{filename} detected.\n"
 
 
 @pytest.mark.parametrize(

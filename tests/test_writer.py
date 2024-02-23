@@ -8,8 +8,8 @@ from changelog_gen import writer
 @pytest.mark.parametrize(
     ("extension", "expected_cls"),
     [
-        ("md", writer.MdWriter),
-        ("rst", writer.RstWriter),
+        (writer.Extension.MD, writer.MdWriter),
+        (writer.Extension.RST, writer.RstWriter),
     ],
 )
 def test_new_writer(extension, expected_cls):
@@ -17,8 +17,8 @@ def test_new_writer(extension, expected_cls):
 
 
 def test_new_writer_raises_for_unsupported_extension():
-    with pytest.raises(ValueError):  # noqa: PT011
-        writer.new_writer("txt")
+    with pytest.raises(ValueError, match='Changelog extension "txt" not supported.'):
+        writer.new_writer(mock.Mock(value="txt"))
 
 
 @pytest.fixture()

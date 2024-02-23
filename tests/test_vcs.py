@@ -137,11 +137,11 @@ def test_add_path_stages_changes_for_commit(multiversion_repo):
     path = multiversion_repo.workspace
     f = path / "hello.txt"
     f.write_text("hello world! v3")
-    assert "Changes not staged for commit" in multiversion_repo.run("git status", True)
+    assert "Changes not staged for commit" in multiversion_repo.run("git status", capture=True)
 
     Git.add_path("hello.txt")
 
-    assert "Changes not staged for commit" not in multiversion_repo.run("git status", True)
+    assert "Changes not staged for commit" not in multiversion_repo.run("git status", capture=True)
 
 
 def test_commit_adds_message_with_version_string(multiversion_repo):

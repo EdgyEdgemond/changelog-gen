@@ -1,7 +1,7 @@
 import pytest
 
 from changelog_gen import errors
-from changelog_gen.cli.command import SUPPORTED_SECTIONS
+from changelog_gen.config import SUPPORTED_SECTIONS
 from changelog_gen.extractor import ReleaseNoteExtractor
 
 
@@ -132,6 +132,24 @@ def test_section_mapping_can_handle_new_sections():
             "4": {"description": "Detail about 4", "breaking": False},
         },
     }
+
+
+def test_unique_issues():
+    e = ReleaseNoteExtractor({"bug": "BugFix", "feat": "Features"})
+
+    assert e.unique_issues({
+        "unsupported": {
+            "5": {"description": "Detail about 4", "breaking": False},
+        },
+        "feat": {
+            "2": {"description": "Detail about 2", "breaking": False},
+        },
+        "bug": {
+            "2": {"description": "Detail about 2", "breaking": False},
+            "3": {"description": "Detail about 3", "breaking": False},
+            "4": {"description": "Detail about 4", "breaking": False},
+        },
+    }) == ["2", "3", "4"]
 
 
 @pytest.mark.usefixtures("_valid_release_notes")

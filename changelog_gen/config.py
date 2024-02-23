@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import dataclasses
 import logging
@@ -6,13 +8,19 @@ from configparser import (
     NoOptionError,
 )
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_SECTIONS = {
+    "feat": "Features and Improvements",
+    "fix": "Bug fixes",
+}
 
 
 @dataclasses.dataclass
 class PostProcessConfig:
+    """Post Processor configuration options."""
+
     url: str = ""
     verb: str = "POST"
     # The body to send as a post-processing command,
@@ -20,96 +28,155 @@ class PostProcessConfig:
     body: str = '{{"body": "Released on v{new_version}"}}'
     # Name of an environment variable to use as HTTP Basic Auth parameters.
     # The variable should contain "{user}:{api_key}"
-    auth_env: Optional[str] = None
+    auth_env: str | None = None
 
 
+@dataclasses.dataclass
 class Config:
-    def __init__(self) -> None:
-        self._config = ConfigParser("")
+    """Changelog configuration options."""
 
-        self._config.add_section("changelog_gen")
+    issue_link: str | None = None
+    date_format: str | None = None
 
-    def read(self) -> Dict:  # noqa: C901
-        config = {}
-        object_map = {
-            "post_process": PostProcessConfig,
-        }
+    allowed_branches: list[str] = dataclasses.field(default_factory=list)
+    section_mapping: dict = dataclasses.field(default_factory=dict)
+    sections: dict = dataclasses.field(default_factory=lambda: SUPPORTED_SECTIONS)
 
-        if not Path("setup.cfg").exists():
-            return config
+    release: bool = False
+    commit: bool = False
+    allow_dirty: bool = False
 
-        with Path("setup.cfg").open(encoding="utf-8") as config_fp:
-            config_content = config_fp.read()
+    post_process: PostProcessConfig | None = None
 
-        self._config.read_string(config_content)
 
-        for stringvaluename in ("issue_link", "date_format"):
-            with contextlib.suppress(NoOptionError):
-                config[stringvaluename] = self._config.get(
-                    "changelog_gen",
-                    stringvaluename,
-                )
+def parse_dict_value(parser: ConfigParser, dictvaluename: str) -> dict | None:
+    """Extract a dictionary from configuration."""
+    try:
+        value = parser.get("changelog_gen", dictvaluename)
+    except NoOptionError:
+        return None
+    else:
+        ret = {}
+        dictvalue = list(
+            filter(None, (x.strip() for x in value.splitlines())),
+        )
 
-        for listvaluename in ("allowed_branches",):
-            listvalue = self.parse_list_value(listvaluename)
-            if listvalue:
-                config[listvaluename] = listvalue
+        for value in dictvalue:
+            k, v = value.split("=")
+            ret[k.strip()] = v.strip()
 
-        for dictvaluename in ("section_mapping", "sections"):
-            dictvalue = self.parse_dict_value(dictvaluename)
-            if dictvalue:
-                config[dictvaluename] = dictvalue
+        return ret
 
-        for objectname, object_class in object_map.items():
-            dictvalue = self.parse_dict_value(objectname) or {}
-            try:
-                config[objectname] = object_class(**dictvalue)
-            except Exception as e:  # noqa: BLE001
-                msg = f"Failed to create {objectname}: {str(e)}"
-                raise RuntimeError(msg) from e
 
-        for boolvaluename in ("release", "commit", "allow_dirty"):
-            try:
-                config[boolvaluename] = self._config.getboolean(
-                    "changelog_gen",
-                    boolvaluename,
-                )
-            except NoOptionError:
-                config[boolvaluename] = False
+def parse_list_value(parser: ConfigParser, listvaluename: str) -> list | None:
+    """Extract a dictionary from configuration."""
+    try:
+        value = parser.get("changelog_gen", listvaluename)
+    except NoOptionError:
+        return None
+    else:
+        ret = []
+        listvalue = list(
+            filter(None, (x.strip() for x in value.splitlines())),
+        )
 
-        return config
+        for value in listvalue:
+            ret.extend([v.strip() for v in value.split(",")])
 
-    def parse_dict_value(self, dictvaluename: str) -> Dict:
-        # TODO(tr) Add unit tests to ensure we handle spaces correctly
-        #  At the moment key and value should NOT have spaces as they are copied verbatim.
+        return ret
+
+
+def parse_boolean_value(parser: ConfigParser, valuename: str) -> bool | None:
+    """Extract a boolean from configuration."""
+    with contextlib.suppress(NoOptionError):
+        return parser.getboolean("changelog_gen", valuename)
+    return None
+
+
+def parse_string_value(parser: ConfigParser, valuename: str) -> str | None:
+    """Extract a string from configuration."""
+    with contextlib.suppress(NoOptionError):
+        return parser.get("changelog_gen", valuename)
+    return None
+
+
+def _process_overrides(overrides: dict) -> tuple[dict, PostProcessConfig | None]:
+    """Process provided overrides.
+
+    Remove any unsupplied values (None).
+    """
+    post_process_url = overrides.pop("post_process_url", "")
+    post_process_auth_env = overrides.pop("post_process_auth_env", None)
+
+    post_process = None
+    if post_process_url or post_process_auth_env:
+        post_process = PostProcessConfig(
+            url=post_process_url,
+            auth_env=post_process_auth_env,
+        )
+
+    overrides = {k: v for k, v in overrides.items() if v is not None}
+
+    return overrides, post_process
+
+
+# TODO(edgy): Support pyproject.toml configuration
+# https://github.com/EdgyEdgemond/changelog-gen/issues/50
+def read(**kwargs) -> Config:
+    """Read configuration from local environment.
+
+    Supported configuration locations:
+    * setup.cfg
+    """
+    parser = ConfigParser("")
+
+    parser.add_section("changelog_gen")
+
+    overrides, post_process = _process_overrides(kwargs)
+    cfg = {}
+
+    setup = Path("setup.cfg")
+    if not setup.exists():
+        return Config()
+
+    with setup.open(encoding="utf-8") as config_fp:
+        config_content = config_fp.read()
+
+    parser.read_string(config_content)
+
+    for valuename, parse_func in [
+        ("issue_link", parse_string_value),
+        ("date_format", parse_string_value),
+        ("allowed_branches", parse_list_value),
+        ("section_mapping", parse_dict_value),
+        ("sections", parse_dict_value),
+        ("release", parse_boolean_value),
+        ("commit", parse_boolean_value),
+        ("allow_dirty", parse_boolean_value),
+    ]:
+        value = parse_func(parser, valuename)
+        if value:
+            cfg[valuename] = value
+
+    for objectname, object_class in [
+        ("post_process", PostProcessConfig),
+    ]:
+        dictvalue = parse_dict_value(parser, objectname)
+        if dictvalue is None:
+            continue
         try:
-            value = self._config.get("changelog_gen", dictvaluename)
-        except NoOptionError:
-            pass  # no default value then ;)
-        else:
-            ret = {}
-            dictvalue = list(
-                filter(None, (x.strip() for x in value.splitlines())),
-            )
+            cfg[objectname] = object_class(**dictvalue)
+        except Exception as e:  # noqa: BLE001
+            msg = f"Failed to create {objectname}: {e!s}"
+            raise RuntimeError(msg) from e
 
-            for value in dictvalue:
-                k, v = value.split("=")
-                ret[k] = v
+    if "post_process" not in cfg and post_process:
+        cfg["post_process"] = post_process
 
-            return ret
+    if "post_process" in cfg and post_process:
+        cfg["post_process"].url = post_process.url or cfg["post_process"].url
+        cfg["post_process"].auth_env = post_process.auth_env or cfg["post_process"].auth_env
 
-    def parse_list_value(self, listvaluename: str) -> List:
-        try:
-            value = self._config.get("changelog_gen", listvaluename)
-        except NoOptionError:
-            pass  # no default value then ;)
-        else:
-            ret = []
-            listvalue = list(
-                filter(None, (x.strip() for x in value.splitlines())),
-            )
+    cfg.update(overrides)
 
-            for value in listvalue:
-                ret.extend(value.split(","))
-
-            return ret
+    return Config(**cfg)
