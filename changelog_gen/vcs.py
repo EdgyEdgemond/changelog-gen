@@ -84,7 +84,7 @@ class Git:
         """Fetch logs since last tag."""
         return (
             subprocess.check_output(
-                ["git", "log", f"{tag}..HEAD"],  # noqa: S603, S607
+                ["git", "log", f"{tag}..HEAD", "--"],  # noqa: S603, S607
             )
             .decode()
             .strip()
