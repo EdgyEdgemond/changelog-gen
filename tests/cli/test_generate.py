@@ -96,6 +96,7 @@ commit = true
 tag = true
 
 [changelog_gen]
+commit = true
 post_process =
     url=https://my-api/{issue_ref}/release
     auth_env=MY_API_AUTH
@@ -579,17 +580,22 @@ class TestDelegatesToPerIssuePostProcess:
         result = gen_cli_runner.invoke(["--dry-run"])
 
         assert result.exit_code == 0
-        assert post_process_mock.call_args_list == [
-            mock.call(
-                PostProcessConfig(
-                    url="https://my-api/{issue_ref}/release",
-                    auth_env="MY_API_AUTH",
-                ),
-                ["1", "2", "3", "4"],
-                "0.1.0",
-                dry_run=True,
-            ),
-        ]
+        assert post_process_mock.call_count == 0
+
+    @pytest.mark.usefixtures("git_repo", "_release_notes", "changelog", "post_process_setup")
+    def test_generate_decline_changes(
+        self,
+        gen_cli_runner,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=False))
+        post_process_mock = mock.MagicMock()
+        monkeypatch.setattr(command, "per_issue_post_process", post_process_mock)
+
+        result = gen_cli_runner.invoke([])
+
+        assert result.exit_code == 0
+        assert post_process_mock.call_count == 0
 
 
 @freeze_time("2022-04-14T16:45:03")

@@ -165,10 +165,10 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
 
     typer.echo(w)
 
-    _finalise(w, e, version_tag, extension, cfg, dry_run=dry_run)
+    processed = _finalise(w, e, version_tag, extension, cfg, dry_run=dry_run)
 
     post_process = cfg.post_process
-    if post_process:
+    if post_process and processed:
         unique_issues = e.unique_issues(sections)
         per_issue_post_process(post_process, sorted(unique_issues), version_tag, dry_run=dry_run)
 
@@ -181,7 +181,7 @@ def _finalise(  # noqa: PLR0913
     cfg: config.Config,
     *,
     dry_run: bool,
-) -> None:
+) -> bool:
     if dry_run or typer.confirm(
         f"Write CHANGELOG for suggested version {version_tag}",
     ):
@@ -189,7 +189,7 @@ def _finalise(  # noqa: PLR0913
         extractor.clean()
 
         if dry_run or not cfg.commit:
-            return
+            return False
 
         Git.add_path(f"CHANGELOG.{extension.value}")
         # TODO(edgy): Dont add release notes if using commit messages...
@@ -198,3 +198,6 @@ def _finalise(  # noqa: PLR0913
 
         if cfg.release:
             BumpVersion.release(version_tag)
+        return True
+
+    return False
