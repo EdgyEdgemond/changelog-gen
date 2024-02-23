@@ -1,20 +1,12 @@
 # Set a conventional commit style topic
 
 ```
-fix(scope): what was fixed
+<type>[(optional scope)][!]: <description>
 ```
 
-```
 feat: what new feature was added
-```
-
-```
 feat!: what breaking change was made
-```
-
-```
-feat: another breaking change
-```
+feat(scope): change to scope
 
 # Replace this description with additional information to be included in merge commit
 
@@ -24,6 +16,11 @@ feat: another breaking change
 [optional body]
 
 [optional footer(s)]
-[BREAKING CHANGE:]
-[Refs: #1]
+```
+
+```
+More details bout the change.
+
+BREAKING CHANGE:
+Refs: #{issue}
 ```
