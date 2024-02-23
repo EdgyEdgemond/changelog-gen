@@ -210,3 +210,20 @@ class TestPerIssuePostPrequest:
             mock.call(f"{cfg_verb} {cfg.url.format(issue_ref=issue)} {exp_body.format(issue_ref=issue)}")
             for issue in issue_refs
         ]
+
+    def test_no_url_ignored(self, monkeypatch):
+        cfg = PostProcessConfig()
+        monkeypatch.setattr(
+            post_processor.typer,
+            "echo",
+            mock.Mock(),
+        )
+
+        post_processor.per_issue_post_process(
+            cfg,
+            ["1", "2"],
+            "3.2.1",
+            dry_run=True,
+        )
+
+        assert post_processor.typer.echo.call_args_list == []
