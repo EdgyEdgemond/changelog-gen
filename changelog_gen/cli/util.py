@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 
 import changelog_gen
-from changelog_gen.writer import SUPPORTED_EXTENSIONS
+from changelog_gen.writer import Extension
 
 
 def common_options(command: click.Command) -> click.Command:
@@ -31,7 +31,7 @@ def common_options(command: click.Command) -> click.Command:
 
 
 def detect_extension() -> str | None:
-    for ext in SUPPORTED_EXTENSIONS:
-        if Path(f"CHANGELOG.{ext}").exists():
+    for ext in Extension:
+        if Path(f"CHANGELOG.{ext.value}").exists():
             return ext
     return None

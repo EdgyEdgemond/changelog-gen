@@ -1,11 +1,11 @@
-import click.testing
 import pytest
+import typer.testing
 
 import changelog_gen.cli.command
 
 
-class GenCliRunner(click.testing.CliRunner):
-    target = changelog_gen.cli.command.gen
+class CliRunner(typer.testing.CliRunner):
+    target = changelog_gen.cli.command.app
 
     def invoke(self, *args, **kwargs):
         result = super().invoke(self.target, *args, **kwargs)
@@ -18,12 +18,21 @@ class GenCliRunner(click.testing.CliRunner):
         return result
 
 
+class GenCliRunner(CliRunner):
+    target = changelog_gen.cli.command.gen_app
+
+
 class InitCliRunner(GenCliRunner):
-    target = changelog_gen.cli.command.init
+    target = changelog_gen.cli.command.init_app
 
 
 @pytest.fixture()
 def cli_runner():
+    return CliRunner()
+
+
+@pytest.fixture()
+def gen_cli_runner():
     return GenCliRunner()
 
 

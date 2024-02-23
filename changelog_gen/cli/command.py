@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Optional
 
-import click
+import typer
 
+import changelog_gen
 from changelog_gen import (
     errors,
     extractor,
@@ -30,63 +31,97 @@ SUPPORTED_SECTIONS = {
 }
 
 
+def _version_callback(*, value: bool) -> None:
+    """Get current cli version."""
+    if value:
+        typer.echo(f"changelog {changelog_gen.__version__}")
+        raise typer.Exit
+
+
+def _callback(
+    _version: Optional[bool] = typer.Option(
+        None,
+        "-v",
+        "--version",
+        callback=_version_callback,
+        help="Print version and exit.",
+    ),
+) -> None: ...
+
+
+app = typer.Typer(name="changelog", callback=_callback)
+init_app = typer.Typer(name="init")
+gen_app = typer.Typer(name="generate")
+
+
 def process_info(info: dict, config: dict, *, dry_run: bool) -> None:
     if dry_run:
         return
 
     if info["dirty"] and not config.get("allow_dirty", False):
-        click.echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.")
-        raise click.Abort
+        typer.echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.")
+        raise typer.Exit(code=1)
 
     allowed_branches = config.get("allowed_branches")
     if allowed_branches and info["branch"] not in allowed_branches:
-        click.echo("Current branch not in allowed generation branches.")
-        raise click.Abort
+        typer.echo("Current branch not in allowed generation branches.")
+        raise typer.Exit(code=1)
 
 
-@util.common_options
-@click.option("--file-format", type=str, default="md", help="File format to generate")
-@click.command("changelog-init", help="Generate an empty CHANGELOG file")
-def init(file_format: str) -> None:
-    """Create a new CHANGELOG file.
+@init_app.command("init")
+@app.command("init")
+def init(
+    file_format: writer.Extension = typer.Option("md", help="File format to generate."),
+    _version: Optional[bool] = typer.Option(
+        None,
+        "-v",
+        "--version",
+        callback=_version_callback,
+        help="Print version and exit.",
+    ),
+) -> None:
+    """Generate an empty CHANGELOG file.
 
     Detect and raise if a CHANGELOG already exists, if not create a new file.
     """
     extension = util.detect_extension()
     if extension is not None:
-        click.echo(f"CHANGELOG.{extension} detected.")
-        raise click.Abort
+        typer.echo(f"CHANGELOG.{extension.value} detected.")
+        raise typer.Exit(code=1)
 
     w = writer.new_writer(file_format)
     w.write()
 
 
-@util.common_options
-@click.option(
-    "--post-process-auth-env",
-    default=None,
-    help="Name of the ENV variable that contains the rest API basic auth content",
-)
-@click.option("--post-process-url", default=None, help="Rest API endpoint to post release version for each issue")
-@click.option("--version-tag", default=None, help="Provide the desired version tag, skip auto generation.")
-@click.option("--release/--no-release", help="Use bumpversion to tag the release")
-@click.option("--dry-run", is_flag=True, help="Don't write release notes to check for errors")
-@click.option("--allow-dirty/--no-allow-dirty", help="Don't abort if branch contains uncommitted changes")
-@click.option("--commit/--no-commit", help="Commit changes made to changelog after writing")
-@click.option("--date-format", default=None, help="The date format for strftime - empty string allowed")
-@click.command("changelog-gen", help="Generate a change log from release_notes/* files")
+@gen_app.command("generate")
+@app.command("generate")
 def gen(  # noqa: PLR0913
-    version_tag: str | None = None,
-    post_process_url: str | None = None,
-    post_process_auth_env: str | None = None,
-    date_format: str | None = None,
+    version_tag: Optional[str] = typer.Option(None, help="Provide the desired version tag, skip auto generation."),
+    post_process_url: Optional[str] = typer.Option(
+        None,
+        help="Rest API endpoint to post release version notifications to.",
+    ),
+    post_process_auth_env: Optional[str] = typer.Option(
+        None,
+        help="Name of the ENV variable that contains the rest API basic auth content.",
+    ),
+    date_format: Optional[str] = typer.Option(None, help="The date format for strftime - empty string allowed."),
     *,
-    dry_run: bool = False,
-    allow_dirty: bool = False,
-    release: bool = False,
-    commit: bool = False,
+    dry_run: bool = typer.Option(False, help="Don't write release notes, check for errors."),  # noqa: FBT003
+    allow_dirty: bool = typer.Option(False, help="Don't abort if branch contains uncommitted changes."),  # noqa: FBT003
+    release: bool = typer.Option(False, help="Use bumpversion to tag the release."),  # noqa: FBT003
+    commit: bool = typer.Option(False, help="Commit changes made to changelog after writing."),  # noqa: FBT003
+    _version: Optional[bool] = typer.Option(
+        None,
+        "-v",
+        "--version",
+        callback=_version_callback,
+        help="Print version and exit.",
+    ),
 ) -> None:
-    """Read release notes and generate a new CHANGELOG entry for the current version."""
+    """Generate changelog entries.
+
+    Read release notes and generate a new CHANGELOG entry for the current version."""
     config = Config().read()
 
     config["release"] = config.get("release") or release
@@ -109,16 +144,16 @@ def gen(  # noqa: PLR0913
     try:
         _gen(config, version_tag, dry_run=dry_run)
     except errors.ChangelogException as ex:
-        click.echo(ex)
-        raise click.Abort from ex
+        typer.echo(ex)
+        raise typer.Exit(code=1) from ex
 
 
 def _gen(config: dict[str, Any], version_tag: str | None = None, *, dry_run: bool = False) -> None:
     extension = util.detect_extension()
 
     if extension is None:
-        click.echo("No CHANGELOG file detected, run changelog-init")
-        raise click.Abort
+        typer.echo("No CHANGELOG file detected, run `changelog init`")
+        raise typer.Exit(code=1)
 
     process_info(Git.get_latest_tag_info(), config, dry_run=dry_run)
 
@@ -145,7 +180,7 @@ def _gen(config: dict[str, Any], version_tag: str | None = None, *, dry_run: boo
     w.add_version(version_string)
     w.consume(supported_sections, sections)
 
-    click.echo(w)
+    typer.echo(w)
 
     _finalise(w, e, version_tag, extension, config, dry_run=dry_run)
 
@@ -159,12 +194,12 @@ def _finalise(  # noqa: PLR0913
     writer: writer.BaseWriter,
     extractor: extractor.ReleaseNoteExtractor,
     version_tag: str,
-    extension: str,
+    extension: writer.Extension,
     config: dict[str, Any],
     *,
     dry_run: bool,
 ) -> None:
-    if dry_run or click.confirm(
+    if dry_run or typer.confirm(
         f"Write CHANGELOG for suggested version {version_tag}",
     ):
         writer.write()
@@ -173,7 +208,7 @@ def _finalise(  # noqa: PLR0913
         if dry_run or not config["commit"]:
             return
 
-        Git.add_path(f"CHANGELOG.{extension}")
+        Git.add_path(f"CHANGELOG.{extension.value}")
         # TODO(edgy): Dont add release notes if using commit messages...
         Git.add_path("release_notes")
         Git.commit(version_tag)

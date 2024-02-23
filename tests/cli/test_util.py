@@ -1,13 +1,14 @@
 import pytest
 
+from changelog_gen import writer
 from changelog_gen.cli import util
 
 
 @pytest.mark.parametrize(
     ("filename", "ext"),
     [
-        ("CHANGELOG.md", "md"),
-        ("CHANGELOG.rst", "rst"),
+        ("CHANGELOG.md", writer.Extension.MD),
+        ("CHANGELOG.rst", writer.Extension.RST),
         ("CHANGELOG.txt", None),
     ],
 )

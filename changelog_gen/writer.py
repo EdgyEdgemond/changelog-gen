@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import typing
+from enum import Enum
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 if typing.TYPE_CHECKING:
     from changelog_gen.extractor import SectionDict
 
-SUPPORTED_EXTENSIONS = ["md", "rst"]
+
+class Extension(Enum):
+    MD = "md"
+    RST = "rst"
 
 
 class BaseWriter:
@@ -72,7 +76,7 @@ class BaseWriter:
 class MdWriter(BaseWriter):
     file_header_line_count = 1
     file_header = "# Changelog\n"
-    extension = "md"
+    extension = Extension.MD
 
     def _add_version(self, version: str) -> None:
         self.content.extend([f"## {version}", ""])
@@ -96,7 +100,7 @@ class MdWriter(BaseWriter):
 class RstWriter(BaseWriter):
     file_header_line_count = 3
     file_header = "=========\nChangelog\n=========\n"
-    extension = "rst"
+    extension = Extension.RST
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -130,13 +134,13 @@ class RstWriter(BaseWriter):
         self._write(self.content)
 
 
-def new_writer(extension: str, issue_link: str | None = None, *, dry_run: bool = False) -> BaseWriter:
-    changelog = Path(f"CHANGELOG.{extension}")
+def new_writer(extension: Extension, issue_link: str | None = None, *, dry_run: bool = False) -> BaseWriter:
+    changelog = Path(f"CHANGELOG.{extension.value}")
 
-    if extension == "md":
+    if extension == Extension.MD:
         return MdWriter(changelog, dry_run=dry_run, issue_link=issue_link)
-    if extension == "rst":
+    if extension == Extension.RST:
         return RstWriter(changelog, dry_run=dry_run, issue_link=issue_link)
 
-    msg = f'Changelog extension "{extension}" not supported.'
+    msg = f'Changelog extension "{extension.value}" not supported.'
     raise ValueError(msg)
