@@ -53,7 +53,7 @@ Write CHANGELOG for suggested version 0.2.1 [y/N]: y
 
 ## Configuration
 
-Of the command line arguments, most of them can be configured in `setup.cfg` to remove
+Of the command line arguments, most of them can be configured in `setup.cfg` or `pyproject.toml` to remove
 the need to pass them in every time.
 
 Example `setup.cfg`:
@@ -63,6 +63,21 @@ Example `setup.cfg`:
 commit = true
 release = true
 allow_dirty = false
+```
+
+Example `pyproject.toml`:
+
+```ini
+[changelog_gen]
+commit = true
+release = true
+allow_dirty = false
+
+[changelog_gen.post_process]
+  url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-{issue_ref}/comment
+  verb = POST
+  body = {{"body": "Released on v{new_version}"}}
+  auth_env = JIRA_AUTH
 ```
 
 ### Configuration file -- Global configuration
@@ -110,9 +125,9 @@ General configuration is grouped in a `[changelog_gen]` section.
 
   Example:
 
-```ini
-[changelog_gen]
-issue_link = http://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}
+```toml
+[toolchangelog_gen]
+issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
 ```
 
 #### `date_format =`
@@ -128,9 +143,9 @@ issue_link = http://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}
 
   Example:
 
-```ini
-[changelog_gen]
-date_format =on %%Y-%m-%d
+```toml
+[tool.changelog_gen]
+date_format = "on %%Y-%m-%d"
 ```
 
 
@@ -143,11 +158,12 @@ date_format =on %%Y-%m-%d
 
   Example:
 
-```ini
-[changelog_gen]
-allowed_branches =
-  master
-  develop
+```toml
+[tool.changelog_gen]
+allowed_branches = [
+  "master",
+  "develop",
+]
 ```
 
 #### `sections =`
@@ -159,13 +175,12 @@ allowed_branches =
 
   Example:
 
-```ini
-[changelog_gen]
-sections =
-  feat=New Features
-  change=Changes
-  remove=Removals
-  fix=Bugfixes
+```toml
+[tool.changelog_gen.sections]
+feat = "New Features"
+change = "Changes"
+remove = "Removals"
+fix = "Bugfixes"
 ```
 
 #### `section_mapping =`
@@ -177,13 +192,12 @@ sections =
 
   Example:
 
-```ini
-[changelog_gen]
-section_mapping =
-  test=fix
-  bugfix=fix
-  docs=fix
-  new=feat
+```toml
+[tool.changelog_gen.section_mapping]
+test = "fix"
+bugfix = "fix"
+docs = "fix"
+new = "feat"
 ```
 
 #### `post_process =`
@@ -219,13 +233,12 @@ section_mapping =
 
   Example to post to JIRA:
 
-```ini
-[changelog_gen]
-post_process =
-  url=https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-{issue_ref}/comment
-  verb=POST
-  body={{"body": "Released on v{new_version}"}}
-  auth_env=JIRA_AUTH
+```toml
+[tool.changelog_gen.post_process]
+url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-{issue_ref}/comment"
+verb = "POST"
+body = '{{"body": "Released on v{new_version}"}}'
+auth_env = "JIRA_AUTH"
 ```
   This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
   See
