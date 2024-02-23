@@ -175,8 +175,6 @@ def _process_setup_cfg(setup: Path) -> dict:
     return cfg
 
 
-# TODO(edgy): Support pyproject.toml configuration
-# https://github.com/EdgyEdgemond/changelog-gen/issues/55
 def read(**kwargs) -> Config:
     """Read configuration from local environment.
 
