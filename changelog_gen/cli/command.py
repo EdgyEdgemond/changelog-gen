@@ -1,9 +1,7 @@
-from datetime import datetime
-from typing import (
-    Any,
-    Dict,
-    Optional,
-)
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
 
 import click
 
@@ -22,8 +20,8 @@ from changelog_gen.post_processor import per_issue_post_process
 from changelog_gen.vcs import Git
 from changelog_gen.version import BumpVersion
 
-# TODO: use config to support reading from files, or from commits
-# TODO: support ConventionalCommits instead of reading from files?
+# TODO(edgy): use config to support reading from files, or from commits
+# TODO(edgy): support ConventionalCommits instead of reading from files?
 
 
 SUPPORTED_SECTIONS = {
@@ -32,7 +30,7 @@ SUPPORTED_SECTIONS = {
 }
 
 
-def process_info(info: Dict, dry_run: bool, allow_dirty: bool, config: Dict) -> None:
+def process_info(info: dict, *, dry_run: bool, allow_dirty: bool, config: dict) -> None:
     if dry_run:
         return
 
@@ -78,14 +76,15 @@ def init(file_format: str) -> None:
 @click.option("--date-format", default=None, help="The date format for strftime - empty string allowed")
 @click.command("changelog-gen", help="Generate a change log from release_notes/* files")
 def gen(  # noqa: PLR0913
+    version_tag: str | None = None,
+    post_process_url: str | None = None,
+    post_process_auth_env: str | None = None,
+    date_format: str | None = None,
+    *,
     dry_run: bool = False,
     allow_dirty: bool = False,
     release: bool = False,
     commit: bool = False,
-    version_tag: Optional[str] = None,
-    post_process_url: Optional[str] = None,
-    post_process_auth_env: Optional[str] = None,
-    date_format: Optional[str] = None,
 ) -> None:
     """Read release notes and generate a new CHANGELOG entry for the current version."""
     config = Config().read()
@@ -114,7 +113,7 @@ def gen(  # noqa: PLR0913
         raise click.Abort from ex
 
 
-def _gen(config: Dict[str, Any], dry_run: bool = False, version_tag: Optional[str] = None) -> None:
+def _gen(config: dict[str, Any], version_tag: str | None = None, *, dry_run: bool = False) -> None:
     extension = util.detect_extension()
 
     if extension is None:
@@ -123,8 +122,8 @@ def _gen(config: Dict[str, Any], dry_run: bool = False, version_tag: Optional[st
 
     process_info(Git.get_latest_tag_info(), dry_run, config["allow_dirty"], config)
 
-    # TODO: supported default extensions (steal from conventional commits)
-    # TODO: support multiple extras by default (the usuals)
+    # TODO(edgy): supported default extensions (steal from conventional commits)
+    # TODO(edgy): support multiple extras by default (the usuals)
     section_mapping = config.get("section_mapping", {})
     supported_sections = config.get("sections", SUPPORTED_SECTIONS)
 
@@ -134,12 +133,12 @@ def _gen(config: Dict[str, Any], dry_run: bool = False, version_tag: Optional[st
     if version_tag is None:
         version_tag = extract_version_tag(sections)
 
-    # TODO: take a note from bumpversion, read in versioning format string
+    # TODO(edgy): take a note from bumpversion, read in versioning format string
     version_string = f"v{version_tag}"
 
     date_fmt = config.get("date_format")
     if date_fmt:
-        version_string += f" {datetime.now().strftime(date_fmt)}"  # noqa: DTZ005
+        version_string += f" {datetime.now(UTC).strftime(date_fmt)}"
 
     w = writer.new_writer(extension, dry_run=dry_run, issue_link=config.get("issue_link"))
 
@@ -161,8 +160,9 @@ def _finalise(  # noqa: PLR0913
     extractor: extractor.ReleaseNoteExtractor,
     version_tag: str,
     extension: str,
+    config: dict[str, Any],
+    *,
     dry_run: bool,
-    config: Dict[str, Any],
 ) -> None:
     if dry_run or click.confirm(
         f"Write CHANGELOG for suggested version {version_tag}",
@@ -174,7 +174,7 @@ def _finalise(  # noqa: PLR0913
             return
 
         Git.add_path(f"CHANGELOG.{extension}")
-        # TODO: Dont add release notes if using commit messages...
+        # TODO(edgy): Dont add release notes if using commit messages...
         Git.add_path("release_notes")
         Git.commit(version_tag)
 

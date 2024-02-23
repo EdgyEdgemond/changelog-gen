@@ -3,15 +3,14 @@ import typing
 from http import HTTPStatus
 
 import click
-import requests
-from requests.auth import HTTPBasicAuth
+import httpx
 
 if typing.TYPE_CHECKING:
     from changelog_gen.config import PostProcessConfig
 
 
-def make_session(cfg: "PostProcessConfig") -> requests.Session:
-    connection = requests.Session()
+def make_client(cfg: "PostProcessConfig") -> httpx.Client:
+    auth = None
     if cfg.auth_env:
         user_auth = os.environ.get(cfg.auth_env)
         if not user_auth:
@@ -24,23 +23,27 @@ def make_session(cfg: "PostProcessConfig") -> requests.Session:
             click.echo(f'Unexpected content in {cfg.auth_env}, need "{{username}}:{{api_key}}"')
             raise click.Abort from e
         else:
-            connection.auth = HTTPBasicAuth(username, api_key)
+            auth = httpx.BasicAuth(username=username, password=api_key)
 
-    # TODO(tr) A good improvement would be to allow the headers to come from the config as well
-    connection.headers = {"content-type": "application/json"}
-    return connection
+    # TODO(tr): A good improvement would be to allow the headers to come from the config as well
+    # Does setup.cfg support dicts easily? migrate to pyproject.toml support
+    return httpx.Client(
+        auth=auth,
+        headers={"content-type": "application/json"},
+    )
 
 
 def per_issue_post_process(
     cfg: "PostProcessConfig",
-    issue_refs: typing.List[str],
+    issue_refs: list[str],
     version_tag: str,
+    *,
     dry_run: bool = False,
 ) -> None:
     if not cfg.url:
         return
 
-    connection = make_session(cfg)
+    client = make_client(cfg)
 
     for issue in issue_refs:
         ep = cfg.url.format(issue_ref=issue, new_version=version_tag)
@@ -51,7 +54,7 @@ def per_issue_post_process(
         if dry_run:
             click.echo(f"{cfg.verb} {ep} {body}")
         else:
-            r = connection.request(
+            r = client.request(
                 method=cfg.verb,
                 url=ep,
                 data=body,
@@ -59,5 +62,5 @@ def per_issue_post_process(
             try:
                 click.echo(f"{cfg.verb} {ep}: {HTTPStatus(r.status_code).name}")
                 r.raise_for_status()
-            except requests.HTTPError as e:
+            except httpx.HTTPError as e:
                 click.echo(e.response.text)

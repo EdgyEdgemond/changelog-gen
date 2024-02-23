@@ -1,18 +1,19 @@
+from __future__ import annotations
+
 import subprocess
-from typing import Dict, Union
 
 from changelog_gen import errors
 
 
 class Git:
     @classmethod
-    def get_latest_tag_info(cls) -> Dict[str, Union[str, int]]:
+    def get_latest_tag_info(cls) -> dict[str, str | int]:
         describe_out = None
         for tags in ["[0-9]*", "v[0-9]*"]:
             try:
                 describe_out = (
                     subprocess.check_output(
-                        [
+                        [  # noqa: S603, S607
                             "git",
                             "describe",
                             "--tags",
@@ -27,7 +28,7 @@ class Git:
                     .strip()
                     .split("-")
                 )
-            except subprocess.CalledProcessError:
+            except subprocess.CalledProcessError:  # noqa: PERF203
                 pass
             else:
                 break
@@ -38,7 +39,7 @@ class Git:
         try:
             rev_parse_out = (
                 subprocess.check_output(
-                    [
+                    [  # noqa: S603, S607
                         "git",
                         "rev-parse",
                         "--tags",
@@ -72,10 +73,10 @@ class Git:
 
     @classmethod
     def add_path(cls, path: str) -> None:
-        subprocess.check_output(["git", "add", "--update", path])
+        subprocess.check_output(["git", "add", "--update", path])  # noqa: S603, S607
 
     @classmethod
     def commit(cls, version: str) -> None:
         subprocess.check_output(
-            ["git", "commit", "-m", f"Update CHANGELOG for {version}"],
+            ["git", "commit", "-m", f"Update CHANGELOG for {version}"],  # noqa: S603, S607
         )

@@ -9,26 +9,26 @@ homepage="https://github.com/EdgyEdgemond/changelog-gen/"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 
 click = "^8.0"
 bump2version = "^1.0.1"
 requests = "^2.27.1"
+httpx = "^0.25.0"
 
 [tool.poetry.dev-dependencies]
 
 # Tests
 freezegun = "^1.2.1"
-pytest = "^6.2"
-pytest-cov = "^2.8"
+pytest = "~7.4.3"
+pytest-cov = "^4.1.0"
+pytest-random-order = "^1.0.4"
+pytest-httpx = "^0.27.0"
 pytest-git = "^1.7.0"
-pytest-random-order = "^1.0"
-requests-mock = "^1.9.3"
 
 # Style
-ruff = "^0.0"
+ruff = "^0.1.2"
 pre-commit = "^3.0.2"
-black = "^22.12.0"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -49,21 +49,9 @@ branch = true
 source = ["changelog_gen"]
 
 
-[tool.bandit]
-exclude_dirs = ["tasks.py"]
-skips = [
-    "B101",  # use of asserts
-    "B404",  # subprocess import
-    "B603",  # use of subprocess
-    "B607",  # use of subprocess
-]
-
-[tool.black]
-line-length = 120
-
 [tool.ruff]
 line-length = 120
-target-version = "py38"
+target-version = "py39"
 select = ["ALL"]
 ignore = [
     "ANN002",  # type annotation on *args
@@ -71,13 +59,13 @@ ignore = [
     "ANN101",  # annotate self
     "ANN102",  # annotate cls
     "D",
-    "FBT",  # boolean trap? no documentation
-    "S",  # bandit is run as a full commit hook
+    "FIX",  # allow TODO
+    "TD003",  # TODO without issue link for now
 ]
 
 [tool.ruff.per-file-ignores]
 "tasks.py" = ["ANN", "E501", "INP001"]
-"tests/*" = ["ANN", "D", "S105", "S106", "SLF001"]
+"tests/*" = ["ANN", "D", "S105", "S106", "SLF001", "S101"]
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"

@@ -3,7 +3,7 @@ from unittest import mock
 from changelog_gen import version
 
 
-# TODO: mock a bumpversion config in cwd fixture instead of mocking subprocess
+# TODO(edgy): mock a bumpversion config in cwd fixture instead of mocking subprocess
 class TestBumpVersion:
     def test_get_version_info(self, monkeypatch):
         monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())

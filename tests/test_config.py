@@ -47,12 +47,10 @@ def test_config_handles_empty_file(config_factory):
 )
 def test_config_picks_up_boolean_values(config_factory, release, exp_value):
     config_factory(
-        """
+        f"""
 [changelog_gen]
-{}
-""".format(
-            release,
-        ),
+{release}
+""",
     )
 
     c = Config().read()
@@ -68,12 +66,10 @@ def test_config_picks_up_boolean_values(config_factory, release, exp_value):
 )
 def test_config_picks_up_strings_values(config_factory, issue_link):
     config_factory(
-        """
+        f"""
 [changelog_gen]
-{}
-""".format(
-            issue_link,
-        ),
+{issue_link}
+""",
     )
 
     c = Config().read()
@@ -90,12 +86,10 @@ def test_config_picks_up_strings_values(config_factory, issue_link):
 )
 def test_config_picks_up_list_values(config_factory, branches):
     config_factory(
-        """
+        f"""
 [changelog_gen]
-{}
-""".format(
-            branches,
-        ),
+{branches}
+""",
     )
 
     c = Config().read()

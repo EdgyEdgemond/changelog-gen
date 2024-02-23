@@ -1,16 +1,15 @@
 import subprocess
-from typing import Dict
 
 from changelog_gen import errors
 
 
 class BumpVersion:
     @classmethod
-    def get_version_info(cls, semver: str) -> Dict[str, str]:
+    def get_version_info(cls, semver: str) -> dict[str, str]:
         try:
             describe_out = (
                 subprocess.check_output(
-                    ["bumpversion", semver, "--dry-run", "--list", "--allow-dirty"],
+                    ["bumpversion", semver, "--dry-run", "--list", "--allow-dirty"],  # noqa: S603, S607
                     stderr=subprocess.STDOUT,
                 )
                 .decode()
@@ -30,4 +29,4 @@ class BumpVersion:
 
     @classmethod
     def release(cls, version: str) -> None:
-        subprocess.check_output(["bumpversion", "--new-version", version, "patch"])
+        subprocess.check_output(["bumpversion", "--new-version", version, "patch"])  # noqa: S603, S607

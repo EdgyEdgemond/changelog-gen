@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -13,7 +15,7 @@ class BaseWriter:
     file_header = None
     extension = None
 
-    def __init__(self, changelog: Path, dry_run: bool = False, issue_link: typing.Optional[str] = None) -> None:
+    def __init__(self, changelog: Path, issue_link: str | None = None, *, dry_run: bool = False) -> None:
         self.existing = []
         self.changelog = changelog
         if self.changelog.exists():
@@ -29,7 +31,7 @@ class BaseWriter:
     def _add_version(self, version: str) -> None:
         raise NotImplementedError
 
-    def consume(self, supported_sections: typing.Dict[str, str], sections: "SectionDict") -> None:
+    def consume(self, supported_sections: dict[str, str], sections: SectionDict) -> None:
         for section in sorted(supported_sections):
             if section not in sections:
                 continue
@@ -37,7 +39,7 @@ class BaseWriter:
             header = supported_sections[section]
             self.add_section(header, {k: v["description"] for k, v in sections[section].items()})
 
-    def add_section(self, header: str, lines: typing.List[str]) -> None:
+    def add_section(self, header: str, lines: list[str]) -> None:
         self._add_section_header(header)
         for issue_ref, description in sorted(lines.items()):
             self._add_section_line(description, issue_ref)
@@ -59,7 +61,7 @@ class BaseWriter:
         self.content = [self.file_header, *self.content, *self.existing]
         self._write(self.content)
 
-    def _write(self, content: typing.List[str]) -> None:
+    def _write(self, content: list[str]) -> None:
         if self.dry_run:
             with NamedTemporaryFile("wb") as output_file:
                 output_file.write(("\n".join(content)).encode("utf-8"))
@@ -80,11 +82,7 @@ class MdWriter(BaseWriter):
 
     def _add_section_line(self, description: str, issue_ref: str) -> None:
         if self.issue_link:
-            line = "- {} [[#{}]({})]".format(
-                description,
-                issue_ref,
-                self.issue_link,
-            )
+            line = f"- {description} [[#{issue_ref}]({self.issue_link})]"
         else:
             line = f"- {description} [#{issue_ref}]"
         line = line.format(issue_ref=issue_ref)
@@ -108,7 +106,7 @@ class RstWriter(BaseWriter):
         return "\n".join(self.content + self.links)
 
     @property
-    def links(self) -> typing.List[str]:
+    def links(self) -> list[str]:
         return [f".. _`{ref}`: {link}" for ref, link in sorted(self._links.items())]
 
     def _add_version(self, version: str) -> None:
@@ -132,7 +130,7 @@ class RstWriter(BaseWriter):
         self._write(self.content)
 
 
-def new_writer(extension: str, dry_run: bool = False, issue_link: typing.Optional[str] = None) -> BaseWriter:
+def new_writer(extension: str, issue_link: str | None = None, *, dry_run: bool = False) -> BaseWriter:
     changelog = Path(f"CHANGELOG.{extension}")
 
     if extension == "md":
@@ -140,7 +138,5 @@ def new_writer(extension: str, dry_run: bool = False, issue_link: typing.Optiona
     if extension == "rst":
         return RstWriter(changelog, dry_run=dry_run, issue_link=issue_link)
 
-    msg = 'Changelog extension "{extension}" not supported.'.format(
-        extension=extension,
-    )
+    msg = f'Changelog extension "{extension}" not supported.'
     raise ValueError(msg)

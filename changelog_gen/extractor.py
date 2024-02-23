@@ -1,27 +1,28 @@
+from __future__ import annotations
+
 from collections import (
     OrderedDict,
     defaultdict,
 )
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from changelog_gen import errors
 from changelog_gen.version import BumpVersion
 
-SectionDict = Dict[str, Dict[str, Dict[str, str]]]
+SectionDict = dict[str, dict[str, dict[str, str]]]
 
 
 class ReleaseNoteExtractor:
-    def __init__(self, supported_sections: List[str], dry_run: bool = False) -> None:
+    def __init__(self, supported_sections: list[str], *, dry_run: bool = False) -> None:
         self.release_notes = Path("./release_notes")
         self.dry_run = dry_run
-        self.supported_sections: Dict[str, str] = supported_sections
+        self.supported_sections: dict[str, str] = supported_sections
 
         if not self.release_notes.exists() or not self.release_notes.is_dir():
             msg = "No release notes directory found."
             raise errors.NoReleaseNotesError(msg)
 
-    def extract(self, section_mapping: Optional[Dict[str, str]] = None) -> SectionDict:
+    def extract(self, section_mapping: dict[str, str] | None = None) -> SectionDict:
         section_mapping = section_mapping or {}
 
         sections = defaultdict(OrderedDict)
@@ -39,9 +40,7 @@ class ReleaseNoteExtractor:
 
                 contents = issue.read_text().strip()
                 if section not in self.supported_sections:
-                    msg = "Unsupported CHANGELOG section {section}".format(
-                        section=section,
-                    )
+                    msg = f"Unsupported CHANGELOG section {section}"
                     raise errors.InvalidSectionError(msg)
 
                 sections[section][issue_ref] = {
@@ -51,7 +50,7 @@ class ReleaseNoteExtractor:
 
         return sections
 
-    def unique_issues(self, sections: SectionDict) -> List[str]:
+    def unique_issues(self, sections: SectionDict) -> list[str]:
         issue_refs = set()
         for section, issues in sections.items():
             if section in self.supported_sections:

@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -29,7 +30,7 @@ def common_options(command: click.Command) -> click.Command:
     return command
 
 
-def detect_extension() -> Optional[str]:
+def detect_extension() -> str | None:
     for ext in SUPPORTED_EXTENSIONS:
         if Path(f"CHANGELOG.{ext}").exists():
             return ext

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import dataclasses
 import logging
@@ -6,7 +8,6 @@ from configparser import (
     NoOptionError,
 )
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class PostProcessConfig:
     body: str = '{{"body": "Released on v{new_version}"}}'
     # Name of an environment variable to use as HTTP Basic Auth parameters.
     # The variable should contain "{user}:{api_key}"
-    auth_env: Optional[str] = None
+    auth_env: str | None = None
 
 
 class Config:
@@ -29,7 +30,7 @@ class Config:
 
         self._config.add_section("changelog_gen")
 
-    def read(self) -> Dict:  # noqa: C901
+    def read(self) -> dict:  # noqa: C901
         config = {}
         object_map = {
             "post_process": PostProcessConfig,
@@ -65,7 +66,7 @@ class Config:
             try:
                 config[objectname] = object_class(**dictvalue)
             except Exception as e:  # noqa: BLE001
-                msg = f"Failed to create {objectname}: {str(e)}"
+                msg = f"Failed to create {objectname}: {e!s}"
                 raise RuntimeError(msg) from e
 
         for boolvaluename in ("release", "commit", "allow_dirty"):
@@ -74,13 +75,13 @@ class Config:
                     "changelog_gen",
                     boolvaluename,
                 )
-            except NoOptionError:
+            except NoOptionError:  # noqa: PERF203
                 config[boolvaluename] = False
 
         return config
 
-    def parse_dict_value(self, dictvaluename: str) -> Dict:
-        # TODO(tr) Add unit tests to ensure we handle spaces correctly
+    def parse_dict_value(self, dictvaluename: str) -> dict:
+        # TODO(tr): Add unit tests to ensure we handle spaces correctly
         #  At the moment key and value should NOT have spaces as they are copied verbatim.
         try:
             value = self._config.get("changelog_gen", dictvaluename)
@@ -98,7 +99,7 @@ class Config:
 
             return ret
 
-    def parse_list_value(self, listvaluename: str) -> List:
+    def parse_list_value(self, listvaluename: str) -> list:
         try:
             value = self._config.get("changelog_gen", listvaluename)
         except NoOptionError:
