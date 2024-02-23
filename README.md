@@ -24,7 +24,13 @@ poetry install
 
 ## Usage
 
-`changelog` currently only supports reading changes from a `release_notes` folder.
+`changelog` currently supports generating from commit logs using [Conventional
+Commits](https://www.conventionalcommits.org/en/v1.0.0/), as well as reading
+changes from a `release_notes` folder.
+
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+
+### Release Notes
 
 Files in the folder should use the format `{issue_number}.{type}`.
 
