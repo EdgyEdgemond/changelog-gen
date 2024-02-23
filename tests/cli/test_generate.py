@@ -38,6 +38,15 @@ def changelog(git_repo):
 
 
 @pytest.fixture()
+def _empty_release_notes(git_repo):
+    r = git_repo.workspace / "release_notes"
+    r.mkdir()
+
+    git_repo.run("git add release_notes")
+    git_repo.api.index.commit("commit release_notes")
+
+
+@pytest.fixture()
 def _release_notes(git_repo):
     r = git_repo.workspace / "release_notes"
     r.mkdir()
@@ -479,6 +488,24 @@ def test_generate_dry_run(
     result = gen_cli_runner.invoke(["--dry-run"])
 
     assert result.exit_code == 0
+
+    assert (
+        changelog.read_text()
+        == """
+# Changelog
+""".lstrip()
+    )
+
+
+@pytest.mark.usefixtures("git_repo", "_empty_release_notes", "setup")
+def test_generate_reject_empty(
+    gen_cli_runner,
+    changelog,
+):
+    result = gen_cli_runner.invoke(["--reject-empty"])
+
+    assert result.exit_code == 0
+    assert result.output == "No changes present and reject_empty configured.\n"
 
     assert (
         changelog.read_text()

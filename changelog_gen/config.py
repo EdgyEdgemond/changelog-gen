@@ -45,6 +45,7 @@ class Config:
     release: bool = False
     commit: bool = False
     allow_dirty: bool = False
+    reject_empty: bool = False
 
     post_process: PostProcessConfig | None = None
 
@@ -153,6 +154,7 @@ def read(**kwargs) -> Config:
         ("release", parse_boolean_value),
         ("commit", parse_boolean_value),
         ("allow_dirty", parse_boolean_value),
+        ("reject_empty", parse_boolean_value),
     ]:
         value = parse_func(parser, valuename)
         if value:

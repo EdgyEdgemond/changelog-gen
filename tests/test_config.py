@@ -30,28 +30,28 @@ def test_read_handles_empty_file():
 
 
 @pytest.mark.parametrize(
-    ("release", "exp_value"),
+    ("value", "exp_key", "exp_value"),
     [
-        ("release=true", True),
-        ("release = true", True),
-        ("release=True", True),
-        ("release = True", True),
-        ("release=false", False),
-        ("release = false", False),
-        ("release=False", False),
-        ("release = False", False),
+        ("release=true", "release", True),
+        ("commit = true", "commit", True),
+        ("allow_dirty=True", "allow_dirty", True),
+        ("reject_empty = True", "reject_empty", True),
+        ("release=false", "release", False),
+        ("commit = false", "commit", False),
+        ("allow_dirty=False", "allow_dirty", False),
+        ("reject_empty = False", "reject_empty", False),
     ],
 )
-def test_read_picks_up_boolean_values(config_factory, release, exp_value):
+def test_read_picks_up_boolean_values(config_factory, value, exp_key, exp_value):
     config_factory(
         f"""
 [changelog_gen]
-{release}
+{value}
 """,
     )
 
     c = config.read()
-    assert c.release is exp_value
+    assert getattr(c, exp_key) == exp_value
 
 
 @pytest.mark.parametrize(
@@ -191,6 +191,7 @@ post_process =
         ("release", True),
         ("commit", True),
         ("allow_dirty", True),
+        ("reject_empty", True),
         ("date_format", "%Y-%m-%d"),
     ],
 )
