@@ -134,6 +134,24 @@ def test_section_mapping_can_handle_new_sections():
     }
 
 
+def test_unique_issues():
+    e = ReleaseNoteExtractor({"bug": "BugFix", "feat": "Features"})
+
+    assert e.unique_issues({
+        "unsupported": {
+            "5": {"description": "Detail about 4", "breaking": False},
+        },
+        "feat": {
+            "2": {"description": "Detail about 2", "breaking": False},
+        },
+        "bug": {
+            "2": {"description": "Detail about 2", "breaking": False},
+            "3": {"description": "Detail about 3", "breaking": False},
+            "4": {"description": "Detail about 4", "breaking": False},
+        },
+    }) == ["2", "3", "4"]
+
+
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_dry_run_clean_keeps_files(release_notes):
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS, dry_run=True)

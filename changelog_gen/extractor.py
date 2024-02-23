@@ -60,7 +60,7 @@ class ReleaseNoteExtractor:
         for section, issues in sections.items():
             if section in self.supported_sections:
                 issue_refs.update(issues.keys())
-        return list(issue_refs)
+        return sorted(issue_refs)
 
     def clean(self: typing.Self) -> None:
         """Remove parsed release not files.

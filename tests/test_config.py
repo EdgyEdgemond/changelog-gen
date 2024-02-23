@@ -156,6 +156,23 @@ post_process =
             auth_env="MY_API_AUTH",
         )
 
+    def test_read_picks_up_post_process_override(self, config_factory):
+        config_factory(
+            """
+[changelog_gen]
+commit=False
+        """,
+        )
+
+        c = config.read(
+            post_process_url="https://fake_rest_api/",
+            post_process_auth_env="MY_API_AUTH",
+        )
+        assert c.post_process == config.PostProcessConfig(
+            url="https://fake_rest_api/",
+            auth_env="MY_API_AUTH",
+        )
+
     def test_read_rejects_unknown_fields(self, config_factory):
         config_factory(
             """
