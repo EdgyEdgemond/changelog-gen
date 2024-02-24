@@ -85,12 +85,12 @@ class TestPerIssuePostPrequest:
         )
         cfg = PostProcessConfig(
             verb=cfg_verb,
-            url="https://my-api.github.com/comments/{issue_ref}",
+            url="https://my-api.github.com/comments/$ISSUE_REF",
         )
         for issue in issue_refs:
             httpx_mock.add_response(
                 method=cfg_verb,
-                url=cfg.url.format(issue_ref=issue),
+                url=cfg.url.replace("$ISSUE_REF", issue),
                 status_code=HTTPStatus.OK,
             )
 
@@ -103,15 +103,15 @@ class TestPerIssuePostPrequest:
     def test_handle_http_errors_gracefully(self, httpx_mock, monkeypatch):
         issue_refs = ["1", "2", "3"]
 
-        cfg = PostProcessConfig(url="https://my-api.github.com/comments/{issue_ref}")
+        cfg = PostProcessConfig(url="https://my-api.github.com/comments/$ISSUE_REF")
 
-        ep0 = cfg.url.format(issue_ref=issue_refs[0])
+        ep0 = cfg.url.replace("$ISSUE_REF", issue_refs[0])
         httpx_mock.add_response(
             method="POST",
             url=ep0,
             status_code=HTTPStatus.OK,
         )
-        ep1 = cfg.url.format(issue_ref=issue_refs[1])
+        ep1 = cfg.url.replace("$ISSUE_REF", issue_refs[1])
         not_found_txt = f"{issue_refs[1]} NOT FOUND"
         httpx_mock.add_response(
             method="POST",
@@ -119,7 +119,7 @@ class TestPerIssuePostPrequest:
             status_code=HTTPStatus.NOT_FOUND,
             content=bytes(not_found_txt, "utf-8"),
         )
-        ep2 = cfg.url.format(issue_ref=issue_refs[2])
+        ep2 = cfg.url.replace("$ISSUE_REF", issue_refs[2])
         httpx_mock.add_response(
             method="POST",
             url=ep2,
@@ -144,9 +144,9 @@ class TestPerIssuePostPrequest:
     @pytest.mark.parametrize(
         ("cfg_body", "exp_body"),
         [
-            (None, '{"body": "Released on v%s"}'),
+            (None, '{"body": "Released on %s"}'),
             # send issue ref as an int without quotes
-            ('{{"issue": {issue_ref}, "version": "{new_version}"}}', '{"issue": 1, "version": "%s"}'),
+            ('{"issue": $ISSUE_REF, "version": "$VERSION"}', '{"issue": 1, "version": "%s"}'),
         ],
     )
     def test_body(self, cfg_verb, new_version, cfg_body, exp_body, httpx_mock):
@@ -156,12 +156,12 @@ class TestPerIssuePostPrequest:
         if cfg_body is not None:
             kwargs["body"] = cfg_body
         cfg = PostProcessConfig(
-            url="https://my-api.github.com/comments/{issue_ref}",
+            url="https://my-api.github.com/comments/$ISSUE_REF",
             **kwargs,
         )
         httpx_mock.add_response(
             method=cfg_verb,
-            url=cfg.url.format(issue_ref=1),
+            url=cfg.url.replace("$ISSUE_REF", "1"),
             status_code=HTTPStatus.OK,
             match_content=bytes(exp_body % new_version, "utf-8"),
         )
@@ -179,9 +179,9 @@ class TestPerIssuePostPrequest:
     @pytest.mark.parametrize(
         ("cfg_body", "exp_body"),
         [
-            (None, '{{"body": "Released on v3.2.1"}}'),
+            (None, '{"body": "Released on 3.2.1"}'),
             # send issue ref as an int without quotes
-            ('{{"issue": {issue_ref}, "version": "{new_version}"}}', '{{"issue": {issue_ref}, "version": "3.2.1"}}'),
+            ('{"issue": $ISSUE_REF, "version": "$VERSION"}', '{"issue": $ISSUE_REF, "version": "3.2.1"}'),
         ],
     )
     def test_dry_run(self, monkeypatch, cfg_verb, issue_refs, cfg_body, exp_body):
@@ -189,7 +189,7 @@ class TestPerIssuePostPrequest:
         if cfg_body is not None:
             kwargs["body"] = cfg_body
         cfg = PostProcessConfig(
-            url="https://my-api.github.com/comments/{issue_ref}",
+            url="https://my-api.github.com/comments/$ISSUE_REF",
             verb=cfg_verb,
             **kwargs,
         )
@@ -207,7 +207,7 @@ class TestPerIssuePostPrequest:
         )
 
         assert post_processor.typer.echo.call_args_list == [
-            mock.call(f"{cfg_verb} {cfg.url.format(issue_ref=issue)} {exp_body.format(issue_ref=issue)}")
+            mock.call(f"{cfg_verb} {cfg.url.replace('$ISSUE_REF', issue)} {exp_body.replace('$ISSUE_REF', issue)}")
             for issue in issue_refs
         ]
 

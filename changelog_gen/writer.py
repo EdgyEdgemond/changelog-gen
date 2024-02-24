@@ -33,9 +33,6 @@ class BaseWriter:
             self.existing = lines[self.file_header_line_count + 1 :]
         self.content = []
         self.dry_run = dry_run
-        # Handle backwards compat
-        if issue_link:
-            issue_link = issue_link.format(issue_ref="$ISSUE_REF", new_version="$VERSION")
         self.issue_link = issue_link
 
     def add_version(self: typing.Self, version: str) -> None:

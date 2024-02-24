@@ -8,6 +8,7 @@ from configparser import (
     NoOptionError,
 )
 from pathlib import Path
+from warnings import warn
 
 import rtoml
 
@@ -26,8 +27,8 @@ class PostProcessConfig:
     url: str = ""
     verb: str = "POST"
     # The body to send as a post-processing command,
-    # can have the entries: {issue_ref} {new_version}
-    body: str = '{{"body": "Released on v{new_version}"}}'
+    # can have the entries: $ISSUE_REF, $VERSION
+    body: str = '{"body": "Released on $VERSION"}'
     # Name of an environment variable to use as HTTP Basic Auth parameters.
     # The variable should contain "{user}:{api_key}"
     auth_env: str | None = None
@@ -205,5 +206,31 @@ def read(**kwargs) -> Config:
         cfg["post_process"].auth_env = post_process.auth_env or cfg["post_process"].auth_env
 
     cfg.update(overrides)
+
+    if cfg.get("post_process"):
+        url = cfg["post_process"].url
+        body = cfg["post_process"].body
+        if "{issue_ref}" in url or "{new_version}" in url:
+            warn(
+                "{replace} format strings are not supported in `post_process.url` configuration, use $REPLACE instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            cfg["post_process"].url = url.format(issue_ref="$ISSUE_REF", new_version="$VERSION")
+        if "{issue_ref}" in body or "{new_version}" in body:
+            warn(
+                "{replace} format strings are not supported in `post_process.body` configuration, use $REPLACE instead.",  # noqa: E501
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            cfg["post_process"].body = body.format(issue_ref="$ISSUE_REF", new_version="$VERSION")
+
+    if cfg.get("issue_link") and "{issue_ref}" in cfg["issue_link"]:
+        warn(
+            "{replace} format strings are not supported in `issue_link` configuration, use $REPLACE instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        cfg["issue_link"] = cfg["issue_link"].format(issue_ref="$ISSUE_REF", new_version="$VERSION")
 
     return Config(**cfg)

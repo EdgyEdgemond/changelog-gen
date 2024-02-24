@@ -48,12 +48,7 @@ def per_issue_post_process(
     client = make_client(cfg)
 
     for issue in issue_refs:
-        # Handle backwards compatibility
-        url = cfg.url.format(issue_ref="$ISSUE_REF", new_version="$VERSION")
-        body = cfg.body.format(
-            issue_ref="$ISSUE_REF",
-            new_version="$VERSION",
-        )
+        url, body = cfg.url, cfg.body
         for find, replace in [
             ("$ISSUE_REF", issue),
             ("$VERSION", version_tag),
@@ -67,7 +62,7 @@ def per_issue_post_process(
             r = client.request(
                 method=cfg.verb,
                 url=url,
-                data=body,
+                content=body,
             )
             try:
                 typer.echo(f"{cfg.verb} {url}: {HTTPStatus(r.status_code).name}")
