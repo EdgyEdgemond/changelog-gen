@@ -140,10 +140,6 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
 
     process_info(Git.get_latest_tag_info(), cfg, dry_run=dry_run)
 
-    # TODO(edgy): supported default extensions (steal from conventional commits)
-    # TODO(edgy): support multiple extras by default (the usuals)
-    # https://github.com/EdgyEdgemond/changelog-gen/issues/37
-
     section_mapping = cfg.section_mapping
     supported_sections = cfg.sections
 
@@ -155,6 +151,8 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
         raise typer.Exit(code=0)
 
     if version_tag is None:
+        # TODO(edgy): Support custom sections in version extraction
+        # https://github.com/EdgyEdgemond/changelog-gen/issues/68
         version_tag = extract_version_tag(sections)
 
     # TODO(edgy): take a note from bumpversion, read in versioning format string
