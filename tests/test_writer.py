@@ -128,9 +128,9 @@ class TestBaseWriter:
 
         assert w._add_section_header.call_args == mock.call("header")
         assert w._add_section_line.call_args_list == [
-            mock.call("line1", "1", None),
-            mock.call("line2", "2", None),
-            mock.call("line3", "3", "(config)"),
+            mock.call("line1", "1"),
+            mock.call("line2", "2"),
+            mock.call("(config) line3", "3"),
         ]
 
 
