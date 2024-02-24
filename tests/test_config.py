@@ -242,7 +242,8 @@ post_process =
     verb=PUT
     body={"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}
     auth_env=MY_API_AUTH
-        """,
+    headers={"content-type": "application/json"}
+""",
         )
 
         c = config.read()
@@ -251,6 +252,29 @@ post_process =
             verb="PUT",
             body='{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}',
             auth_env="MY_API_AUTH",
+            headers={"content-type": "application/json"},
+        )
+
+    def test_read_picks_up_post_process_config_pyproject(self, pyproject_factory):
+        pyproject_factory(
+            """
+[tool.changelog_gen.post_process]
+url = "https://fake_rest_api/$ISSUE_REF"
+verb = "PUT"
+body = '{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}'
+auth_env = "MY_API_AUTH"
+[tool.changelog_gen.post_process.headers]
+content-type = "application/json"
+""",
+        )
+
+        c = config.read()
+        assert c.post_process == config.PostProcessConfig(
+            url="https://fake_rest_api/$ISSUE_REF",
+            verb="PUT",
+            body='{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}',
+            auth_env="MY_API_AUTH",
+            headers={"content-type": "application/json"},
         )
 
     def test_read_picks_up_post_process_config_backwards_compat(self, config_factory):

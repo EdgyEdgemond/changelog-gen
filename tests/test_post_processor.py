@@ -12,7 +12,7 @@ from changelog_gen.config import PostProcessConfig
 class TestMakeClient:
     def test_create_client_with_auth_token(self, monkeypatch):
         monkeypatch.setenv("MY_API_AUTH", "fake_auth@domain:hex_api_key")
-        cfg = PostProcessConfig(auth_env="MY_API_AUTH")
+        cfg = PostProcessConfig(auth_env="MY_API_AUTH", headers={"content-type": "application/json"})
 
         client = post_processor.make_client(cfg)
 
@@ -20,7 +20,7 @@ class TestMakeClient:
         assert client.auth._auth_header == "Basic ZmFrZV9hdXRoQGRvbWFpbjpoZXhfYXBpX2tleQ=="
 
     def test_create_client_without_auth_token(self):
-        cfg = PostProcessConfig()
+        cfg = PostProcessConfig(headers={"content-type": "application/json"})
 
         client = post_processor.make_client(cfg)
 

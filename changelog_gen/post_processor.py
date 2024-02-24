@@ -26,11 +26,9 @@ def make_client(cfg: "PostProcessConfig") -> httpx.Client:
         else:
             auth = httpx.BasicAuth(username=username, password=api_key)
 
-    # TODO(tr): A good improvement would be to allow the headers to come from the config as well
-    # https://github.com/EdgyEdgemond/changelog-gen/issues/70
     return httpx.Client(
         auth=auth,
-        headers={"content-type": "application/json"},
+        headers=cfg.headers,
     )
 
 
