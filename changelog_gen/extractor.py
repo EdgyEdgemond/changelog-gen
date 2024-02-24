@@ -55,7 +55,8 @@ class ReleaseNoteExtractor:
 
         # Build a conventional commit regex based on configured sections
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
-        reg = re.compile(f"^({'|'.join(self.supported_sections.keys())}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")  # noqa: W605
+        types = "|".join(self.supported_sections.keys())
+        reg = re.compile(f"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")  # noqa: W605
 
         for i, log in enumerate(logs):
             m = reg.match(log)

@@ -123,6 +123,7 @@ def test_git_commit_extraction(multiversion_repo):
 
 Refs: #4
 """,
+        "fix typo",
         """feat(docs)!: Detail about 3
 
 Refs: #3
@@ -134,6 +135,7 @@ With some details
 BREAKING CHANGE:
 Refs: #1
 """,
+        "update readme",
         """feat: Detail about 2
 
 Refs: #2
