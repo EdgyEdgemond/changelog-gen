@@ -151,6 +151,8 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
         raise typer.Exit(code=0)
 
     if version_tag is None:
+        # TODO(edgy): Support custom sections in version extraction
+        # https://github.com/EdgyEdgemond/changelog-gen/issues/68
         version_tag = extract_version_tag(sections)
 
     version_string = cfg.version_string.format(new_version=version_tag)
