@@ -112,3 +112,8 @@ class Git:
         subprocess.check_output(
             ["git", "commit", "-m", f"Update CHANGELOG for {version}"],  # noqa: S603, S607
         )
+
+    @classmethod
+    def revert(cls: type[T]) -> None:
+        """Revert a commit."""
+        subprocess.check_output(["git", "reset", "HEAD~1", "--hard"])  # noqa: S603, S607
