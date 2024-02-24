@@ -27,7 +27,7 @@ def make_client(cfg: "PostProcessConfig") -> httpx.Client:
             auth = httpx.BasicAuth(username=username, password=api_key)
 
     # TODO(tr): A good improvement would be to allow the headers to come from the config as well
-    # Does setup.cfg support dicts easily? migrate to pyproject.toml support
+    # https://github.com/EdgyEdgemond/changelog-gen/issues/70
     return httpx.Client(
         auth=auth,
         headers={"content-type": "application/json"},
