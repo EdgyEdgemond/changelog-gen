@@ -53,6 +53,7 @@ class Config:
 
     issue_link: str | None = None
     date_format: str | None = None
+    version_string: str = "v{new_version}"
 
     allowed_branches: list[str] = dataclasses.field(default_factory=list)
     section_mapping: dict = dataclasses.field(default_factory=lambda: DEFAULT_SECTION_MAPPING)
@@ -162,6 +163,7 @@ def _process_setup_cfg(setup: Path) -> dict:
     for valuename, parse_func in [
         ("issue_link", parse_string_value),
         ("date_format", parse_string_value),
+        ("version_string", parse_string_value),
         ("allowed_branches", parse_list_value),
         ("section_mapping", parse_dict_value),
         ("sections", parse_dict_value),
