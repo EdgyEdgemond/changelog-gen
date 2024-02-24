@@ -234,7 +234,10 @@ allowed_branches = [
 
 #### `sections =`
   _**[optional]**_<br />
-  **default**: {"feat": "Features and Improvements", "fix": "Bug fixes"}
+  **default**: {
+      "feat": "Features and Improvements",
+      "fix": "Bug fixes"
+  }
 
   Define custom headers or new sections/headers, new sections will require a matching
   section_mapping configuration.
@@ -251,7 +254,10 @@ fix = "Bugfixes"
 
 #### `semver_mapping =`
   _**[optional]**_<br />
-  **default**: {"fix": "patch", "feat": "minor"}
+  **default**: {
+      "fix": "patch",
+      "feat": "minor"
+  }
 
   Define custom section mappings for semver tagging. Any custom sections need
   to be mapped to `major`, `minor`, `patch`. Any unknown sections will be
@@ -276,7 +282,7 @@ remove = "minor"
         "refactor": "fix",
         "revert": "fix",
         "style": "fix",
-        "test": "fix",
+        "test": "fix"
     }
 
   Configure additional supported commit types to supported changelog sections.
@@ -299,18 +305,18 @@ new = "feat"
 
   See example on Jira configuration information.
 
- `.url=`<br />
+ `.url =`<br />
   _**[required]**_<br />
   **default**: None<br />
   The url to contact.
   Can have the placeholders `$ISSUE_REF` and `$VERSION`.
 
-  `.verb=`<br />
+  `.verb =`<br />
   _**[optional]**_<br />
   **default**: POST<br />
   HTTP method to use.
 
-  `.body=`<br />
+  `.body =`<br />
   _**[optional]**_<br />
   **default**: `{"body": "Released on $VERSION"}`<br />
   The text to send to the API.
