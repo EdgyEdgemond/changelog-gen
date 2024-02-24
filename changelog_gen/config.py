@@ -20,6 +20,19 @@ SUPPORTED_SECTIONS = {
 }
 
 
+DEFAULT_SECTION_MAPPING = {
+    "bug": "fix",
+    "chore": "fix",
+    "ci": "fix",
+    "docs": "fix",
+    "perf": "fix",
+    "refactor": "fix",
+    "revert": "fix",
+    "style": "fix",
+    "test": "fix",
+}
+
+
 @dataclasses.dataclass
 class PostProcessConfig:
     """Post Processor configuration options."""
@@ -42,7 +55,7 @@ class Config:
     date_format: str | None = None
 
     allowed_branches: list[str] = dataclasses.field(default_factory=list)
-    section_mapping: dict = dataclasses.field(default_factory=dict)
+    section_mapping: dict = dataclasses.field(default_factory=lambda: DEFAULT_SECTION_MAPPING)
     sections: dict = dataclasses.field(default_factory=lambda: SUPPORTED_SECTIONS)
 
     release: bool = False

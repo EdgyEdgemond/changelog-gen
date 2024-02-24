@@ -31,6 +31,37 @@ changes from a `release_notes` folder.
 By default supported types are currently `fix` and `feat`. Additional types can be configured
 to map to these initial types.
 
+By default the supported changelog sections are `feat` and `fix`, generating a
+changelog like below. The section headings can be configured, and new
+headers/types can be configured.
+
+```md
+## <version>
+
+### Features and Improvements
+- xxx
+- xxx
+
+### Bug fixes
+- xxx
+- xxx
+```
+
+The supported commit types out of the box are (all but `feat` are treated as
+`fix` for generation purposes, these relations can be configured):
+
+* feat
+* fix
+* bug
+* chore
+* ci
+* docs
+* perf
+* refactor
+* revert
+* style
+* test
+
 ### Conventional commits
 
 ```
@@ -210,8 +241,7 @@ fix = "Bugfixes"
   _**[optional]**_<br />
   **default**: None
 
-  Configure additional supported release_note extensions to supported changelog
-  sections.
+  Configure additional supported commit types to supported changelog sections.
 
   Example:
 

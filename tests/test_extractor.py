@@ -161,6 +161,41 @@ Refs: #2
     }
 
 
+def test_git_commit_extraction_picks_up_custom_types(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    for msg in [
+        """bug: Detail about 1
+
+With some details
+
+BREAKING CHANGE:
+Refs: #1
+""",
+        "update readme",
+        """feat: Detail about 2
+
+Refs: #2
+""",
+    ]:
+        f.write_text(msg)
+        multiversion_repo.run("git add hello.txt")
+        multiversion_repo.api.index.commit(msg)
+
+    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+
+    sections = e.extract({"bug": "fix"})
+
+    assert sections == {
+        "feat": {
+            "2": {"description": "Detail about 2", "breaking": False, "scope": None},
+        },
+        "fix": {
+            "1": {"description": "Detail about 1", "breaking": True, "scope": None},
+        },
+    }
+
+
 @pytest.mark.usefixtures("_invalid_release_notes")
 def test_invalid_notes_extraction_raises():
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
