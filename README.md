@@ -234,7 +234,7 @@ allowed_branches = [
 
 #### `sections =`
   _**[optional]**_<br />
-  **default**: None
+  **default**: {"feat": "Features and Improvements", "fix": "Bug fixes"}
 
   Define custom headers or new sections/headers, new sections will require a matching
   section_mapping configuration.
@@ -249,9 +249,35 @@ remove = "Removals"
 fix = "Bugfixes"
 ```
 
+#### `semver_mapping =`
+  _**[optional]**_<br />
+  **default**: {"fix": "patch", "feat": "minor"}
+
+  Define custom section mappings for semver tagging. Any custom sections need
+  to be mapped to `major`, `minor`, `patch`. Any unknown sections will be
+  treated as a `patch`.
+
+  Example:
+
+```toml
+[tool.changelog_gen.sections]
+change = "patch"
+remove = "minor"
+```
+
 #### `section_mapping =`
   _**[optional]**_<br />
-  **default**: None
+  **default**: {
+        "bug": "fix",
+        "chore": "fix",
+        "ci": "fix",
+        "docs": "fix",
+        "perf": "fix",
+        "refactor": "fix",
+        "revert": "fix",
+        "style": "fix",
+        "test": "fix",
+    }
 
   Configure additional supported commit types to supported changelog sections.
 

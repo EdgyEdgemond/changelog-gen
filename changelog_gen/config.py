@@ -20,6 +20,10 @@ SUPPORTED_SECTIONS = {
     "fix": "Bug fixes",
 }
 
+SEMVER_MAPPING = {
+    "feat": "minor",
+    "fix": "patch",
+}
 
 DEFAULT_SECTION_MAPPING = {
     "bug": "fix",
@@ -122,8 +126,9 @@ class Config:
     version_string: str = "v{new_version}"
 
     allowed_branches: list[str] = dataclasses.field(default_factory=list)
-    section_mapping: dict = dataclasses.field(default_factory=lambda: DEFAULT_SECTION_MAPPING)
     sections: dict = dataclasses.field(default_factory=lambda: SUPPORTED_SECTIONS)
+    semver_mapping: dict = dataclasses.field(default_factory=lambda: SEMVER_MAPPING)
+    section_mapping: dict = dataclasses.field(default_factory=lambda: DEFAULT_SECTION_MAPPING)
 
     release: bool = False
     commit: bool = False
@@ -183,8 +188,9 @@ def _process_setup_cfg(setup: Path) -> dict:
         ("date_format", extract_string_value),
         ("version_string", extract_string_value),
         ("allowed_branches", extract_list_value),
-        ("section_mapping", extract_dict_value),
         ("sections", extract_dict_value),
+        ("semver_mapping", extract_dict_value),
+        ("section_mapping", extract_dict_value),
         ("release", extract_boolean_value),
         ("commit", extract_boolean_value),
         ("allow_dirty", extract_boolean_value),
