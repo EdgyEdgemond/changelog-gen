@@ -48,21 +48,29 @@ def per_issue_post_process(
     client = make_client(cfg)
 
     for issue in issue_refs:
-        ep = cfg.url.format(issue_ref=issue, new_version=version_tag)
+        # Handle backwards compatibility
+        url = cfg.url.format(issue_ref="$ISSUE_REF", new_version="$VERSION")
         body = cfg.body.format(
-            issue_ref=issue,
-            new_version=version_tag,
+            issue_ref="$ISSUE_REF",
+            new_version="$VERSION",
         )
+        for find, replace in [
+            ("$ISSUE_REF", issue),
+            ("$VERSION", version_tag),
+        ]:
+            url = url.replace(find, replace)
+            body = body.replace(find, replace)
+
         if dry_run:
-            typer.echo(f"{cfg.verb} {ep} {body}")
+            typer.echo(f"{cfg.verb} {url} {body}")
         else:
             r = client.request(
                 method=cfg.verb,
-                url=ep,
+                url=url,
                 data=body,
             )
             try:
-                typer.echo(f"{cfg.verb} {ep}: {HTTPStatus(r.status_code).name}")
+                typer.echo(f"{cfg.verb} {url}: {HTTPStatus(r.status_code).name}")
                 r.raise_for_status()
             except httpx.HTTPError as e:
                 typer.echo(e.response.text)

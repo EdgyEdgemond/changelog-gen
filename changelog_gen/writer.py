@@ -33,6 +33,9 @@ class BaseWriter:
             self.existing = lines[self.file_header_line_count + 1 :]
         self.content = []
         self.dry_run = dry_run
+        # Handle backwards compat
+        if issue_link:
+            issue_link = issue_link.format(issue_ref="$ISSUE_REF", new_version="$VERSION")
         self.issue_link = issue_link
 
     def add_version(self: typing.Self, version: str) -> None:
@@ -102,10 +105,11 @@ class MdWriter(BaseWriter):
         if issue_ref.startswith("__"):
             line = f"- {description}"
         elif self.issue_link:
-            line = f"- {description} [[#{issue_ref}]({self.issue_link})]"
+            line = f"- {description} [[#$ISSUE_REF]({self.issue_link})]"
         else:
-            line = f"- {description} [#{issue_ref}]"
-        line = line.format(issue_ref=issue_ref)
+            line = f"- {description} [#$ISSUE_REF]"
+
+        line = line.replace("$ISSUE_REF", issue_ref)
 
         self.content.append(line)
 
@@ -144,11 +148,12 @@ class RstWriter(BaseWriter):
         if issue_ref.startswith("__"):
             line = f"* {description}"
         elif self.issue_link:
-            line = f"* {description} [`#{issue_ref}`_]"
-            self._links[f"#{issue_ref}"] = self.issue_link.format(issue_ref=issue_ref)
+            line = f"* {description} [`#$ISSUE_REF`_]"
+            self._links[f"#{issue_ref}"] = self.issue_link.replace("$ISSUE_REF", issue_ref)
         else:
-            line = f"* {description} [#{issue_ref}]"
-        line = line.format(issue_ref=issue_ref)
+            line = f"* {description} [#$ISSUE_REF]"
+
+        line = line.replace("$ISSUE_REF", issue_ref)
 
         self.content.extend([line, ""])
 
