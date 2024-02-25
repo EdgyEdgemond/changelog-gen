@@ -4,7 +4,7 @@ import pytest
 
 from changelog_gen import errors, extractor
 from changelog_gen.config import SUPPORTED_SECTIONS
-from changelog_gen.extractor import ReleaseNoteExtractor
+from changelog_gen.extractor import Change, ReleaseNoteExtractor
 
 
 @pytest.fixture()
@@ -89,12 +89,12 @@ def test_valid_notes_extraction():
 
     assert sections == {
         "feat": {
-            "2": {"description": "Detail about 2", "breaking": False},
-            "3": {"description": "Detail about 3", "breaking": False},
+            "2": Change("2", "Detail about 2"),
+            "3": Change("3", "Detail about 3"),
         },
         "fix": {
-            "1": {"description": "Detail about 1", "breaking": False},
-            "4": {"description": "Detail about 4", "breaking": False},
+            "1": Change("1", "Detail about 1"),
+            "4": Change("4", "Detail about 4"),
         },
     }
 
@@ -107,12 +107,12 @@ def test_breaking_notes_extraction():
 
     assert sections == {
         "feat": {
-            "2": {"description": "Detail about 2", "breaking": False},
-            "3": {"description": "Detail about 3", "breaking": True},
+            "2": Change("2", "Detail about 2"),
+            "3": Change("3", "Detail about 3", breaking=True),
         },
         "fix": {
-            "1": {"description": "Detail about 1", "breaking": True},
-            "4": {"description": "Detail about 4", "breaking": False},
+            "1": Change("1", "Detail about 1", breaking=True),
+            "4": Change("4", "Detail about 4"),
         },
     }
 
@@ -153,12 +153,12 @@ Refs: #2
 
     assert sections == {
         "feat": {
-            "2": {"description": "Detail about 2", "breaking": False, "scope": None},
-            "3": {"description": "Detail about 3", "breaking": True, "scope": "(docs)"},
+            "2": Change("2", "Detail about 2"),
+            "3": Change("3", "Detail about 3", breaking=True, scope="(docs)"),
         },
         "fix": {
-            "1": {"description": "Detail about 1", "breaking": True, "scope": None},
-            "4": {"description": "Detail about 4", "breaking": False, "scope": "(config)"},
+            "1": Change("1", "Detail about 1", breaking=True),
+            "4": Change("4", "Detail about 4", scope="(config)"),
         },
     }
 
@@ -190,10 +190,10 @@ Refs: #2
 
     assert sections == {
         "feat": {
-            "2": {"description": "Detail about 2", "breaking": False, "scope": None},
+            "2": Change("2", "Detail about 2"),
         },
         "fix": {
-            "1": {"description": "Detail about 1", "breaking": True, "scope": None},
+            "1": Change("1", "Detail about 1", breaking=True),
         },
     }
 
@@ -215,12 +215,12 @@ def test_section_remapping_can_remap_custom_sections():
     sections = e.extract({"bug": "fix"})
     assert sections == {
         "feat": {
-            "2": {"description": "Detail about 2", "breaking": False},
+            "2": Change("2", "Detail about 2"),
         },
         "fix": {
-            "1": {"description": "Detail about 1", "breaking": False},
-            "3": {"description": "Detail about 3", "breaking": False},
-            "4": {"description": "Detail about 4", "breaking": False},
+            "1": Change("1", "Detail about 1"),
+            "3": Change("3", "Detail about 3"),
+            "4": Change("4", "Detail about 4"),
         },
     }
 
@@ -232,12 +232,12 @@ def test_section_mapping_can_handle_new_sections():
     sections = e.extract({"fix": "bug"})
     assert sections == {
         "feat": {
-            "2": {"description": "Detail about 2", "breaking": False},
+            "2": Change("2", "Detail about 2"),
         },
         "bug": {
-            "1": {"description": "Detail about 1", "breaking": False},
-            "3": {"description": "Detail about 3", "breaking": False},
-            "4": {"description": "Detail about 4", "breaking": False},
+            "1": Change("1", "Detail about 1"),
+            "3": Change("3", "Detail about 3"),
+            "4": Change("4", "Detail about 4"),
         },
     }
 
@@ -247,15 +247,15 @@ def test_unique_issues():
 
     assert e.unique_issues({
         "unsupported": {
-            "5": {"description": "Detail about 4", "breaking": False},
+            "5": Change("5", "Detail about 5"),
         },
         "feat": {
-            "2": {"description": "Detail about 2", "breaking": False},
+            "2": Change("2", "Detail about 2"),
         },
         "bug": {
-            "2": {"description": "Detail about 2", "breaking": False},
-            "3": {"description": "Detail about 3", "breaking": False},
-            "4": {"description": "Detail about 4", "breaking": False},
+            "2": Change("2", "Detail about 2"),
+            "3": Change("3", "Detail about 3"),
+            "4": Change("4", "Detail about 4"),
         },
     }) == ["2", "3", "4"]
 
@@ -290,13 +290,13 @@ def test_clean_removes_all_non_dotfiles(release_notes):
 @pytest.mark.parametrize(
     ("sections", "semver_mapping", "expected_semver"),
     [
-        ({"fix": {"1": {"breaking": False}}}, {"feat": "minor"}, "patch"),
-        ({"feat": {"1": {"breaking": False}}}, {"feat": "minor"}, "patch"),
-        ({"fix": {"1": {"breaking": True}}}, {"feat": "minor"}, "minor"),
-        ({"feat": {"1": {"breaking": True}}}, {"feat": "minor"}, "minor"),
-        ({"custom": {"1": {"breaking": False}}}, {"custom": "patch"}, "patch"),
-        ({"custom": {"1": {"breaking": False}}}, {"custom": "minor"}, "patch"),
-        ({"custom": {"1": {"breaking": True}}}, {"custom": "minor"}, "minor"),
+        ({"fix": {"1": Change("1", "desc")}}, {"feat": "minor"}, "patch"),
+        ({"feat": {"1": Change("1", "desc")}}, {"feat": "minor"}, "patch"),
+        ({"fix": {"1": Change("1", "desc", breaking=True)}}, {"feat": "minor"}, "minor"),
+        ({"feat": {"1": Change("1", "desc", breaking=True)}}, {"feat": "minor"}, "minor"),
+        ({"custom": {"1": Change("1", "desc")}}, {"custom": "patch"}, "patch"),
+        ({"custom": {"1": Change("1", "desc")}}, {"custom": "minor"}, "patch"),
+        ({"custom": {"1": Change("1", "desc", breaking=True)}}, {"custom": "minor"}, "minor"),
     ],
 )
 def test_extract_version_tag_version_zero(sections, semver_mapping, expected_semver, monkeypatch):
@@ -314,13 +314,13 @@ def test_extract_version_tag_version_zero(sections, semver_mapping, expected_sem
 @pytest.mark.parametrize(
     ("sections", "semver_mapping", "expected_semver"),
     [
-        ({"fix": {"1": {"breaking": False}}}, {"feat": "minor"}, "patch"),
-        ({"feat": {"1": {"breaking": False}}}, {"feat": "minor"}, "minor"),
-        ({"fix": {"1": {"breaking": True}}}, {"feat": "minor"}, "major"),
-        ({"feat": {"1": {"breaking": True}}}, {"feat": "minor"}, "major"),
-        ({"custom": {"1": {"breaking": False}}}, {"custom": "patch"}, "patch"),
-        ({"custom": {"1": {"breaking": False}}}, {"custom": "minor"}, "minor"),
-        ({"custom": {"1": {"breaking": True}}}, {"custom": "minor"}, "major"),
+        ({"fix": {"1": Change("1", "desc")}}, {"feat": "minor"}, "patch"),
+        ({"feat": {"1": Change("1", "desc")}}, {"feat": "minor"}, "minor"),
+        ({"fix": {"1": Change("1", "desc", breaking=True)}}, {"feat": "minor"}, "major"),
+        ({"feat": {"1": Change("1", "desc", breaking=True)}}, {"feat": "minor"}, "major"),
+        ({"custom": {"1": Change("1", "desc")}}, {"custom": "patch"}, "patch"),
+        ({"custom": {"1": Change("1", "desc")}}, {"custom": "minor"}, "minor"),
+        ({"custom": {"1": Change("1", "desc", breaking=True)}}, {"custom": "minor"}, "major"),
     ],
 )
 def test_extract_version_tag(sections, semver_mapping, expected_semver, monkeypatch):

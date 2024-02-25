@@ -54,17 +54,16 @@ class BaseWriter:
     def add_section(self: typing.Self, header: str, lines: dict[str, dict]) -> None:
         """Add a section to changelog file."""
         self._add_section_header(header)
-        for issue_ref, details in sorted(lines.items()):
-            description = details["description"]
-            scope = details.get("scope")
-            breaking = details.get("breaking", False)
-
-            description = f"{scope} {description}" if scope else description
-            description = f"**Breaking:** {description}" if breaking else description
+        # TODO(edgy): sort based on change attributes
+        # https://github.com/EdgyEdgemond/changelog-gen/issues/75
+        for _, change in sorted(lines.items()):
+            description = f"{change.scope} {change.description}" if change.scope else change.description
+            description = f"**Breaking:** {description}" if change.breaking else description
+            description = f"{description} {change.authors}" if change.authors else description
 
             self._add_section_line(
                 description,
-                issue_ref,
+                change.issue_ref,
             )
         self._post_section()
 
