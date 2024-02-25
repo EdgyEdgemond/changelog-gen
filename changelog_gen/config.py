@@ -17,19 +17,21 @@ logger = logging.getLogger(__name__)
 SUPPORTED_SECTIONS = {
     "feat": "Features and Improvements",
     "fix": "Bug fixes",
+    "docs": "Documentation",
+    "misc": "Miscellaneous",
 }
 
 
 DEFAULT_SECTION_MAPPING = {
     "bug": "fix",
-    "chore": "fix",
-    "ci": "fix",
-    "docs": "fix",
-    "perf": "fix",
-    "refactor": "fix",
-    "revert": "fix",
-    "style": "fix",
-    "test": "fix",
+    "chore": "misc",
+    "ci": "misc",
+    "docs": "docs",
+    "perf": "misc",
+    "refactor": "misc",
+    "revert": "misc",
+    "style": "misc",
+    "test": "misc",
 }
 
 
