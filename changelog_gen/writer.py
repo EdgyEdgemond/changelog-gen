@@ -58,7 +58,7 @@ class BaseWriter:
             description = (
                 f"{self.italic_string(change.scope)} {change.description}" if change.scope else change.description
             )
-            description = f"{self.bold_string('Breaking')} {description}" if change.breaking else description
+            description = f"{self.bold_string('Breaking:')} {description}" if change.breaking else description
             description = f"{description} {change.authors}" if change.authors else description
 
             self._add_section_line(
