@@ -159,7 +159,7 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
     if date_fmt:
         version_string += f" {datetime.now(timezone.utc).strftime(date_fmt)}"
 
-    w = writer.new_writer(extension, dry_run=dry_run, issue_link=cfg.issue_link)
+    w = writer.new_writer(extension, dry_run=dry_run, issue_link=cfg.issue_link, commit_link=cfg.commit_link)
 
     w.add_version(version_string)
     w.consume(supported_sections, sections)

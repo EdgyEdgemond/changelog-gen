@@ -193,14 +193,20 @@ class RstWriter(BaseWriter):
         self._write(self.content)
 
 
-def new_writer(extension: Extension, issue_link: str | None = None, *, dry_run: bool = False) -> BaseWriter:
+def new_writer(
+    extension: Extension,
+    issue_link: str | None = None,
+    commit_link: str | None = None,
+    *,
+    dry_run: bool = False,
+) -> BaseWriter:
     """Generate a new writer based on the required extension."""
     changelog = Path(f"CHANGELOG.{extension.value}")
 
     if extension == Extension.MD:
-        return MdWriter(changelog, dry_run=dry_run, issue_link=issue_link)
+        return MdWriter(changelog, dry_run=dry_run, issue_link=issue_link, commit_link=commit_link)
     if extension == Extension.RST:
-        return RstWriter(changelog, dry_run=dry_run, issue_link=issue_link)
+        return RstWriter(changelog, dry_run=dry_run, issue_link=issue_link, commit_link=commit_link)
 
     msg = f'Changelog extension "{extension.value}" not supported.'
     raise ValueError(msg)
