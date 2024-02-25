@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 if typing.TYPE_CHECKING:
-    from changelog_gen.extractor import SectionDict
+    from changelog_gen.extractor import Change, SectionDict
 
 
 class Extension(Enum):
@@ -25,7 +25,14 @@ class BaseWriter:
     file_header = None
     extension = None
 
-    def __init__(self: typing.Self, changelog: Path, issue_link: str | None = None, *, dry_run: bool = False) -> None:
+    def __init__(
+        self: typing.Self,
+        changelog: Path,
+        issue_link: str | None = None,
+        commit_link: str | None = None,
+        *,
+        dry_run: bool = False,
+    ) -> None:
         self.existing = []
         self.changelog = changelog
         if self.changelog.exists():
@@ -34,6 +41,7 @@ class BaseWriter:
         self.content = []
         self.dry_run = dry_run
         self.issue_link = issue_link
+        self.commit_link = commit_link
 
     def add_version(self: typing.Self, version: str) -> None:
         """Add a version string to changelog file."""
@@ -63,7 +71,7 @@ class BaseWriter:
 
             self._add_section_line(
                 description,
-                change.issue_ref,
+                change,
             )
         self._post_section()
 
@@ -78,7 +86,7 @@ class BaseWriter:
     def _add_section_header(self: typing.Self, header: str) -> None:
         raise NotImplementedError
 
-    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
+    def _add_section_line(self: typing.Self, description: str, change: Change) -> None:
         raise NotImplementedError
 
     def _post_section(self: typing.Self) -> None:
@@ -113,16 +121,22 @@ class MdWriter(BaseWriter):
     def _add_section_header(self: typing.Self, header: str) -> None:
         self.content.extend([f"### {header}", ""])
 
-    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
+    def _add_section_line(self: typing.Self, description: str, change: Change) -> None:
         # Skip __{i}__ placeholder refs
-        if issue_ref.startswith("__"):
+        if change.issue_ref.startswith("__"):
             line = f"- {description}"
         elif self.issue_link:
             line = f"- {description} [[#$ISSUE_REF]({self.issue_link})]"
         else:
             line = f"- {description} [#$ISSUE_REF]"
 
-        line = line.replace("$ISSUE_REF", issue_ref)
+        if self.commit_link and change.commit_hash:
+            line = f"{line} [[{change.short_hash}]({self.commit_link})]"
+        elif change.commit_hash:
+            line = f"{line} [{change.short_hash}]"
+
+        line = line.replace("$ISSUE_REF", change.issue_ref)
+        line = line.replace("$COMMIT_HASH", change.commit_hash or "")
 
         self.content.append(line)
 
@@ -155,17 +169,21 @@ class RstWriter(BaseWriter):
     def _add_section_header(self: typing.Self, header: str) -> None:
         self.content.extend([header, "-" * len(header), ""])
 
-    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
+    def _add_section_line(self: typing.Self, description: str, change: Change) -> None:
         # Skip __{i}__ placeholder refs
-        if issue_ref.startswith("__"):
+        if change.issue_ref.startswith("__"):
             line = f"* {description}"
         elif self.issue_link:
-            line = f"* {description} [`#$ISSUE_REF`_]"
-            self._links[f"#{issue_ref}"] = self.issue_link.replace("$ISSUE_REF", issue_ref)
+            line = f"* {description} [`#{change.issue_ref}`_]"
+            self._links[f"#{change.issue_ref}"] = self.issue_link.replace("$ISSUE_REF", change.issue_ref)
         else:
-            line = f"* {description} [#$ISSUE_REF]"
+            line = f"* {description} [#{change.issue_ref}]"
 
-        line = line.replace("$ISSUE_REF", issue_ref)
+        if self.commit_link and change.commit_hash:
+            line = f"{line} [`{change.short_hash}`_]"
+            self._links[f"{change.short_hash}"] = self.commit_link.replace("$COMMIT_HASH", change.commit_hash)
+        elif change.commit_hash:
+            line = f"{line} [{change.short_hash}]"
 
         self.content.extend([line, ""])
 

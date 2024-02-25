@@ -83,14 +83,14 @@ class Git:
     def get_logs(cls: type[T], tag: str) -> list:
         """Fetch logs since last tag."""
         return [
-            m
+            m.split(":", 2)
             for m in (
                 subprocess.check_output(
                     [  # noqa: S603, S607
                         "git",
                         "log",
                         f"{tag}..HEAD",  # between last tag and HEAd
-                        "--format=%B",  # message only
+                        "--format=%h:%H:%B",  # message only
                         "-z",  # separate with \x00 rather than \n to differentiate multiline commits
                     ],
                 )

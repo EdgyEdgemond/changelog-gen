@@ -122,6 +122,7 @@ class Config:
     """Changelog configuration options."""
 
     issue_link: str | None = None
+    commit_link: str | None = None
     date_format: str | None = None
     version_string: str = "v{new_version}"
 
@@ -185,6 +186,7 @@ def _process_setup_cfg(setup: Path) -> dict:
 
     for valuename, extract_func in [
         ("issue_link", extract_string_value),
+        ("commit_link", extract_string_value),
         ("date_format", extract_string_value),
         ("version_string", extract_string_value),
         ("allowed_branches", extract_list_value),
@@ -269,5 +271,13 @@ def read(**kwargs) -> Config:
             stacklevel=2,
         )
         cfg["issue_link"] = cfg["issue_link"].format(issue_ref="$ISSUE_REF", new_version="$VERSION")
+
+    if cfg.get("commit_link") and "{commit_hash}" in cfg["config_link"]:
+        warn(
+            "{replace} format strings are not supported in `config_link` configuration, use $REPLACE instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        cfg["commit_link"] = cfg["commit_link"].format(commit_hash="$COMMIT_HASH")
 
     return Config(**cfg)

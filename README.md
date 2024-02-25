@@ -28,7 +28,10 @@ poetry install
 Commits](https://www.conventionalcommits.org/en/v1.0.0/), as well as reading
 changes from a `release_notes` folder.
 
-By default supported types are currently `fix` and `feat`. Additional types can be configured
+NOTE: `release_notes` support will be dropped in a future version, migration to
+conventional commits is recommended.
+
+By default supported sections are currently `fix` and `feat`. Additional types can be configured
 to map to these initial types.
 
 By default the supported changelog sections are `feat` and `fix`, generating a
@@ -183,6 +186,20 @@ General configuration is grouped in a `[changelog_gen]` section.
 ```toml
 [toolchangelog_gen]
 issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+```
+
+#### `commit_link =`
+  _**[optional]**_<br />
+  **default**: None
+
+  Create links in the CHANGELOG to the originating commit. A url that contains
+  an `$COMMIT_HASH` placeholder for replacement.
+
+  Example:
+
+```toml
+[toolchangelog_gen]
+commit_link = "http://github.com/EdgyEdgemond/changelog-gen/commit/$COMMIT_HASH"
 ```
 
 #### `version_string =`

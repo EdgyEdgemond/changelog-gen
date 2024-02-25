@@ -5,6 +5,7 @@ import re
 import typing
 from collections import defaultdict
 from pathlib import Path
+from warnings import warn
 
 from changelog_gen import errors
 from changelog_gen.vcs import Git
@@ -19,10 +20,12 @@ class Change:  # noqa: D101
     authors: str = ""
     scope: str = ""
     breaking: bool = False
+    short_hash: str | None = None
+    commit_hash: str | None = None
 
     def __lt__(self: typing.Self, other: Change) -> bool:  # noqa: D105
-        s = (not self.breaking, self.scope if self.scope else "zzz", self.issue_ref)
-        o = (not other.breaking, other.scope if other.scope else "zzz", other.issue_ref)
+        s = (not self.breaking, self.scope.lower() if self.scope else "zzz", self.issue_ref.lower())
+        o = (not other.breaking, other.scope.lower() if other.scope else "zzz", other.issue_ref.lower())
         return s < o
 
 
@@ -44,6 +47,11 @@ class ReleaseNoteExtractor:
         section_mapping: dict[str, str] | None,
         sections: dict[str, dict],
     ) -> None:
+        warn(
+            "`release_notes` support will be dropped in a future version, please migrate to conventional commits.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # Extract changelog details from release note files.
         for issue in sorted(self.release_notes.iterdir()):
             if issue.is_file and not issue.name.startswith("."):
@@ -79,7 +87,7 @@ class ReleaseNoteExtractor:
         types = "|".join(set(list(self.supported_sections.keys()) + list(section_mapping.keys())))
         reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")
 
-        for i, log in enumerate(logs):
+        for i, (short_hash, commit_hash, log) in enumerate(logs):
             m = reg.match(log)
             if m:
                 section = m[1]
@@ -97,6 +105,8 @@ class ReleaseNoteExtractor:
                     issue_ref=issue_ref,
                     breaking=breaking,
                     scope=scope,
+                    short_hash=short_hash,
+                    commit_hash=commit_hash,
                 )
 
                 for line in details.split("\n"):

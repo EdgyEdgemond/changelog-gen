@@ -121,6 +121,7 @@ def test_breaking_notes_extraction():
 def test_git_commit_extraction(multiversion_repo):
     path = multiversion_repo.workspace
     f = path / "hello.txt"
+    hashes = []
     for msg in [
         """fix(config): Detail about 4
 
@@ -147,6 +148,7 @@ Refs: #2
         f.write_text(msg)
         multiversion_repo.run("git add hello.txt")
         multiversion_repo.api.index.commit(msg)
+        hashes.append(str(multiversion_repo.api.head.commit))
 
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
@@ -154,12 +156,19 @@ Refs: #2
 
     assert sections == {
         "feat": {
-            "2": Change("2", "Detail about 2"),
-            "3": Change("3", "Detail about 3", breaking=True, scope="(docs)"),
+            "2": Change("2", "Detail about 2", short_hash=hashes[5][:7], commit_hash=hashes[5]),
+            "3": Change(
+                "3",
+                "Detail about 3",
+                breaking=True,
+                scope="(docs)",
+                short_hash=hashes[2][:7],
+                commit_hash=hashes[2],
+            ),
         },
         "fix": {
-            "1": Change("1", "Detail about 1", breaking=True),
-            "4": Change("4", "Detail about 4", scope="(config)"),
+            "1": Change("1", "Detail about 1", breaking=True, short_hash=hashes[3][:7], commit_hash=hashes[3]),
+            "4": Change("4", "Detail about 4", scope="(config)", short_hash=hashes[0][:7], commit_hash=hashes[0]),
         },
     }
 
@@ -167,6 +176,7 @@ Refs: #2
 def test_git_commit_extraction_picks_up_custom_types(multiversion_repo):
     path = multiversion_repo.workspace
     f = path / "hello.txt"
+    hashes = []
     for msg in [
         """bug: Detail about 1
 
@@ -184,6 +194,7 @@ Refs: #2
         f.write_text(msg)
         multiversion_repo.run("git add hello.txt")
         multiversion_repo.api.index.commit(msg)
+        hashes.append(str(multiversion_repo.api.head.commit))
 
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
@@ -191,10 +202,10 @@ Refs: #2
 
     assert sections == {
         "feat": {
-            "2": Change("2", "Detail about 2"),
+            "2": Change("2", "Detail about 2", short_hash=hashes[2][:7], commit_hash=hashes[2]),
         },
         "fix": {
-            "1": Change("1", "Detail about 1", breaking=True),
+            "1": Change("1", "Detail about 1", breaking=True, short_hash=hashes[0][:7], commit_hash=hashes[0]),
         },
     }
 
@@ -246,19 +257,21 @@ def test_section_mapping_can_handle_new_sections():
 def test_unique_issues():
     e = ReleaseNoteExtractor({"bug": "BugFix", "feat": "Features"})
 
-    assert e.unique_issues({
-        "unsupported": {
-            "5": Change("5", "Detail about 5"),
+    assert e.unique_issues(
+        {
+            "unsupported": {
+                "5": Change("5", "Detail about 5"),
+            },
+            "feat": {
+                "2": Change("2", "Detail about 2"),
+            },
+            "bug": {
+                "2": Change("2", "Detail about 2"),
+                "3": Change("3", "Detail about 3"),
+                "4": Change("4", "Detail about 4"),
+            },
         },
-        "feat": {
-            "2": Change("2", "Detail about 2"),
-        },
-        "bug": {
-            "2": Change("2", "Detail about 2"),
-            "3": Change("3", "Detail about 3"),
-            "4": Change("4", "Detail about 4"),
-        },
-    }) == ["2", "3", "4"]
+    ) == ["2", "3", "4"]
 
 
 @pytest.mark.usefixtures("_valid_release_notes")
