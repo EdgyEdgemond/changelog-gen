@@ -249,8 +249,10 @@ fix = "Bugfixes"
 #### `semver_mapping =`
   _**[optional]**_<br />
   **default**: {
-      "fix": "patch",
       "feat": "minor"
+      "fix": "patch",
+      "docs": "patch"
+      "misc": "patch"
   }
 
   Define custom section mappings for semver tagging. Any custom sections need
