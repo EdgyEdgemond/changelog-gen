@@ -171,7 +171,7 @@ General configuration is grouped in a `[changelog_gen]` section.
   **default**: None
 
   Create links in the CHANGELOG to the originating issue. A url that contains
-  an `issue_ref` placeholder for replacement.
+  an `$ISSUE_REF` placeholder for replacement.
 
   Example:
 
