@@ -185,7 +185,7 @@ issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
   **default**: None
 
   Create links in the CHANGELOG to the originating commit. A url that contains
-  an `$COMMIT_HASH` placeholder for replacement.
+  a `$COMMIT_HASH` placeholder for replacement.
 
   Example:
 
