@@ -381,11 +381,18 @@ new = "feat"
 
   If using setup.cfg, provide a json string representation of the headers.
 
+  `.auth_type =`<br />
+  _**[optional]**_<br />
+  **default**: basic<br />
+  Auth type to use for post process requests, supported options are `basic` and `bearer`.
+
   `.auth_env =`<br />
   _**[optional]**_<br />
   **default**: None<br />
   Name of the environment variable to use to extract the basic auth information to contact the API.
-  The content of the variable should be `{user}:{api key}`.
+
+  * For basic auth the content of the variable should be `{user}:{api key}`.
+  * For bearer auth the content of the variable should be `{api key}`.
 
   Example to post to JIRA:
 
