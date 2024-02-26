@@ -16,6 +16,7 @@ from changelog_gen.version import BumpVersion
 class Change:  # noqa: D101
     issue_ref: str
     description: str
+    commit_type: str
 
     authors: str = ""
     scope: str = ""
@@ -35,16 +36,15 @@ SectionDict = dict[str, dict[str, Change]]
 class ReleaseNoteExtractor:
     """Parse release notes and generate section dictionaries."""
 
-    def __init__(self: typing.Self, supported_sections: list[str], *, dry_run: bool = False) -> None:
+    def __init__(self: typing.Self, type_headers: dict[str, str], *, dry_run: bool = False) -> None:
         self.release_notes = Path("./release_notes")
         self.dry_run = dry_run
-        self.supported_sections: dict[str, str] = supported_sections
+        self.type_headers = type_headers
 
         self.has_release_notes = self.release_notes.exists() and self.release_notes.is_dir()
 
     def _extract_release_notes(
         self: typing.Self,
-        section_mapping: dict[str, str] | None,
         sections: dict[str, dict],
     ) -> None:
         warn(
@@ -55,28 +55,31 @@ class ReleaseNoteExtractor:
         # Extract changelog details from release note files.
         for issue in sorted(self.release_notes.iterdir()):
             if issue.is_file and not issue.name.startswith("."):
-                issue_ref, section = issue.name.split(".")
-                section = section_mapping.get(section, section)
+                issue_ref, commit_type = issue.name.split(".")
 
                 breaking = False
-                if section.endswith("!"):
-                    section = section[:-1]
+                if commit_type.endswith("!"):
+                    commit_type = commit_type[:-1]
                     breaking = True
 
+                header = self.type_headers.get(commit_type, commit_type)
+
                 contents = issue.read_text().strip()
-                if section not in self.supported_sections:
-                    msg = f"Unsupported CHANGELOG section {section}, derived from `./release_notes/{issue.name}`"
+                if commit_type not in self.type_headers:
+                    msg = (
+                        f"Unsupported CHANGELOG commit type {commit_type}, derived from `./release_notes/{issue.name}`"
+                    )
                     raise errors.InvalidSectionError(msg)
 
-                sections[section][issue_ref] = Change(
+                sections[header][issue_ref] = Change(
                     description=contents,
                     issue_ref=issue_ref,
                     breaking=breaking,
+                    commit_type=commit_type,
                 )
 
     def _extract_commit_logs(
         self: typing.Self,
-        section_mapping: dict[str, str] | None,
         sections: dict[str, dict],
     ) -> None:
         latest_info = Git.get_latest_tag_info()
@@ -84,13 +87,13 @@ class ReleaseNoteExtractor:
 
         # Build a conventional commit regex based on configured sections
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
-        types = "|".join(set(list(self.supported_sections.keys()) + list(section_mapping.keys())))
+        types = "|".join(self.type_headers.keys())
         reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")
 
         for i, (short_hash, commit_hash, log) in enumerate(logs):
             m = reg.match(log)
             if m:
-                section = m[1]
+                commit_type = m[1]
                 scope = m[2] or ""
                 breaking = m[3] is not None
                 message = m[4]
@@ -107,6 +110,7 @@ class ReleaseNoteExtractor:
                     scope=scope,
                     short_hash=short_hash,
                     commit_hash=commit_hash,
+                    commit_type=commit_type,
                 )
 
                 for line in details.split("\n"):
@@ -118,28 +122,29 @@ class ReleaseNoteExtractor:
                         if m:
                             setattr(change, target, m[1])
 
-                section = section_mapping.get(section, section)
-                sections[section][change.issue_ref] = change
+                header = self.type_headers.get(commit_type, commit_type)
+                sections[header][change.issue_ref] = change
 
-    def extract(self: typing.Self, section_mapping: dict[str, str] | None = None) -> SectionDict:
+    def extract(self: typing.Self) -> SectionDict:
         """Iterate over release note files extracting sections and issues."""
-        section_mapping = section_mapping or {}
-
         sections = defaultdict(dict)
 
         if self.has_release_notes:
-            self._extract_release_notes(section_mapping, sections)
+            self._extract_release_notes(sections)
 
-        self._extract_commit_logs(section_mapping, sections)
+        self._extract_commit_logs(sections)
 
         return sections
 
     def unique_issues(self: typing.Self, sections: SectionDict) -> list[str]:
         """Generate unique list of issue references."""
         issue_refs = set()
-        for section, issues in sections.items():
-            if section in self.supported_sections:
-                issue_refs.update(issues.keys())
+        issue_refs = {
+            issue.issue_ref
+            for issues in sections.values()
+            for issue in issues.values()
+            if issue.commit_type in self.type_headers
+        }
         return sorted(issue_refs)
 
     def clean(self: typing.Self) -> None:
@@ -167,10 +172,10 @@ def extract_version_tag(sections: SectionDict, semver_mapping: dict[str, str]) -
 
     semvers = ["patch", "minor", "major"]
     semver = "patch"
-    for section, section_issues in sections.items():
-        if semvers.index(semver) < semvers.index(semver_mapping.get(section, "patch")):
-            semver = semver_mapping.get(section, "patch")
+    for section_issues in sections.values():
         for issue in section_issues.values():
+            if semvers.index(semver) < semvers.index(semver_mapping.get(issue.commit_type, "patch")):
+                semver = semver_mapping.get(issue.commit_type, "patch")
             if issue.breaking:
                 semver = "major"
 

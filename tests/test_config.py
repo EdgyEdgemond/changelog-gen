@@ -101,6 +101,31 @@ allowed_branches = [
         c = config.read()
         assert c.allowed_branches == ["master", "feature/11"]
 
+    def test_read_picks_up_type_headers(self, pyproject_factory):
+        pyproject_factory(
+            """
+[tool.changelog_gen.type_headers]
+bug = "Bug fixes"
+docs = "Documentation"
+feat = "Features and Improvements"
+feature = "Features and Improvements"
+fix = "Bug fixes"
+misc = "Miscellaneous"
+test = "Bug fixes"
+""",
+        )
+
+        c = config.read()
+        assert c.type_headers == {
+            "bug": "Bug fixes",
+            "docs": "Documentation",
+            "feat": "Features and Improvements",
+            "feature": "Features and Improvements",
+            "fix": "Bug fixes",
+            "misc": "Miscellaneous",
+            "test": "Bug fixes",
+        }
+
     def test_read_picks_up_section_mapping(self, pyproject_factory):
         pyproject_factory(
             """
@@ -112,7 +137,15 @@ test = "fix"
         )
 
         c = config.read()
-        assert c.section_mapping == {"feature": "feat", "bug": "fix", "test": "fix"}
+        assert c.type_headers == {
+            "bug": "Bug fixes",
+            "docs": "Documentation",
+            "feat": "Features and Improvements",
+            "feature": "Features and Improvements",
+            "fix": "Bug fixes",
+            "misc": "Miscellaneous",
+            "test": "Bug fixes",
+        }
 
     def test_read_picks_up_custom_sections(self, pyproject_factory):
         pyproject_factory(
@@ -122,11 +155,34 @@ bug = "Bugfixes"
 feat = "New Features"
 remove = "Chore"
 ci = "Chore"
+
+[tool.changelog_gen.section_mapping]
+bug = "bug"
+ci = "ci"
+chore = "misc"
+docs = "docs"
+perf = "misc"
+refactor = "misc"
+revert = "misc"
+style = "misc"
+test = "misc"
 """,
         )
 
         c = config.read()
-        assert c.sections == {"bug": "Bugfixes", "feat": "New Features", "remove": "Chore", "ci": "Chore"}
+        assert c.type_headers == {
+            "bug": "Bugfixes",
+            "feat": "New Features",
+            "remove": "Chore",
+            "ci": "Chore",
+            "chore": "Unknown",
+            "docs": "Unknown",
+            "perf": "Unknown",
+            "refactor": "Unknown",
+            "revert": "Unknown",
+            "style": "Unknown",
+            "test": "Unknown",
+        }
 
 
 class TestSetupConfig:
@@ -191,6 +247,32 @@ class TestSetupConfig:
         c = config.read()
         assert c.allowed_branches == ["master", "feature/11"]
 
+    def test_read_picks_up_type_headers(self, config_factory):
+        config_factory(
+            """
+[changelog_gen]
+type_headers =
+  bug = Bug fixes
+  docs = Documentation
+  feat = Features and Improvements
+  feature = Features and Improvements
+  fix = Bug fixes
+  misc = Miscellaneous
+  test = Bug fixes
+""",
+        )
+
+        c = config.read()
+        assert c.type_headers == {
+            "bug": "Bug fixes",
+            "docs": "Documentation",
+            "feat": "Features and Improvements",
+            "feature": "Features and Improvements",
+            "fix": "Bug fixes",
+            "misc": "Miscellaneous",
+            "test": "Bug fixes",
+        }
+
     def test_read_picks_up_section_mapping(self, config_factory):
         config_factory(
             """
@@ -203,7 +285,15 @@ section_mapping =
         )
 
         c = config.read()
-        assert c.section_mapping == {"feature": "feat", "bug": "fix", "test": "fix"}
+        assert c.type_headers == {
+            "bug": "Bug fixes",
+            "docs": "Documentation",
+            "feat": "Features and Improvements",
+            "feature": "Features and Improvements",
+            "fix": "Bug fixes",
+            "misc": "Miscellaneous",
+            "test": "Bug fixes",
+        }
 
     def test_read_picks_up_custom_sections(self, config_factory):
         config_factory(
@@ -214,11 +304,34 @@ sections =
   feat =New Features
   remove = Chore
   ci=Chore
+
+section_mapping =
+  bug = bug
+  ci = ci
+  chore = misc
+  docs = docs
+  perf = misc
+  refactor = misc
+  revert = misc
+  style = misc
+  test = misc
 """,
         )
 
         c = config.read()
-        assert c.sections == {"bug": "Bugfixes", "feat": "New Features", "remove": "Chore", "ci": "Chore"}
+        assert c.type_headers == {
+            "bug": "Bugfixes",
+            "feat": "New Features",
+            "remove": "Chore",
+            "ci": "Chore",
+            "chore": "Unknown",
+            "docs": "Unknown",
+            "perf": "Unknown",
+            "refactor": "Unknown",
+            "revert": "Unknown",
+            "style": "Unknown",
+            "test": "Unknown",
+        }
 
 
 class TestPostProcessConfig:

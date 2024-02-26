@@ -30,11 +30,9 @@ changes from a `release_notes` folder.
 
 NOTE: `release_notes` support will be dropped in a future version, migration to
 conventional commits is recommended.
-By default supported sections are `feat`, `fix`, `docs` and `misc`. Additional types can be configured
-to map to these initial sections, custom sections can be added and mapped to types as well.
 
-See [Configuration](#Configuration) below for default sections and section
-mappings and how to customize them.
+See [Configuration](#Configuration) below for default commit type configuration
+and how to customize them.
 
 ```md
 ## <version>
@@ -245,17 +243,23 @@ allowed_branches = [
 ]
 ```
 
-#### `sections =`
+#### `type_headers = `
   _**[optional]**_<br />
   **default**: {
       "feat": "Features and Improvements",
       "fix": "Bug fixes",
       "docs": "Documentation",
-      "misc": "Miscellaneous",
+      "bug": "Bug fixes",
+      "chore": "Miscellaneous",
+      "ci": "Miscellaneous",
+      "perf": "Miscellaneous",
+      "refactor": "Miscellaneous",
+      "revert": "Miscellaneous",
+      "style": "Miscellaneous",
+      "test": "Miscellaneous",
   }
 
-  Define custom headers or new sections/headers, new sections will require a
-  matching section_mapping configuration.
+  Define commit types and which headers in the changelog they should map to.
 
   Example:
 
@@ -276,19 +280,45 @@ fix = "Bugfixes"
       "misc": "patch"
   }
 
-  Define custom section mappings for semver tagging. Any custom sections need
-  to be mapped to `major`, `minor`, `patch`. Any unknown sections will be
+  Define custom type mappings for semver tagging. Any custom types need
+  to be mapped to `major`, `minor`, `patch`. Any unknown types will be
   treated as a `patch`.
 
   Example:
 
 ```toml
-[tool.changelog_gen.sections]
+[tool.changelog_gen.semver_mapping]
 change = "patch"
 remove = "minor"
 ```
 
+#### `sections =`
+  _**[Deprecated]**_<br />
+  _**[optional]**_<br />
+  **default**: {
+      "feat": "Features and Improvements",
+      "fix": "Bug fixes",
+      "docs": "Documentation",
+      "misc": "Miscellaneous",
+  }
+
+  Define custom headers or new sections/headers, new sections will require a
+  matching section_mapping configuration.
+
+  This configuration has been deprecated, use `type_headers` instead.
+
+  Example:
+
+```toml
+[tool.changelog_gen.sections]
+feat = "New Features"
+change = "Changes"
+remove = "Removals"
+fix = "Bugfixes"
+```
+
 #### `section_mapping =`
+  _**[Deprecated]**_<br />
   _**[optional]**_<br />
   **default**: {
       "bug": "fix",
@@ -303,6 +333,8 @@ remove = "minor"
   }
 
   Configure additional supported commit types to supported changelog sections.
+
+  This configuration has been deprecated, use `type_headers` instead.
 
   Example:
 

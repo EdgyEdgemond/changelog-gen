@@ -99,7 +99,7 @@ class TestBaseWriter:
             w._add_section_header("header")
 
         with pytest.raises(NotImplementedError):
-            w._add_section_line("description", Change("issue_ref", "description"))
+            w._add_section_line("description", Change("issue_ref", "description", "fix"))
 
         with pytest.raises(NotImplementedError):
             w._add_version("0.0.0")
@@ -121,17 +121,17 @@ class TestBaseWriter:
         w.add_section(
             "header",
             {
-                "1": Change("1", "line1", breaking=True),
-                "2": Change("2", "line2", authors="(a, b)"),
-                "3": Change("3", "line3", scope="(config)"),
+                "1": Change("1", "line1", "fix", breaking=True),
+                "2": Change("2", "line2", "fix", authors="(a, b)"),
+                "3": Change("3", "line3", "fix", scope="(config)"),
             },
         )
 
         assert w._add_section_header.call_args == mock.call("header")
         assert w._add_section_line.call_args_list == [
-            mock.call("**Breaking:** line1", Change("1", "line1", breaking=True)),
-            mock.call("*(config)* line3", Change("3", "line3", scope="(config)")),
-            mock.call("line2 (a, b)", Change("2", "line2", authors="(a, b)")),
+            mock.call("**Breaking:** line1", Change("1", "line1", "fix", breaking=True)),
+            mock.call("*(config)* line3", Change("3", "line3", "fix", scope="(config)")),
+            mock.call("line2 (a, b)", Change("2", "line2", "fix", authors="(a, b)")),
         ]
 
     def test_add_section_sorting(self, monkeypatch, changelog):
@@ -143,17 +143,17 @@ class TestBaseWriter:
         w.add_section(
             "header",
             {
-                "3": Change("3", "line3", breaking=True),
-                "2": Change("2", "line2", authors="(a, b)"),
-                "1": Change("1", "line1", scope="(config)"),
+                "3": Change("3", "line3", "fix", breaking=True),
+                "2": Change("2", "line2", "fix", authors="(a, b)"),
+                "1": Change("1", "line1", "fix", scope="(config)"),
             },
         )
 
         assert w._add_section_header.call_args == mock.call("header")
         assert w._add_section_line.call_args_list == [
-            mock.call("**Breaking:** line3", Change("3", "line3", breaking=True)),
-            mock.call("*(config)* line1", Change("1", "line1", scope="(config)")),
-            mock.call("line2 (a, b)", Change("2", "line2", authors="(a, b)")),
+            mock.call("**Breaking:** line3", Change("3", "line3", "fix", breaking=True)),
+            mock.call("*(config)* line1", Change("1", "line1", "fix", scope="(config)")),
+            mock.call("line2 (a, b)", Change("2", "line2", "fix", authors="(a, b)")),
         ]
 
 
@@ -219,42 +219,42 @@ class TestMdWriter:
     def test_add_section_line(self, changelog_md):
         w = writer.MdWriter(changelog_md)
 
-        w._add_section_line("line", Change("1", "line"))
+        w._add_section_line("line", Change("1", "line", "fix"))
 
         assert w.content == ["- line [#1]"]
 
     def test_add_section_line_ignores_placeholder(self, changelog_md):
         w = writer.MdWriter(changelog_md)
 
-        w._add_section_line("line", Change("__1__", "line"))
+        w._add_section_line("line", Change("__1__", "line", "fix"))
 
         assert w.content == ["- line"]
 
     def test_add_section_line_with_issue_link(self, changelog_md):
         w = writer.MdWriter(changelog_md, issue_link="http://url/issues/$ISSUE_REF")
 
-        w._add_section_line("line", Change("1", "line"))
+        w._add_section_line("line", Change("1", "line", "fix"))
 
         assert w.content == ["- line [[#1](http://url/issues/1)]"]
 
     def test_add_section_line_with_issue_link_ignores_placeholder(self, changelog_md):
         w = writer.MdWriter(changelog_md, issue_link="http://url/issues/$ISSUE_REF")
 
-        w._add_section_line("line", Change("__1__", "line"))
+        w._add_section_line("line", Change("__1__", "line", "fix"))
 
         assert w.content == ["- line"]
 
     def test_add_section_line_with_commit_link(self, changelog_md):
         w = writer.MdWriter(changelog_md, commit_link="http://url/commit/$COMMIT_HASH")
 
-        w._add_section_line("line", Change("__1__", "line", short_hash="1234567", commit_hash="commit-hash"))
+        w._add_section_line("line", Change("__1__", "line", "fix", short_hash="1234567", commit_hash="commit-hash"))
 
         assert w.content == ["- line [[1234567](http://url/commit/commit-hash)]"]
 
     def test_add_section_line_with_commit_link_ignores_null_commit_hash(self, changelog_md):
         w = writer.MdWriter(changelog_md, commit_link="http://url/commit/$COMMIT_HASH")
 
-        w._add_section_line("line", Change("__1__", "line"))
+        w._add_section_line("line", Change("__1__", "line", "fix"))
 
         assert w.content == ["- line"]
 
@@ -264,9 +264,9 @@ class TestMdWriter:
         w.add_section(
             "header",
             {
-                "1": Change("1", "line1"),
-                "2": Change("2", "line2"),
-                "3": Change("3", "line3", scope="(config)"),
+                "1": Change("1", "line1", "fix"),
+                "2": Change("2", "line2", "fix"),
+                "3": Change("3", "line3", "fix", scope="(config)"),
             },
         )
 
@@ -279,9 +279,9 @@ class TestMdWriter:
         w.add_section(
             "header",
             {
-                "1": Change("1", "line1"),
-                "2": Change("2", "line2"),
-                "3": Change("3", "line3", scope="(config)"),
+                "1": Change("1", "line1", "fix"),
+                "2": Change("2", "line2", "fix"),
+                "3": Change("3", "line3", "fix", scope="(config)"),
             },
         )
 
@@ -319,9 +319,9 @@ class TestMdWriter:
         w.add_section(
             "header",
             {
-                "4": Change("4", "line4"),
-                "5": Change("5", "line5"),
-                "6": Change("6", "line6", scope="(config)"),
+                "4": Change("4", "line4", "fix"),
+                "5": Change("5", "line5", "fix"),
+                "6": Change("6", "line6", "fix", scope="(config)"),
             },
         )
 
@@ -422,21 +422,21 @@ header
     def test_add_section_line(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)
 
-        w._add_section_line("line", Change("1", "line"))
+        w._add_section_line("line", Change("1", "line", "fix"))
 
         assert w.content == ["* line [#1]", ""]
 
     def test_add_section_line_ignores_placeholder(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)
 
-        w._add_section_line("line", Change("__1__", "line"))
+        w._add_section_line("line", Change("__1__", "line", "fix"))
 
         assert w.content == ["* line", ""]
 
     def test_add_section_line_with_issue_link(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/$ISSUE_REF")
 
-        w._add_section_line("line", Change("1", "line"))
+        w._add_section_line("line", Change("1", "line", "fix"))
 
         assert w.content == ["* line [`#1`_]", ""]
         assert w._links == {"#1": "http://url/issues/1"}
@@ -445,7 +445,7 @@ header
     def test_add_section_line_with_issue_link_skips_placeholder(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/$ISSUE_REF")
 
-        w._add_section_line("line", Change("__1__", "line"))
+        w._add_section_line("line", Change("__1__", "line", "fix"))
 
         assert w.content == ["* line", ""]
         assert w._links == {}
@@ -454,7 +454,7 @@ header
     def test_add_section_line_with_commit_link(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, commit_link="http://url/commit/$COMMIT_HASH")
 
-        w._add_section_line("line", Change("__1__", "line", short_hash="1234567", commit_hash="commit-hash"))
+        w._add_section_line("line", Change("__1__", "line", "fix", short_hash="1234567", commit_hash="commit-hash"))
 
         assert w.content == ["* line [`1234567`_]", ""]
         assert w._links == {"1234567": "http://url/commit/commit-hash"}
@@ -463,7 +463,7 @@ header
     def test_add_section_line_with_commit_link_ignores_null_commit_hash(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, commit_link="http://url/commit/$COMMIT_HASH")
 
-        w._add_section_line("line", Change("__1__", "line"))
+        w._add_section_line("line", Change("__1__", "line", "fix"))
 
         assert w.content == ["* line", ""]
         assert w._links == {}
@@ -475,9 +475,9 @@ header
         w.add_section(
             "header",
             {
-                "1": Change("1", "line1"),
-                "2": Change("2", "line2"),
-                "3": Change("3", "line3", scope="(config)"),
+                "1": Change("1", "line1", "fix"),
+                "2": Change("2", "line2", "fix"),
+                "3": Change("3", "line3", "fix", scope="(config)"),
             },
         )
 
@@ -508,9 +508,9 @@ header
         w.add_section(
             "header",
             {
-                "1": Change("1", "line1"),
-                "2": Change("2", "line2"),
-                "3": Change("3", "line3", scope="(config)"),
+                "1": Change("1", "line1", "fix"),
+                "2": Change("2", "line2", "fix"),
+                "3": Change("3", "line3", "fix", scope="(config)"),
             },
         )
 
@@ -529,9 +529,9 @@ Changelog
         w.add_section(
             "header",
             {
-                "1": Change("1", "line1"),
-                "2": Change("2", "line2"),
-                "3": Change("3", "line3", scope="(config)"),
+                "1": Change("1", "line1", "fix"),
+                "2": Change("2", "line2", "fix"),
+                "3": Change("3", "line3", "fix", scope="(config)"),
             },
         )
 
@@ -581,9 +581,9 @@ header
         w.add_section(
             "header",
             {
-                "4": Change("4", "line4"),
-                "5": Change("5", "line5"),
-                "6": Change("6", "line6", scope="(config)"),
+                "4": Change("4", "line4", "fix"),
+                "5": Change("5", "line5", "fix"),
+                "6": Change("6", "line6", "fix", scope="(config)"),
             },
         )
 
