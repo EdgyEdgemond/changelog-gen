@@ -103,15 +103,6 @@ Write CHANGELOG for suggested version 0.2.1 [y/N]: y
 Of the command line arguments, most of them can be configured in `setup.cfg` or `pyproject.toml` to remove
 the need to pass them in every time.
 
-Example `setup.cfg`:
-
-```ini
-[changelog_gen]
-commit = true
-release = true
-allow_dirty = false
-```
-
 Example `pyproject.toml`:
 
 ```ini
@@ -125,6 +116,18 @@ allow_dirty = false
   verb = POST
   body = {"body": "Released on v$VERSION"}
   auth_env = JIRA_AUTH
+```
+
+NOTE: setup.cfg is being deprecated, use `changelog migrate` to generate valid
+toml from existing setup.cfg file.
+
+Example `setup.cfg`:
+
+```ini
+[changelog_gen]
+commit = true
+release = true
+allow_dirty = false
 ```
 
 ### Configuration file -- Global configuration

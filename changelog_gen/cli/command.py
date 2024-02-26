@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+import rtoml
 import typer
 
 import changelog_gen
@@ -81,6 +83,22 @@ def init(
 
     w = writer.new_writer(file_format)
     w.write()
+
+
+@app.command("migrate")
+def migrate() -> None:
+    """Generate toml configuration from setup.cfg."""
+    setup = Path("setup.cfg")
+
+    if not setup.exists():
+        typer.echo("setup.cfg not found.")
+        raise typer.Exit(code=1)
+
+    cfg = config._process_setup_cfg(setup)  # noqa: SLF001
+    config.check_deprecations(cfg)
+    if "post_process" in cfg and "headers" in cfg["post_process"]:
+        cfg["post_process"]["headers"] = json.loads(cfg["post_process"]["headers"])
+    typer.echo(rtoml.dumps({"tool": {"changelog_gen": cfg}}))
 
 
 @gen_app.command("generate")
