@@ -50,8 +50,8 @@ reject_empty = false
 allowed_branches = master
 version_string={new_version}
 date_format=on %%Y-%%b-%%d
-issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF
-commit_link = https://github.com/EdgyEdgemond/changelog-gen/issues/$COMMIT_HASH
+issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::
+commit_link = https://github.com/EdgyEdgemond/changelog-gen/issues/::commit_hash::
 
 """,
     )
@@ -67,8 +67,8 @@ def test_migrate_generates_toml(cli_runner):
     assert (
         result.output
         == """[tool.changelog_gen]
-issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
-commit_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/$COMMIT_HASH"
+issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
+commit_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::commit_hash::"
 date_format = "on %Y-%b-%d"
 version_string = "{new_version}"
 release = true
@@ -78,7 +78,7 @@ allowed_branches = ["master", "test"]
 [tool.changelog_gen.post_process]
 url = "http://url"
 verb = "PUT"
-body = "{\\"body\\": \\"version $VERSION\\"}"
+body = "{\\"body\\": \\"version ::version::\\"}"
 auth_env = "AUTH_KEY"
 
 [tool.changelog_gen.post_process.headers]
@@ -108,8 +108,8 @@ def test_migrate_generates_toml_simple_setup(cli_runner):
     assert (
         result.output
         == """[tool.changelog_gen]
-issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
-commit_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/$COMMIT_HASH"
+issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
+commit_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::commit_hash::"
 date_format = "on %Y-%b-%d"
 version_string = "{new_version}"
 release = true

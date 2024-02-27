@@ -105,12 +105,12 @@ class TestPerIssuePostPrequest:
         )
         cfg = PostProcessConfig(
             verb=cfg_verb,
-            url="https://my-api.github.com/comments/$ISSUE_REF",
+            url="https://my-api.github.com/comments/::issue_ref::",
         )
         for issue in issue_refs:
             httpx_mock.add_response(
                 method=cfg_verb,
-                url=cfg.url.replace("$ISSUE_REF", issue),
+                url=cfg.url.replace("::issue_ref::", issue),
                 status_code=HTTPStatus.OK,
             )
 
@@ -123,15 +123,15 @@ class TestPerIssuePostPrequest:
     def test_handle_http_errors_gracefully(self, httpx_mock, monkeypatch):
         issue_refs = ["1", "2", "3"]
 
-        cfg = PostProcessConfig(url="https://my-api.github.com/comments/$ISSUE_REF")
+        cfg = PostProcessConfig(url="https://my-api.github.com/comments/::issue_ref::")
 
-        ep0 = cfg.url.replace("$ISSUE_REF", issue_refs[0])
+        ep0 = cfg.url.replace("::issue_ref::", issue_refs[0])
         httpx_mock.add_response(
             method="POST",
             url=ep0,
             status_code=HTTPStatus.OK,
         )
-        ep1 = cfg.url.replace("$ISSUE_REF", issue_refs[1])
+        ep1 = cfg.url.replace("::issue_ref::", issue_refs[1])
         not_found_txt = f"{issue_refs[1]} NOT FOUND"
         httpx_mock.add_response(
             method="POST",
@@ -139,7 +139,7 @@ class TestPerIssuePostPrequest:
             status_code=HTTPStatus.NOT_FOUND,
             content=bytes(not_found_txt, "utf-8"),
         )
-        ep2 = cfg.url.replace("$ISSUE_REF", issue_refs[2])
+        ep2 = cfg.url.replace("::issue_ref::", issue_refs[2])
         httpx_mock.add_response(
             method="POST",
             url=ep2,
@@ -166,7 +166,7 @@ class TestPerIssuePostPrequest:
         [
             (None, '{"body": "Released on %s"}'),
             # send issue ref as an int without quotes
-            ('{"issue": $ISSUE_REF, "version": "$VERSION"}', '{"issue": 1, "version": "%s"}'),
+            ('{"issue": ::issue_ref::, "version": "::version::"}', '{"issue": 1, "version": "%s"}'),
         ],
     )
     def test_body(self, cfg_verb, new_version, cfg_body, exp_body, httpx_mock):
@@ -176,12 +176,12 @@ class TestPerIssuePostPrequest:
         if cfg_body is not None:
             kwargs["body"] = cfg_body
         cfg = PostProcessConfig(
-            url="https://my-api.github.com/comments/$ISSUE_REF",
+            url="https://my-api.github.com/comments/::issue_ref::",
             **kwargs,
         )
         httpx_mock.add_response(
             method=cfg_verb,
-            url=cfg.url.replace("$ISSUE_REF", "1"),
+            url=cfg.url.replace("::issue_ref::", "1"),
             status_code=HTTPStatus.OK,
             match_content=bytes(exp_body % new_version, "utf-8"),
         )
@@ -201,7 +201,7 @@ class TestPerIssuePostPrequest:
         [
             (None, '{"body": "Released on 3.2.1"}'),
             # send issue ref as an int without quotes
-            ('{"issue": $ISSUE_REF, "version": "$VERSION"}', '{"issue": $ISSUE_REF, "version": "3.2.1"}'),
+            ('{"issue": ::issue_ref::, "version": "::version::"}', '{"issue": ::issue_ref::, "version": "3.2.1"}'),
         ],
     )
     def test_dry_run(self, monkeypatch, cfg_verb, issue_refs, cfg_body, exp_body):
@@ -209,7 +209,7 @@ class TestPerIssuePostPrequest:
         if cfg_body is not None:
             kwargs["body"] = cfg_body
         cfg = PostProcessConfig(
-            url="https://my-api.github.com/comments/$ISSUE_REF",
+            url="https://my-api.github.com/comments/::issue_ref::",
             verb=cfg_verb,
             **kwargs,
         )
@@ -227,7 +227,9 @@ class TestPerIssuePostPrequest:
         )
 
         assert post_processor.typer.echo.call_args_list == [
-            mock.call(f"{cfg_verb} {cfg.url.replace('$ISSUE_REF', issue)} {exp_body.replace('$ISSUE_REF', issue)}")
+            mock.call(
+                f"{cfg_verb} {cfg.url.replace('::issue_ref::', issue)} {exp_body.replace('::issue_ref::', issue)}",
+            )
             for issue in issue_refs
         ]
 

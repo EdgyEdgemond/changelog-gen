@@ -16,3 +16,7 @@ class VcsError(ChangelogException):
 
 class VersionDetectionError(ChangelogException):
     """Bumpversion error."""
+
+
+class UnsupportedReplaceError(ChangelogException):
+    """Unsupported ::replace:: in configuration string."""
