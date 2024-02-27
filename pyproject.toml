@@ -38,8 +38,8 @@ allowed_branches = [
     "master",
 ]
 date_format = "- %Y-%m-%d"
-issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
-commit_link = "https://github.com/EdgyEdgemond/changelog-gen/commit/$COMMIT_HASH"
+issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
+commit_link = "https://github.com/EdgyEdgemond/changelog-gen/commit/::commit_hash::"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
