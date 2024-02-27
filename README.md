@@ -105,8 +105,8 @@ the need to pass them in every time.
 
 Example `pyproject.toml`:
 
-```ini
-[changelog_gen]
+```tonl
+[tool.changelog_gen]
 commit = true
 release = true
 allow_dirty = false
@@ -176,7 +176,7 @@ General configuration is grouped in a `[changelog_gen]` section.
   Example:
 
 ```toml
-[toolchangelog_gen]
+[tool.changelog_gen]
 issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 ```
 
