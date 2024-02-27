@@ -107,7 +107,7 @@ tag = true
 [changelog_gen]
 commit = true
 post_process =
-    url=https://my-api/$ISSUE_REF/release
+    url=https://my-api/::issue_ref::/release
     auth_env=MY_API_AUTH
 """,
     )
@@ -615,7 +615,7 @@ class TestDelegatesToPerIssuePostProcess:
         assert post_process_mock.call_args_list == [
             mock.call(
                 PostProcessConfig(
-                    url="https://my-api/$ISSUE_REF/release",
+                    url="https://my-api/::issue_ref::/release",
                     auth_env="MY_API_AUTH",
                 ),
                 ["1", "2", "3", "4"],
@@ -634,7 +634,7 @@ class TestDelegatesToPerIssuePostProcess:
         post_process_mock = mock.MagicMock()
         monkeypatch.setattr(command, "per_issue_post_process", post_process_mock)
 
-        api_url = "https://my-api/$ISSUE_REF/comment"
+        api_url = "https://my-api/::issue_ref::/comment"
         result = gen_cli_runner.invoke(["--post-process-url", api_url])
 
         assert result.exit_code == 0
@@ -666,7 +666,7 @@ class TestDelegatesToPerIssuePostProcess:
         assert post_process_mock.call_args_list == [
             mock.call(
                 PostProcessConfig(
-                    url="https://my-api/$ISSUE_REF/release",
+                    url="https://my-api/::issue_ref::/release",
                     auth_env="OTHER_API_AUTH",
                 ),
                 ["1", "2", "3", "4"],
