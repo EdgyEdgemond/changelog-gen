@@ -580,6 +580,38 @@ def test_generate_uses_supplied_version_tag(
     assert git_repo.api.head.commit.message == "Update CHANGELOG for 0.3.2\n"
 
 
+@pytest.mark.usefixtures("setup_release", "_conventional_commits")
+def test_generate_uses_supplied_version_part(
+    gen_cli_runner,
+    git_repo,
+    changelog,
+    monkeypatch,
+):
+    monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=True))
+    result = gen_cli_runner.invoke(["--version-part", "major", "--commit"])
+
+    assert result.exit_code == 0
+    assert (
+        changelog.read_text()
+        == """
+# Changelog
+
+## v2.0.0
+
+### Features and Improvements
+
+- Detail about 2 [#2]
+- Detail about 3 [#3]
+
+### Bug fixes
+
+- Detail about 1 [#1]
+- Detail about 4 [#4]
+""".lstrip()
+    )
+    assert git_repo.api.head.commit.message == "Update CHANGELOG for 2.0.0\n"
+
+
 @pytest.mark.usefixtures("git_repo", "_conventional_commits", "setup_prerelease")
 def test_generate_dry_run(
     gen_cli_runner,
