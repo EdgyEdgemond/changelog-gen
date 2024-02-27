@@ -126,17 +126,17 @@ class MdWriter(BaseWriter):
         if change.issue_ref.startswith("__"):
             line = f"- {description}"
         elif self.issue_link:
-            line = f"- {description} [[#$ISSUE_REF]({self.issue_link})]"
+            line = f"- {description} [[#::issue_ref::]({self.issue_link})]"
         else:
-            line = f"- {description} [#$ISSUE_REF]"
+            line = f"- {description} [#::issue_ref::]"
 
         if self.commit_link and change.commit_hash:
             line = f"{line} [[{change.short_hash}]({self.commit_link})]"
         elif change.commit_hash:
             line = f"{line} [{change.short_hash}]"
 
-        line = line.replace("$ISSUE_REF", change.issue_ref)
-        line = line.replace("$COMMIT_HASH", change.commit_hash or "")
+        line = line.replace("::issue_ref::", change.issue_ref)
+        line = line.replace("::commit_hash::", change.commit_hash or "")
 
         self.content.append(line)
 
@@ -175,13 +175,13 @@ class RstWriter(BaseWriter):
             line = f"* {description}"
         elif self.issue_link:
             line = f"* {description} [`#{change.issue_ref}`_]"
-            self._links[f"#{change.issue_ref}"] = self.issue_link.replace("$ISSUE_REF", change.issue_ref)
+            self._links[f"#{change.issue_ref}"] = self.issue_link.replace("::issue_ref::", change.issue_ref)
         else:
             line = f"* {description} [#{change.issue_ref}]"
 
         if self.commit_link and change.commit_hash:
             line = f"{line} [`{change.short_hash}`_]"
-            self._links[f"{change.short_hash}"] = self.commit_link.replace("$COMMIT_HASH", change.commit_hash)
+            self._links[f"{change.short_hash}"] = self.commit_link.replace("::commit_hash::", change.commit_hash)
         elif change.commit_hash:
             line = f"{line} [{change.short_hash}]"
 

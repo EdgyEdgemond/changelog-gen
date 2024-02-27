@@ -4,6 +4,7 @@ import contextlib
 import dataclasses
 import json
 import logging
+import re
 from configparser import (
     ConfigParser,
     NoOptionError,
@@ -12,6 +13,8 @@ from pathlib import Path
 from warnings import warn
 
 import rtoml
+
+from changelog_gen import errors
 
 logger = logging.getLogger(__name__)
 
@@ -127,8 +130,8 @@ class PostProcessConfig:
     url: str | None = None
     verb: str = "POST"
     # The body to send as a post-processing command,
-    # can have the entries: $ISSUE_REF, $VERSION
-    body: str = '{"body": "Released on $VERSION"}'
+    # can have the entries: ::issue_ref::, ::version::
+    body: str = '{"body": "Released on ::version::"}'
     auth_type: str = "basic"  # future proof config
     headers: dict | None = None
     # Name of an environment variable to use as HTTP Basic Auth parameters.
@@ -236,34 +239,34 @@ def check_deprecations(cfg: dict) -> None:
         body = cfg["post_process"].get("body", "")
         if "{issue_ref}" in url or "{new_version}" in url:
             warn(
-                "{replace} format strings are not supported in `post_process.url` configuration, use $REPLACE instead.",
+                "{replace} format strings are not supported in `post_process.url` configuration, use ::replace:: instead.",  # noqa: E501
                 DeprecationWarning,
                 stacklevel=2,
             )
-            cfg["post_process"]["url"] = url.format(issue_ref="$ISSUE_REF", new_version="$VERSION")
+            cfg["post_process"]["url"] = url.format(issue_ref="::issue_ref::", new_version="::version::")
         if "{issue_ref}" in body or "{new_version}" in body:
             warn(
-                "{replace} format strings are not supported in `post_process.body` configuration, use $REPLACE instead.",  # noqa: E501
+                "{replace} format strings are not supported in `post_process.body` configuration, use ::replace:: instead.",  # noqa: E501
                 DeprecationWarning,
                 stacklevel=2,
             )
-            cfg["post_process"]["body"] = body.format(issue_ref="$ISSUE_REF", new_version="$VERSION")
+            cfg["post_process"]["body"] = body.format(issue_ref="::issue_ref::", new_version="::version::")
 
     if cfg.get("issue_link") and "{issue_ref}" in cfg["issue_link"]:
         warn(
-            "{replace} format strings are not supported in `issue_link` configuration, use $REPLACE instead.",
+            "{replace} format strings are not supported in `issue_link` configuration, use ::replace:: instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        cfg["issue_link"] = cfg["issue_link"].format(issue_ref="$ISSUE_REF", new_version="$VERSION")
+        cfg["issue_link"] = cfg["issue_link"].format(issue_ref="::issue_ref::", new_version="::version::")
 
     if cfg.get("commit_link") and "{commit_hash}" in cfg["config_link"]:
         warn(
-            "{replace} format strings are not supported in `config_link` configuration, use $REPLACE instead.",
+            "{replace} format strings are not supported in `config_link` configuration, use ::replace:: instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        cfg["commit_link"] = cfg["commit_link"].format(commit_hash="$COMMIT_HASH")
+        cfg["commit_link"] = cfg["commit_link"].format(commit_hash="::commit_hash::")
 
     if cfg.get("section_mapping") or cfg.get("sections"):
         warn(
@@ -273,7 +276,7 @@ def check_deprecations(cfg: dict) -> None:
         )
 
 
-def read(**kwargs) -> Config:
+def read(**kwargs) -> Config:  # noqa: C901, PLR0912
     """Read configuration from local environment.
 
     Supported configuration locations (checked in order):
@@ -324,5 +327,32 @@ def read(**kwargs) -> Config:
             type_headers[type_] = s.get(section, "Unknown")
 
         cfg["type_headers"] = type_headers
+
+    # this feels messy, but later on there is an update that should assist in cleaning this up.
+    for key_path in [
+        ("issue_link",),
+        ("commit_link",),
+        ("post_process", "url"),
+        ("post_process", "body"),
+    ]:
+        data, value = cfg, None
+        for key in key_path:
+            if isinstance(data, dict):
+                if key in data:
+                    data = data[key]
+                    value = data
+                else:
+                    value = None
+            else:
+                value = getattr(data, key)
+
+        if value:
+            # check for non supported replace keys
+            m = re.findall(r"(::.*?::)", value)
+            if m:
+                for replace in m:
+                    if replace not in ["::issue_ref::", "::version::"]:
+                        msg = f"Replace string {replace}, not supported."
+                        raise errors.UnsupportedReplaceError(msg)
 
     return Config(**cfg)
