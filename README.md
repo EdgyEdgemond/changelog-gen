@@ -7,7 +7,7 @@
 [![codecov](https://codecov.io/gh/EdgyEdgemond/changelog-gen/branch/master/graph/badge.svg)](https://codecov.io/gh/EdgyEdgemond/changelog-gen)
 
 `changelog-gen` is a CHANGELOG generator intended to be used in conjunction
-with [bumpversion](https://github.com/c4urself/bump2version) to generate
+with [bump-my-version](https://github.com/callowayproject/bump-my-version) to generate
 changelogs and create release tags.
 
 ## Installation

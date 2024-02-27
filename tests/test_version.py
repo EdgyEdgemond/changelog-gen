@@ -2,10 +2,15 @@ from unittest import mock
 
 import pytest
 
-from changelog_gen import version
+from changelog_gen import errors, version
 
 
 class TestBumpVersion:
+    @pytest.mark.usefixtures("cwd")
+    def test_errors_wrapped(self):
+        with pytest.raises(errors.VersionDetectionError):
+            version.BumpVersion.get_version_info("patch")
+
     @pytest.mark.parametrize(
         ("current_version", "new_version", "semver"),
         [
