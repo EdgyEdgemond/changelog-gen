@@ -112,9 +112,9 @@ release = true
 allow_dirty = false
 
 [changelog_gen.post_process]
-  url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-$ISSUE_REF/comment
+  url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment
   verb = POST
-  body = {"body": "Released on v$VERSION"}
+  body = {"body": "Released on v::version::"}
   auth_env = JIRA_AUTH
 ```
 
@@ -177,7 +177,7 @@ General configuration is grouped in a `[changelog_gen]` section.
 
 ```toml
 [toolchangelog_gen]
-issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 ```
 
 #### `commit_link =`
@@ -185,13 +185,13 @@ issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
   **default**: None
 
   Create links in the CHANGELOG to the originating commit. A url that contains
-  a `$COMMIT_HASH` placeholder for replacement.
+  a `::commit_hash::` placeholder for replacement.
 
   Example:
 
 ```toml
 [toolchangelog_gen]
-commit_link = "http://github.com/EdgyEdgemond/changelog-gen/commit/$COMMIT_HASH"
+commit_link = "http://github.com/EdgyEdgemond/changelog-gen/commit/::commit_hash::"
 ```
 
 #### `version_string =`
@@ -361,7 +361,7 @@ new = "feat"
   _**[required]**_<br />
   **default**: None<br />
   The url to contact.
-  Can have the placeholders `$ISSUE_REF` and `$VERSION`.
+  Can have the placeholders `::issue_ref::` and `::version::``.
 
   `.verb =`<br />
   _**[optional]**_<br />
@@ -370,9 +370,9 @@ new = "feat"
 
   `.body =`<br />
   _**[optional]**_<br />
-  **default**: `{"body": "Released on $VERSION"}`<br />
+  **default**: `{"body": "Released on ::version::"}`<br />
   The text to send to the API.
-  Can have the placeholders `$ISSUE_REF` and `$VERSION`.
+  Can have the placeholders `::issue_ref::` and `::version::`.
 
   `.headers =`<br />
   _**[optional]**_<br />
@@ -391,9 +391,9 @@ new = "feat"
 
 ```toml
 [tool.changelog_gen.post_process]
-url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-$ISSUE_REF/comment"
+url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment"
 verb = "POST"
-body = '{"body": "Released on $VERSION"}'
+body = '{"body": "Released on ::version::"}'
 auth_env = "JIRA_AUTH"
 [tool.changelog_gen.post_process.headers]
 content-type = "application/json"
@@ -403,7 +403,7 @@ content-type = "application/json"
   [manage-api-tokens-for-your-atlassian-account](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
   to generate a key.
 
-  Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog generate --post-process-url 'http://my-api-url.domain/comment/$ISSUE_REF' --post-process-auth-env MY_API_AUTH`)
+  Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog generate --post-process-url 'http://my-api-url.domain/comment/::issue_ref::' --post-process-auth-env MY_API_AUTH`)
 
 ## Contributing
 
