@@ -104,6 +104,7 @@ def gen(  # noqa: PLR0913
     allow_dirty: Optional[bool] = typer.Option(None, help="Don't abort if branch contains uncommitted changes."),
     release: Optional[bool] = typer.Option(None, help="Use bumpversion to tag the release."),
     commit: Optional[bool] = typer.Option(None, help="Commit changes made to changelog after writing."),
+    reject_empty: Optional[bool] = typer.Option(None, help="Don't accept changes if there are no release notes."),
     _version: Optional[bool] = typer.Option(
         None,
         "-v",
@@ -120,6 +121,7 @@ def gen(  # noqa: PLR0913
         release=release,
         allow_dirty=allow_dirty,
         commit=commit,
+        reject_empty=reject_empty,
         date_format=date_format,
         post_process_url=post_process_url,
         post_process_auth_env=post_process_auth_env,
@@ -148,6 +150,10 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
 
     e = extractor.ReleaseNoteExtractor(dry_run=dry_run, supported_sections=supported_sections)
     sections = e.extract(section_mapping)
+
+    if not e.unique_issues(sections) and cfg.reject_empty:
+        typer.echo("No changes present and reject_empty configured.")
+        raise typer.Exit(code=0)
 
     if version_tag is None:
         version_tag = extract_version_tag(sections)

@@ -25,6 +25,9 @@ Options:
   --release / --no-release        Use bumpversion to tag the release.
   --commit / --no-commit          Commit changes made to changelog after
                                   writing.
+  --reject-empty / --no-reject-empty
+                                  Don't accept changes if there are no release
+                                  notes.
   -v, --version                   Print version and exit.
   --help                          Show this message and exit.
 """
