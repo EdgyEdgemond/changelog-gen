@@ -1,6 +1,6 @@
 import pytest
 
-from changelog_gen import config
+from changelog_gen import config, errors
 
 
 @pytest.fixture()
@@ -69,12 +69,12 @@ class TestPyprojectToml:
         config_factory(
             """
 [tool.changelog_gen]
-issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 """,
         )
 
         c = config.read()
-        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 
     @pytest.mark.backwards_compat()
     def test_read_issue_link_backwards_compat(self, config_factory):
@@ -86,7 +86,7 @@ issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
         )
 
         c = config.read()
-        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 
     def test_read_picks_up_list_values(self, config_factory):
         config_factory(
@@ -217,8 +217,8 @@ class TestSetupConfig:
     @pytest.mark.parametrize(
         "issue_link",
         [
-            "issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF",
-            "issue_link=https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF",
+            "issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::",
+            "issue_link=https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::",
         ],
     )
     def test_read_picks_up_strings_values(self, setup_factory, issue_link):
@@ -230,7 +230,7 @@ class TestSetupConfig:
         )
 
         c = config.read()
-        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 
     @pytest.mark.parametrize(
         "branches",
@@ -354,9 +354,9 @@ release = true
         config_factory(
             """
 [tool.changelog_gen.post_process]
-url = "https://fake_rest_api/$ISSUE_REF"
+url = "https://fake_rest_api/::issue_ref::"
 verb = "PUT"
-body = '{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}'
+body = '{"issue": "::issue_ref::", "comment": "Released in ::version::"}'
 auth_env = "MY_API_AUTH"
 headers."content-type" = "application/json"
 """,
@@ -364,12 +364,26 @@ headers."content-type" = "application/json"
 
         c = config.read()
         assert c.post_process == config.PostProcessConfig(
-            url="https://fake_rest_api/$ISSUE_REF",
+            url="https://fake_rest_api/::issue_ref::",
             verb="PUT",
-            body='{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}',
+            body='{"issue": "::issue_ref::", "comment": "Released in ::version::"}',
             auth_env="MY_API_AUTH",
             headers={"content-type": "application/json"},
         )
+
+    def test_read_picks_up_unexpected_replaces(self, config_factory):
+        config_factory(
+            """
+[tool.changelog_gen.post_process]
+url = "https://fake_rest_api/::issue_ref::"
+verb = "PUT"
+body = '{"issue": "::issue_ref::", "comment": "Released in ::version::", "other": "::unexpected::"}'
+auth_env = "MY_API_AUTH"
+        """,
+        )
+
+        with pytest.raises(errors.UnsupportedReplaceError):
+            config.read()
 
     @pytest.mark.backwards_compat()
     def test_read_picks_up_post_process_config_backwards_compat(self, config_factory):
@@ -386,9 +400,9 @@ headers = '{"content-type": "application/json"}'
 
         c = config.read()
         assert c.post_process == config.PostProcessConfig(
-            url="https://fake_rest_api/$ISSUE_REF",
+            url="https://fake_rest_api/::issue_ref::",
             verb="PUT",
-            body='{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}',
+            body='{"issue": "::issue_ref::", "comment": "Released in ::version::"}',
             auth_env="MY_API_AUTH",
             headers={"content-type": "application/json"},
         )
