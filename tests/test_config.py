@@ -1,6 +1,6 @@
 import pytest
 
-from changelog_gen import config
+from changelog_gen import config, errors
 
 
 @pytest.fixture()
@@ -252,6 +252,21 @@ post_process =
             body='{"issue": "::issue_ref::", "comment": "Released in ::version::"}',
             auth_env="MY_API_AUTH",
         )
+
+    def test_read_picks_up_unexpected_replaces(self, config_factory):
+        config_factory(
+            """
+[changelog_gen]
+post_process =
+    url=https://fake_rest_api/::issue_ref::
+    verb=PUT
+    body={"issue": "::issue_ref::", "comment": "Released in ::version::", "other": "::unexpected::"}
+    auth_env=MY_API_AUTH
+        """,
+        )
+
+        with pytest.raises(errors.UnsupportedReplaceError):
+            config.read()
 
     def test_read_picks_up_post_process_config_backwards_compat(self, config_factory):
         config_factory(

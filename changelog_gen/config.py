@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import logging
+import re
 from configparser import (
     ConfigParser,
     NoOptionError,
@@ -11,6 +12,8 @@ from pathlib import Path
 from warnings import warn
 
 import rtoml
+
+from changelog_gen import errors
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +181,7 @@ def _process_setup_cfg(setup: Path) -> dict:
 
 # TODO(edgy): Support pyproject.toml configuration
 # https://github.com/EdgyEdgemond/changelog-gen/issues/55
-def read(**kwargs) -> Config:
+def read(**kwargs) -> Config:  # noqa: C901, PLR0912
     """Read configuration from local environment.
 
     Supported configuration locations (checked in order):
@@ -232,5 +235,32 @@ def read(**kwargs) -> Config:
             stacklevel=2,
         )
         cfg["issue_link"] = cfg["issue_link"].format(issue_ref="::issue_ref::", new_version="::version::")
+
+    # this feels messy, but later on there is an update that should assist in cleaning this up.
+    for key_path in [
+        ("issue_link",),
+        ("commit_link",),
+        ("post_process", "url"),
+        ("post_process", "body"),
+    ]:
+        data, value = cfg, None
+        for key in key_path:
+            if isinstance(data, dict):
+                if key in data:
+                    data = data[key]
+                    value = data
+                else:
+                    value = None
+            else:
+                value = getattr(data, key)
+
+        if value:
+            # check for non supported replace keys
+            m = re.findall(r"(::.*?::)", value)
+            if m:
+                for replace in m:
+                    if replace not in ["::issue_ref::", "::version::"]:
+                        msg = f"Replace string {replace}, not supported."
+                        raise errors.UnsupportedReplaceError(msg)
 
     return Config(**cfg)
