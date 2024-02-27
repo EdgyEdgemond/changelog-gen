@@ -21,7 +21,7 @@ pip install changelog-gen[bump2version]  # bump2version support will be dropped 
 or clone this repo and install with poetry.
 
 ```bash
-poetry install
+poetry install --extras=bump-my-version
 ```
 
 ## Usage
