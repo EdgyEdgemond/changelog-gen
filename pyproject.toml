@@ -14,7 +14,12 @@ python = "^3.9"
 typer = "^0.9.0"
 httpx = "^0.25.0"
 rtoml = "^0.10.0"
-bump-my-version = "^0.18.3"
+bump-my-version = { version = "^0.18.3", optional = true }
+bump2version = { version = "^1.0.1", optional = true }
+
+[tool.poetry.extras]
+bump-my-version = ["bump-my-version"]
+bump2version = ["bump2version"]
 
 [tool.poetry.dev-dependencies]
 
@@ -76,6 +81,8 @@ show_missing = true
 skip_covered = true
 exclude_lines = [
     "if typing.TYPE_CHECKING:",
+    "bump_library",
+    'warn',
 ]
 
 [tool.coverage.run]
