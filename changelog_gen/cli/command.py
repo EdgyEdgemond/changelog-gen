@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.metadata
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,7 +9,6 @@ from typing import Optional
 import rtoml
 import typer
 
-import changelog_gen
 from changelog_gen import (
     config,
     errors,
@@ -25,7 +25,8 @@ from changelog_gen.version import BumpVersion
 def _version_callback(*, value: bool) -> None:
     """Get current cli version."""
     if value:
-        typer.echo(f"changelog {changelog_gen.__version__}")
+        version = importlib.metadata.version("changelog-gen")
+        typer.echo(f"changelog {version}")
         raise typer.Exit
 
 
