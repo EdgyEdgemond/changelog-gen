@@ -69,12 +69,12 @@ class TestPyprojectToml:
         pyproject_factory(
             """
 [tool.changelog_gen]
-issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 """,
         )
 
         c = config.read()
-        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 
     def test_read_issue_link_backwards_compat(self, pyproject_factory):
         pyproject_factory(
@@ -85,7 +85,7 @@ issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
         )
 
         c = config.read()
-        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 
     def test_read_picks_up_list_values(self, pyproject_factory):
         pyproject_factory(
@@ -238,18 +238,18 @@ release = true
             """
 [changelog_gen]
 post_process =
-    url=https://fake_rest_api/$ISSUE_REF
+    url=https://fake_rest_api/::issue_ref::
     verb=PUT
-    body={"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}
+    body={"issue": "::issue_ref::", "comment": "Released in ::version::"}
     auth_env=MY_API_AUTH
         """,
         )
 
         c = config.read()
         assert c.post_process == config.PostProcessConfig(
-            url="https://fake_rest_api/$ISSUE_REF",
+            url="https://fake_rest_api/::issue_ref::",
             verb="PUT",
-            body='{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}',
+            body='{"issue": "::issue_ref::", "comment": "Released in ::version::"}',
             auth_env="MY_API_AUTH",
         )
 
@@ -267,9 +267,9 @@ post_process =
 
         c = config.read()
         assert c.post_process == config.PostProcessConfig(
-            url="https://fake_rest_api/$ISSUE_REF",
+            url="https://fake_rest_api/::issue_ref::",
             verb="PUT",
-            body='{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}',
+            body='{"issue": "::issue_ref::", "comment": "Released in ::version::"}',
             auth_env="MY_API_AUTH",
         )
 

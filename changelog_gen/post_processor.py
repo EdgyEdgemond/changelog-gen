@@ -50,8 +50,8 @@ def per_issue_post_process(
     for issue in issue_refs:
         url, body = cfg.url, cfg.body
         for find, replace in [
-            ("$ISSUE_REF", issue),
-            ("$VERSION", version_tag),
+            ("::issue_ref::", issue),
+            ("::version::", version_tag),
         ]:
             url = url.replace(find, replace)
             body = body.replace(find, replace)
