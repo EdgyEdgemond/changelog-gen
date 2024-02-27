@@ -1,3 +1,4 @@
+import re
 import subprocess
 from typing import TypeVar
 
@@ -13,7 +14,7 @@ class BumpVersion:  # noqa: D101
         try:
             describe_out = (
                 subprocess.check_output(
-                    ["bumpversion", semver, "--dry-run", "--list", "--allow-dirty"],  # noqa: S603, S607
+                    ["bump-my-version", "show-bump", "--ascii"],  # noqa: S603, S607
                     stderr=subprocess.STDOUT,
                 )
                 .decode()
@@ -24,14 +25,20 @@ class BumpVersion:  # noqa: D101
             msg = "Unable to get version data from bumpversion."
             raise errors.VersionDetectionError(msg) from e
 
-        bumpversion_data = {v.split("=")[0]: v.split("=")[1] for v in describe_out}
+        reg = re.compile(rf".*({semver}) [-]+ (.*)")
+
+        current = describe_out[0].split(" -- ")[0]
+        for line in describe_out:
+            m = reg.match(line)
+            if m:
+                new = m[2]
 
         return {
-            "current": bumpversion_data["current_version"],
-            "new": bumpversion_data["new_version"],
+            "current": current,
+            "new": new,
         }
 
     @classmethod
     def release(cls: type[T], version: str) -> None:
         """Generate new release."""
-        subprocess.check_output(["bumpversion", "--new-version", version, "patch"])  # noqa: S603, S607
+        subprocess.check_output(["bump-my-version", "bump", "--new-version", version, "patch"])  # noqa: S603, S607

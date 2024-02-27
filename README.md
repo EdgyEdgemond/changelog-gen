@@ -1,4 +1,4 @@
-# Changelog Generator - v0.8.2
+# Changelog Generator - v0.8.1
 [![image](https://img.shields.io/pypi/v/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
 [![image](https://img.shields.io/pypi/l/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
 [![image](https://img.shields.io/pypi/pyversions/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
@@ -411,6 +411,16 @@ content-type = "application/json"
   to generate a key.
 
   Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog generate --post-process-url 'http://my-api-url.domain/comment/$ISSUE_REF' --post-process-auth-env MY_API_AUTH`)
+
+### Pre-release flows
+
+If your versioning uses prerelease version parts, after a major/minor/patch update creates e.g. `v0.0.1rc0`, use
+`--version-part=<part>` to trigger release flows, based on your configuration.
+
+```bash
+$ changelog generate --version-part build
+... v0.0.1rc1
+```
 
 ## Contributing
 
