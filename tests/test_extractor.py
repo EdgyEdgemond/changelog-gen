@@ -53,74 +53,8 @@ def _breaking_release_notes(release_notes):
 
 
 @pytest.fixture()
-def _invalid_release_notes(release_notes):
-    for i, note in enumerate(["1.fix", "2.feat", "3.bug", "4.fix"], 1):
-        n = release_notes / note
-        n.write_text(f"Detail about {i}")
-
-
-@pytest.fixture()
-def _remap_release_notes(release_notes):
-    for i, note in enumerate(["1.bugfix", "2.feature", "3.test"]):
-        n = release_notes / note
-        n.write_text(f"Detail about {i}")
-
-
-@pytest.mark.usefixtures("multiversion_repo")
-def test_init_with_no_release_notes():
-    e = ReleaseNoteExtractor(TYPE_HEADERS)
-    assert e.has_release_notes is False
-
-
-def test_init_with_release_notes_non_dir(multiversion_repo):
-    path = multiversion_repo.workspace
-    r = path / "release_notes"
-    r.write_text("not a dir")
-
-    e = ReleaseNoteExtractor(TYPE_HEADERS)
-
-    assert e.has_release_notes is False
-
-
-@pytest.mark.usefixtures("_valid_release_notes")
-def test_valid_notes_extraction():
-    e = ReleaseNoteExtractor(TYPE_HEADERS)
-
-    sections = e.extract()
-
-    assert sections == {
-        "Features and Improvements": {
-            "2": Change("2", "Detail about 2", "feat"),
-            "3": Change("3", "Detail about 3", "feat"),
-        },
-        "Bug fixes": {
-            "1": Change("1", "Detail about 1", "fix"),
-            "4": Change("4", "Detail about 4", "fix"),
-        },
-    }
-
-
-@pytest.mark.usefixtures("_breaking_release_notes")
-def test_breaking_notes_extraction():
-    e = ReleaseNoteExtractor(TYPE_HEADERS)
-
-    sections = e.extract()
-
-    assert sections == {
-        "Features and Improvements": {
-            "2": Change("2", "Detail about 2", "feat"),
-            "3": Change("3", "Detail about 3", "feat", breaking=True),
-        },
-        "Bug fixes": {
-            "1": Change("1", "Detail about 1", "fix", breaking=True),
-            "4": Change("4", "Detail about 4", "fix"),
-        },
-    }
-
-
-def test_git_commit_extraction(multiversion_repo):
-    path = multiversion_repo.workspace
-    f = path / "hello.txt"
+def conventional_commits(multiversion_repo):
+    f = multiversion_repo.workspace / "hello.txt"
     hashes = []
     for msg in [
         """fix(config): Detail about 4
@@ -149,7 +83,48 @@ Refs: #2
         multiversion_repo.run("git add hello.txt")
         multiversion_repo.api.index.commit(msg)
         hashes.append(str(multiversion_repo.api.head.commit))
+    return hashes
 
+
+@pytest.mark.backwards_compat()
+@pytest.mark.usefixtures("multiversion_repo")
+def test_init_with_no_release_notes():
+    e = ReleaseNoteExtractor(TYPE_HEADERS)
+    assert e.has_release_notes is False
+
+
+@pytest.mark.backwards_compat()
+def test_init_with_release_notes_non_dir(multiversion_repo):
+    path = multiversion_repo.workspace
+    r = path / "release_notes"
+    r.write_text("not a dir")
+
+    e = ReleaseNoteExtractor(TYPE_HEADERS)
+
+    assert e.has_release_notes is False
+
+
+@pytest.mark.backwards_compat()
+@pytest.mark.usefixtures("_breaking_release_notes")
+def test_breaking_notes_extraction():
+    e = ReleaseNoteExtractor(TYPE_HEADERS)
+
+    sections = e.extract()
+
+    assert sections == {
+        "Features and Improvements": {
+            "2": Change("2", "Detail about 2", "feat"),
+            "3": Change("3", "Detail about 3", "feat", breaking=True),
+        },
+        "Bug fixes": {
+            "1": Change("1", "Detail about 1", "fix", breaking=True),
+            "4": Change("4", "Detail about 4", "fix"),
+        },
+    }
+
+
+def test_git_commit_extraction(conventional_commits):
+    hashes = conventional_commits
     e = ReleaseNoteExtractor(TYPE_HEADERS)
 
     sections = e.extract()
@@ -232,31 +207,15 @@ Refs: #2
     }
 
 
-@pytest.mark.usefixtures("_invalid_release_notes")
+@pytest.mark.backwards_compat()
+@pytest.mark.usefixtures("_valid_release_notes")
 def test_invalid_notes_extraction_raises():
-    e = ReleaseNoteExtractor({"fix": "Fix", "feat": "Features"})
+    e = ReleaseNoteExtractor({"fix": "Fix"})
 
     with pytest.raises(errors.InvalidSectionError) as ex:
         e.extract()
 
-    assert str(ex.value) == "Unsupported CHANGELOG commit type bug, derived from `./release_notes/3.bug`"
-
-
-@pytest.mark.usefixtures("_invalid_release_notes")
-def test_section_mapping_can_handle_new_sections():
-    e = ReleaseNoteExtractor({"bug": "BugFix", "feat": "Features", "fix": "BugFix"})
-
-    sections = e.extract()
-    assert sections == {
-        "Features": {
-            "2": Change("2", "Detail about 2", "feat"),
-        },
-        "BugFix": {
-            "1": Change("1", "Detail about 1", "fix"),
-            "3": Change("3", "Detail about 3", "bug"),
-            "4": Change("4", "Detail about 4", "fix"),
-        },
-    }
+    assert str(ex.value) == "Unsupported CHANGELOG commit type feat, derived from `./release_notes/2.feat`"
 
 
 def test_unique_issues():
@@ -279,6 +238,7 @@ def test_unique_issues():
     ) == ["2", "3", "4"]
 
 
+@pytest.mark.backwards_compat()
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_dry_run_clean_keeps_files(release_notes):
     e = ReleaseNoteExtractor(TYPE_HEADERS, dry_run=True)
@@ -296,6 +256,7 @@ def test_dry_run_clean_keeps_files(release_notes):
     )
 
 
+@pytest.mark.backwards_compat()
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_clean_removes_all_non_dotfiles(release_notes):
     """Clean should not remove .gitkeep files etc."""
