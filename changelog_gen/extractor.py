@@ -118,6 +118,7 @@ class ReleaseNoteExtractor:
 
                 if breaking:
                     util.noisy_echo(f"  Breaking change detected:\n    {commit_type}: {description}", self.verbose)
+
                 change = Change(
                     description=description,
                     issue_ref=issue_ref,
