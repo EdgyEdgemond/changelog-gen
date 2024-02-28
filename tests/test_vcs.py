@@ -184,9 +184,10 @@ def test_commit_no_changes_staged(multiversion_repo):
     f = path / "hello.txt"
     f.write_text("hello world! v3")
 
-    Git().commit("new_version")
+    with pytest.raises(errors.VcsError) as e:
+        Git().commit("new_version")
 
-    assert "Changes not staged for commit" in multiversion_repo.run("git status", capture=True)
+    assert "Changes not staged for commit" in str(e.value)
 
 
 def test_get_logs(multiversion_repo):

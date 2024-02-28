@@ -7,6 +7,8 @@ from enum import Enum
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
+from changelog_gen import util
+
 if typing.TYPE_CHECKING:
     from changelog_gen import config
     from changelog_gen.extractor import Change, SectionDict
@@ -103,9 +105,11 @@ class BaseWriter:
 
     def _write(self: typing.Self, content: list[str]) -> None:
         if self.dry_run:
+            util.debug_echo(f"Would write to '{self.changelog.name}'", self.verbose)
             with NamedTemporaryFile("wb") as output_file:
                 output_file.write(("\n".join(content)).encode("utf-8"))
         else:
+            util.debug_echo(f"Writing to '{self.changelog.name}'", self.verbose)
             self.changelog.write_text("\n".join(content))
 
 

@@ -42,6 +42,11 @@ def parse_bump2version_info(_semver: str, lines: list[str]) -> tuple[str, str]:
     return bumpversion_data["current_version"], bumpversion_data["new_version"]
 
 
+def generate_verbosity(verbose: int = 0) -> list[str]:
+    """Generate verbose flags correctly for each supported bumpversion library."""
+    return ["--verbose"] * verbose if bump_library == "bump2version" else [f"-{'v' * verbose}"]
+
+
 commands = {
     "bump-my-version": {
         "get_version_info": ["bump-my-version", "show-bump", "--ascii"],
@@ -70,7 +75,7 @@ class BumpVersion:  # noqa: D101
         command = commands[bump_library]["release"]
         args = [c.replace("VERSION", version) for c in command]
         if self.verbose:
-            args.append(f"-{'v' * self.verbose}")
+            args.extend(generate_verbosity(self.verbose))
         if self.dry_run:
             args.append("--dry-run")
         if self.allow_dirty:

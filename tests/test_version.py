@@ -38,6 +38,22 @@ def test_parse_bump2version_info():
     ) == ("0.1.0", "0.1.1rc0")
 
 
+@pytest.mark.parametrize(
+    ("verbose", "lib", "expected_verbosity"),
+    [
+        (1, "bump-my-version", ["-v"]),
+        (2, "bump-my-version", ["-vv"]),
+        (3, "bump-my-version", ["-vvv"]),
+        (1, "bump2version", ["--verbose"]),
+        (2, "bump2version", ["--verbose", "--verbose"]),
+        (3, "bump2version", ["--verbose", "--verbose", "--verbose"]),
+    ],
+)
+def test_generate_verbosity(monkeypatch, verbose, lib, expected_verbosity):
+    monkeypatch.setattr(version, "bump_library", lib)
+    assert version.generate_verbosity(verbose) == expected_verbosity
+
+
 class TestBumpMyVersion:
     @pytest.mark.usefixtures("cwd")
     def test_errors_wrapped(self):

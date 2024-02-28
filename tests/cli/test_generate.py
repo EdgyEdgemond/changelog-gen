@@ -363,10 +363,7 @@ def test_generate_creates_release(
     result = gen_cli_runner.invoke(["--commit", "--release"])
 
     assert result.exit_code == 0
-    assert mock_git.add_path.call_args_list == [
-        mock.call("CHANGELOG.md"),
-    ]
-    assert mock_git.commit.call_args == mock.call("0.0.1")
+    assert mock_git.commit.call_args == mock.call("0.0.1", ["CHANGELOG.md"])
     assert mock_bump.release.call_args == mock.call("0.0.1")
 
 
@@ -383,11 +380,7 @@ def test_generate_creates_release_from_notes(
 
     assert result.exit_code == 0
 
-    assert mock_git.add_path.call_args_list == [
-        mock.call("CHANGELOG.md"),
-        mock.call("release_notes"),
-    ]
-    assert mock_git.commit.call_args == mock.call("0.0.1")
+    assert mock_git.commit.call_args == mock.call("0.0.1", ["CHANGELOG.md", "release_notes"])
     assert mock_bump.release.call_args == mock.call("0.0.1")
 
 
@@ -412,7 +405,7 @@ release = true
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 0
-    assert mock_git.commit.call_args == mock.call("0.0.1")
+    assert mock_git.commit.call_args == mock.call("0.0.1", ["CHANGELOG.md"])
     assert mock_bump.release.call_args == mock.call("0.0.1")
 
 
@@ -485,7 +478,7 @@ release = true
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 1
-    assert mock_git.commit.call_args == mock.call("0.0.1")
+    assert mock_git.commit.call_args == mock.call("0.0.1", ["CHANGELOG.md"])
     assert mock_bump.release.call_args == mock.call("0.0.1")
     assert mock_git.revert.call_args == mock.call()
 
@@ -519,7 +512,7 @@ def test_generate_uses_supplied_version_tag(
 - Detail about 4 [#4]
 """.lstrip()
     )
-    assert mock_git.commit.call_args == mock.call("0.3.2")
+    assert mock_git.commit.call_args == mock.call("0.3.2", ["CHANGELOG.md"])
 
 
 @pytest.mark.usefixtures("_conventional_commits", "changelog")
@@ -664,7 +657,17 @@ class TestDelegatesToPerIssuePostProcess:
         result = gen_cli_runner.invoke(["--dry-run"])
 
         assert result.exit_code == 0
-        assert post_process_mock.call_count == 0
+        assert post_process_mock.call_args_list == [
+            mock.call(
+                PostProcessConfig(
+                    url="https://my-api/::issue_ref::/release",
+                    auth_env="MY_API_AUTH",
+                ),
+                ["1", "2", "3", "4"],
+                "0.0.1",
+                dry_run=True,
+            ),
+        ]
 
     @pytest.mark.usefixtures("_conventional_commits", "changelog", "post_process_pyproject")
     def test_generate_decline_changes(

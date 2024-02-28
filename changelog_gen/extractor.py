@@ -7,7 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from warnings import warn
 
-from changelog_gen import config, errors
+from changelog_gen import config, util
 
 if typing.TYPE_CHECKING:
     from changelog_gen.vcs import Git
@@ -56,6 +56,7 @@ class ReleaseNoteExtractor:
             DeprecationWarning,
             stacklevel=2,
         )
+        util.debug_echo("Extracting release note changes.", self.verbose)
         # Extract changelog details from release note files.
         for issue in sorted(self.release_notes.iterdir()):
             if issue.is_file and not issue.name.startswith("."):
@@ -66,17 +67,21 @@ class ReleaseNoteExtractor:
                     commit_type = commit_type[:-1]
                     breaking = True
 
+                description = issue.read_text().strip()
+
+                if breaking:
+                    util.noisy_echo(f"  Breaking change detected:\n    {commit_type}: {description}", self.verbose)
                 header = self.type_headers.get(commit_type, commit_type)
 
-                contents = issue.read_text().strip()
                 if commit_type not in self.type_headers:
-                    msg = (
-                        f"Unsupported CHANGELOG commit type {commit_type}, derived from `./release_notes/{issue.name}`"
+                    util.debug_echo(
+                        f"  Skipping unsupported CHANGELOG commit type {commit_type}, derived from `./release_notes/{issue.name}`",  # noqa: E501
+                        self.verbose,
                     )
-                    raise errors.InvalidSectionError(msg)
+                    continue
 
                 sections[header][issue_ref] = Change(
-                    description=contents,
+                    description=description,
                     issue_ref=issue_ref,
                     breaking=breaking,
                     commit_type=commit_type,
@@ -93,22 +98,28 @@ class ReleaseNoteExtractor:
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
         types = "|".join(self.type_headers.keys())
         reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")
+        util.debug_echo("Extracting commit log changes.", self.verbose)
 
         for i, (short_hash, commit_hash, log) in enumerate(logs):
             m = reg.match(log)
+            if m is None:
+                util.all_echo(f"  Skipping commit log (not conventional): {log}", self.verbose)
             if m:
+                util.all_echo(f"  Parsing commit log: {log}", self.verbose)
                 commit_type = m[1]
                 scope = m[2] or ""
                 breaking = m[3] is not None
-                message = m[4]
+                description = m[4]
                 details = m[5] or ""
 
                 # Handle missing refs in commit message, skip link generation in writer
                 issue_ref = f"__{i}__"
                 breaking = breaking or "BREAKING CHANGE" in details
 
+                if breaking:
+                    util.noisy_echo(f"  Breaking change detected:\n    {commit_type}: {description}", self.verbose)
                 change = Change(
-                    description=message,
+                    description=description,
                     issue_ref=issue_ref,
                     breaking=breaking,
                     scope=scope,
@@ -124,6 +135,7 @@ class ReleaseNoteExtractor:
                     ]:
                         m = re.match(pattern, line)
                         if m:
+                            util.noisy_echo(f"  `{target}` footer extracted '{m[1]}'", self.verbose)
                             setattr(change, target, m[1])
 
                 header = self.type_headers.get(commit_type, commit_type)
@@ -157,9 +169,13 @@ class ReleaseNoteExtractor:
         On dry_run, leave files where they are as they haven't been written to
         a changelog.
         """
-        if not self.dry_run and self.release_notes.exists():
+        if self.release_notes.exists():
+            util.debug_echo("Cleaning release notes.", self.verbose)
             for x in self.release_notes.iterdir():
                 if x.is_file and not x.name.startswith("."):
+                    if self.dry_run:
+                        util.debug_echo(f"  Would remove release note '{x.name}'", self.verbose)
+                        continue
                     x.unlink()
 
 
@@ -181,13 +197,17 @@ def extract_version_tag(sections: SectionDict, cfg: config.Config, bv: BumpVersi
         for issue in section_issues.values():
             if semvers.index(semver) < semvers.index(semver_mapping.get(issue.commit_type, "patch")):
                 semver = semver_mapping.get(issue.commit_type, "patch")
-            if issue.breaking:
+                util.noisy_echo(f"  `{semver}` change detected from commit_type '{issue.commit_type}'", cfg.verbose)
+            if issue.breaking and semver != "major":
                 semver = "major"
+                util.noisy_echo(f"  `{semver}` change detected from breaking issue '{issue.issue_ref}'", cfg.verbose)
 
     if current.startswith("0."):
         # If currently on 0.X releases, downgrade semver by one, major -> minor etc.
         idx = semvers.index(semver)
-        semver = semvers[max(idx - 1, 0)]
+        new_ = semvers[max(idx - 1, 0)]
+        util.noisy_echo(f"  `{semver}` change downgraded to `{new_}` for 0.x release.", cfg.verbose)
+        semver = new_
 
     version_info = bv.get_version_info(semver)
 
