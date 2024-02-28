@@ -5,6 +5,8 @@ from http import HTTPStatus
 import httpx
 import typer
 
+from changelog_gen import util
+
 if typing.TYPE_CHECKING:
     from changelog_gen.config import PostProcessConfig
 
@@ -27,7 +29,11 @@ def make_client(cfg: "PostProcessConfig") -> httpx.Client:
     if cfg.auth_env:
         user_auth = os.environ.get(cfg.auth_env)
         if not user_auth:
-            typer.echo(f'Missing environment variable "{cfg.auth_env}"')
+            util.verbose_echo(
+                f'Missing environment variable "{cfg.auth_env}"',
+                util.Verbosity.QUIET,
+                cfg.verbose,
+            )
             raise typer.Exit(code=1)
 
         if cfg.auth_type == "bearer":
@@ -37,7 +43,11 @@ def make_client(cfg: "PostProcessConfig") -> httpx.Client:
             try:
                 username, api_key = user_auth.split(":")
             except ValueError as e:
-                typer.echo(f'Unexpected content in {cfg.auth_env}, need "{{username}}:{{api_key}} for basic auth"')
+                util.verbose_echo(
+                    f'Unexpected content in {cfg.auth_env}, need "{{username}}:{{api_key}} for basic auth"',
+                    util.Verbosity.QUIET,
+                    cfg.verbose,
+                )
                 raise typer.Exit(code=1) from e
             else:
                 auth = httpx.BasicAuth(username=username, password=api_key)
@@ -72,15 +82,17 @@ def per_issue_post_process(
             body = body.replace(find, replace)
 
         if dry_run:
-            typer.echo(f"{cfg.verb} {url} {body}")
+            util.debug_echo(f"Request: {cfg.verb} {url} {body}", cfg.verbose)
         else:
+            util.noisy_echo(f"Request: {cfg.verb} {url}", cfg.verbose)
             r = client.request(
                 method=cfg.verb,
                 url=url,
                 content=body,
             )
             try:
-                typer.echo(f"{cfg.verb} {url}: {HTTPStatus(r.status_code).name}")
+                util.noisy_echo(f"Response: {HTTPStatus(r.status_code).name}", cfg.verbose)
                 r.raise_for_status()
             except httpx.HTTPError as e:
-                typer.echo(e.response.text)
+                util.quiet_echo("Post process request failed.", cfg.verbose)
+                util.debug_echo(e.response.text, cfg.verbose)

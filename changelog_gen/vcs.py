@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 from typing import TypeVar
 
-from changelog_gen import errors
+from changelog_gen import errors, util
 
 T = TypeVar("T", bound="Git")
 
@@ -11,8 +11,12 @@ T = TypeVar("T", bound="Git")
 class Git:
     """VCS implementation for git repositories."""
 
-    @classmethod
-    def get_latest_tag_info(cls: type[T]) -> dict[str, str | int]:
+    def __init__(self: T, verbose: int = 0, *, commit: bool = True, dry_run: bool = False) -> None:
+        self.verbose = verbose
+        self._commit = commit
+        self.dry_run = dry_run
+
+    def get_latest_tag_info(self: T) -> dict[str, str | int]:
         """Extract latest tag info from git."""
         describe_out = None
         for tags in ["[0-9]*", "v[0-9]*"]:
@@ -83,8 +87,7 @@ class Git:
 
         return info
 
-    @classmethod
-    def get_logs(cls: type[T], tag: str) -> list:
+    def get_logs(self: T, tag: str) -> list:
         """Fetch logs since last tag."""
         return [
             m.split(":", 2)
@@ -105,14 +108,18 @@ class Git:
             if m
         ]
 
-    @classmethod
-    def add_path(cls: type[T], path: str) -> None:
+    def add_path(self: T, path: str) -> None:
         """Add path to git repository."""
+        if self.dry_run:
+            util.debug_echo(f"Would add path {path} to Git", self.verbose)
+            return
         subprocess.check_output(["git", "add", "--update", path])  # noqa: S603, S607
 
-    @classmethod
-    def commit(cls: type[T], version: str) -> None:
+    def commit(self: T, version: str) -> None:
         """Commit changes to git repository."""
+        if self.dry_run or not self._commit:
+            util.debug_echo(f"Would commit to Git with message 'Update CHANGELOG for {version}'", self.verbose)
+            return
         try:
             subprocess.check_output(
                 ["git", "commit", "-m", f"Update CHANGELOG for {version}"],  # noqa: S603, S607
@@ -121,7 +128,9 @@ class Git:
             msg = f"Unable to commit: {e.output.decode().strip()}" if e.output else "Unable to commit."
             raise errors.VcsError(msg) from e
 
-    @classmethod
-    def revert(cls: type[T]) -> None:
+    def revert(self: T) -> None:
         """Revert a commit."""
+        if self.dry_run:
+            util.debug_echo("Would revert commit in Git", self.verbose)
+            return
         subprocess.check_output(["git", "reset", "HEAD~1", "--hard"])  # noqa: S603, S607

@@ -36,12 +36,9 @@ ruff = "^0.1.2"
 pre-commit = "^3.0.2"
 
 [tool.bumpversion]
-current_version = "0.8.2"
+current_version = "0.8.1"
 commit = true
 tag = true
-
-[[tool.bumpversion.files]]
-filename = "changelog_gen/__init__.py"
 
 [[tool.bumpversion.files]]
 filename = "README.md"

@@ -365,7 +365,7 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
             m = re.findall(r"(::.*?::)", value)
             if m:
                 for replace in m:
-                    if replace not in ["::issue_ref::", "::version::"]:
+                    if replace not in ["::issue_ref::", "::version::", "::commit_hash::"]:
                         msg = f"Replace string {replace}, not supported."
                         raise errors.UnsupportedReplaceError(msg)
 

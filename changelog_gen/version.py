@@ -3,6 +3,8 @@ import subprocess
 from typing import TypeVar
 from warnings import warn
 
+from changelog_gen import util
+
 try:
     from bumpversion import bump  # noqa: F401
 except ImportError:
@@ -55,8 +57,10 @@ commands = {
 
 
 class BumpVersion:  # noqa: D101
-    def __init__(self: T, verbose: int = 0) -> None:
+    def __init__(self: T, verbose: int = 0, *, allow_dirty: bool = False, dry_run: bool = False) -> None:
         self.verbose = verbose
+        self.allow_dirty = allow_dirty
+        self.dry_run = dry_run
 
     def _version_info_cmd(self: T, semver: str) -> list[str]:
         command = commands[bump_library]["get_version_info"]
@@ -64,7 +68,14 @@ class BumpVersion:  # noqa: D101
 
     def _release_cmd(self: T, version: str) -> list[str]:
         command = commands[bump_library]["release"]
-        return [c.replace("VERSION", version) for c in command]
+        args = [c.replace("VERSION", version) for c in command]
+        if self.verbose:
+            args.append(f"-{'v' * self.verbose}")
+        if self.dry_run:
+            args.append("--dry-run")
+        if self.allow_dirty:
+            args.append("--allow-dirty")
+        return args
 
     def get_version_info(self: T, semver: str) -> dict[str, str]:
         """Get version info for a semver release."""
@@ -79,6 +90,7 @@ class BumpVersion:  # noqa: D101
                 .split("\n")
             )
         except subprocess.CalledProcessError as e:
+            util.debug_echo(e.output, self.verbose)
             msg = "Unable to get version data from bumpversion."
             raise errors.VersionDetectionError(msg) from e
 
@@ -90,6 +102,19 @@ class BumpVersion:  # noqa: D101
 
     def release(self: T, version: str) -> None:
         """Generate new release."""
-        subprocess.check_output(
-            self._release_cmd(version),  # noqa: S603
-        )
+        try:
+            describe_out = (
+                subprocess.check_output(
+                    self._release_cmd(version),  # noqa: S603
+                    stderr=subprocess.STDOUT,
+                )
+                .decode()
+                .strip()
+                .split("\n")
+            )
+        except subprocess.CalledProcessError as e:
+            util.debug_echo(e.output, self.verbose)
+            raise
+
+        for line in describe_out:
+            util.debug_echo(line, self.verbose)

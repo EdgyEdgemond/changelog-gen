@@ -18,6 +18,7 @@ from changelog_gen import (
 from changelog_gen.cli import util
 from changelog_gen.extractor import extract_version_tag
 from changelog_gen.post_processor import per_issue_post_process
+from changelog_gen.util import quiet_echo
 from changelog_gen.vcs import Git
 from changelog_gen.version import BumpVersion
 
@@ -52,12 +53,12 @@ def process_info(info: dict, cfg: config.Config, *, dry_run: bool) -> None:
         return
 
     if info["dirty"] and not cfg.allow_dirty:
-        typer.echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.")
+        quiet_echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.", cfg.verbose)
         raise typer.Exit(code=1)
 
     allowed_branches = cfg.allowed_branches
     if allowed_branches and info["branch"] not in allowed_branches:
-        typer.echo("Current branch not in allowed generation branches.")
+        quiet_echo("Current branch not in allowed generation branches.", cfg.verbose)
         raise typer.Exit(code=1)
 
 
@@ -74,7 +75,7 @@ def init(
     cfg = config.Config(verbose=verbose)
     extension = util.detect_extension()
     if extension is not None:
-        typer.echo(f"CHANGELOG.{extension.value} detected.")
+        quiet_echo(f"CHANGELOG.{extension.value} detected.", cfg.verbose)
         raise typer.Exit(code=1)
 
     w = writer.new_writer(file_format, cfg)
@@ -89,14 +90,14 @@ def migrate(
     setup = Path("setup.cfg")
 
     if not setup.exists():
-        typer.echo("setup.cfg not found.")
+        quiet_echo("setup.cfg not found.", verbose)
         raise typer.Exit(code=1)
 
     cfg = config._process_setup_cfg(setup, verbose=verbose)  # noqa: SLF001
     config.check_deprecations(cfg)
     if "post_process" in cfg and "headers" in cfg["post_process"]:
         cfg["post_process"]["headers"] = json.loads(cfg["post_process"]["headers"])
-    typer.echo(rtoml.dumps({"tool": {"changelog_gen": cfg}}))
+    quiet_echo(rtoml.dumps({"tool": {"changelog_gen": cfg}}), verbose)
 
 
 @gen_app.command("generate")
@@ -145,7 +146,7 @@ def gen(  # noqa: PLR0913
     try:
         _gen(cfg, version_part, version_tag, dry_run=dry_run)
     except errors.ChangelogException as ex:
-        typer.echo(ex)
+        quiet_echo(ex, verbose)
         raise typer.Exit(code=1) from ex
 
 
@@ -156,13 +157,13 @@ def _gen(
     *,
     dry_run: bool = False,
 ) -> None:
-    bv = BumpVersion(verbose=cfg.verbose)
-    git = Git(verbose=cfg.verbose)
+    bv = BumpVersion(verbose=cfg.verbose, dry_run=dry_run)
+    git = Git(verbose=cfg.verbose, dry_run=dry_run)
 
     extension = util.detect_extension()
 
     if extension is None:
-        typer.echo("No CHANGELOG file detected, run `changelog init`")
+        quiet_echo("No CHANGELOG file detected, run `changelog init`", cfg.verbose)
         raise typer.Exit(code=1)
 
     process_info(git.get_latest_tag_info(), cfg, dry_run=dry_run)
@@ -172,7 +173,7 @@ def _gen(
 
     unique_issues = e.unique_issues(sections)
     if not unique_issues and cfg.reject_empty:
-        typer.echo("No changes present and reject_empty configured.")
+        quiet_echo("No changes present and reject_empty configured.", cfg.verbose)
         raise typer.Exit(code=0)
 
     if version_part is not None:
@@ -193,7 +194,7 @@ def _gen(
     w.add_version(version_string)
     w.consume(cfg.type_headers, sections)
 
-    typer.echo(w)
+    quiet_echo(w, cfg.verbose)
 
     processed = _finalise(w, e, version_tag, extension, cfg, dry_run=dry_run)
 
@@ -212,8 +213,8 @@ def _finalise(  # noqa: PLR0913
     *,
     dry_run: bool,
 ) -> bool:
-    bv = BumpVersion(verbose=cfg.verbose)
-    git = Git(verbose=cfg.verbose)
+    bv = BumpVersion(verbose=cfg.verbose, dry_run=dry_run, allow_dirty=cfg.allow_dirty)
+    git = Git(verbose=cfg.verbose, dry_run=dry_run, commit=cfg.commit)
 
     if dry_run or typer.confirm(
         f"Write CHANGELOG for suggested version {version_tag}",
@@ -221,20 +222,17 @@ def _finalise(  # noqa: PLR0913
         writer.write()
         extractor.clean()
 
-        if dry_run or not cfg.commit:
-            return False
-
         git.add_path(f"CHANGELOG.{extension.value}")
         if Path("release_notes").exists():
             git.add_path("release_notes")
         git.commit(version_tag)
 
-        if cfg.release:
+        if cfg.commit and cfg.release:
             try:
                 bv.release(version_tag)
             except Exception as e:  # noqa: BLE001
                 git.revert()
-                typer.echo("Error creating release: {e}")
+                quiet_echo(f"Error creating release: {e}", cfg.verbose)
                 raise typer.Exit(code=1) from e
         return True
 

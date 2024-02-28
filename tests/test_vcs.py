@@ -53,14 +53,14 @@ def test_get_latest_info_branch(multiversion_repo):
 
     f.write_text("hello world! v3")
 
-    info = Git.get_latest_tag_info()
+    info = Git().get_latest_tag_info()
 
     assert info["branch"] == "master"
 
 
 @pytest.mark.usefixtures("multiversion_repo")
 def test_get_latest_info_clean():
-    info = Git.get_latest_tag_info()
+    info = Git().get_latest_tag_info()
 
     assert info["dirty"] is False
 
@@ -71,7 +71,7 @@ def test_get_latest_info_dirty(multiversion_repo):
 
     f.write_text("hello world! v3")
 
-    info = Git.get_latest_tag_info()
+    info = Git().get_latest_tag_info()
 
     assert info["dirty"] is True
     assert info["distance_to_latest_tag"] == 0
@@ -85,35 +85,35 @@ def test_get_latest_info_untagged(multiversion_repo):
     multiversion_repo.run("git add hello.txt")
     multiversion_repo.api.index.commit("untagged")
 
-    info = Git.get_latest_tag_info()
+    info = Git().get_latest_tag_info()
 
     assert info["distance_to_latest_tag"] == 1
 
 
 @pytest.mark.usefixtures("multiversion_repo")
 def test_get_latest_info_current_version():
-    info = Git.get_latest_tag_info()
+    info = Git().get_latest_tag_info()
 
     assert info["current_version"] == "0.0.2"
 
 
 @pytest.mark.usefixtures("multiversion_v_repo")
 def test_get_latest_info_current_version_vtag():
-    info = Git.get_latest_tag_info()
+    info = Git().get_latest_tag_info()
 
     assert info["current_version"] == "0.0.2"
 
 
 @pytest.mark.usefixtures("multiversion_repo")
 def test_get_latest_info_current_tag():
-    info = Git.get_latest_tag_info()
+    info = Git().get_latest_tag_info()
 
     assert info["current_tag"] == "0.0.2"
 
 
 @pytest.mark.usefixtures("multiversion_v_repo")
 def test_get_latest_info_current_tag_vtag():
-    info = Git.get_latest_tag_info()
+    info = Git().get_latest_tag_info()
 
     assert info["current_tag"] == "v0.0.2"
 
@@ -121,7 +121,7 @@ def test_get_latest_info_current_tag_vtag():
 def test_get_latest_info_commit_sha(multiversion_repo):
     head_hash = multiversion_repo.api.head.commit
 
-    info = Git.get_latest_tag_info()
+    info = Git().get_latest_tag_info()
 
     assert info["commit_sha"] == str(head_hash)[:7]
 
@@ -129,7 +129,7 @@ def test_get_latest_info_commit_sha(multiversion_repo):
 @pytest.mark.usefixtures("git_repo")
 def test_get_latest_info_raises_if_no_tags_found():
     with pytest.raises(errors.VcsError) as ex:
-        Git.get_latest_tag_info()
+        Git().get_latest_tag_info()
 
     assert str(ex.value) == "Unable to get version number from git tags."
 
@@ -142,7 +142,7 @@ def test_get_latest_info_raises_if_rev_parse_fails(monkeypatch):
         mock.Mock(side_effect=[b"", subprocess.CalledProcessError(returncode=1, cmd="")]),
     )
     with pytest.raises(errors.VcsError) as ex:
-        Git.get_latest_tag_info()
+        Git().get_latest_tag_info()
 
     assert str(ex.value) == "Unable to get current git branch."
 
@@ -153,7 +153,7 @@ def test_add_path_stages_changes_for_commit(multiversion_repo):
     f.write_text("hello world! v3")
     assert "Changes not staged for commit" in multiversion_repo.run("git status", capture=True)
 
-    Git.add_path("hello.txt")
+    Git().add_path("hello.txt")
 
     assert "Changes not staged for commit" not in multiversion_repo.run("git status", capture=True)
 
@@ -164,7 +164,7 @@ def test_commit_adds_message_with_version_string(multiversion_repo):
     f.write_text("hello world! v3")
     multiversion_repo.run("git add hello.txt")
 
-    Git.commit("new_version")
+    Git().commit("new_version")
 
     assert multiversion_repo.api.head.commit.message == "Update CHANGELOG for new_version\n"
 
@@ -192,7 +192,7 @@ Formatted
     )
     hash3 = str(multiversion_repo.api.head.commit)
 
-    logs = Git.get_logs("0.0.2")
+    logs = Git().get_logs("0.0.2")
     assert logs == [
         [hash3[:7], hash3, "Commit message 3\n\nFormatted\n"],
         [hash2[:7], hash2, "commit log 2: electric boogaloo"],
@@ -210,7 +210,7 @@ def test_commit(multiversion_repo):
     f.write_text("hello world! v4")
     multiversion_repo.run("git add hello.txt")
 
-    Git.commit("0.0.3")
+    Git().commit("0.0.3")
 
     assert multiversion_repo.api.head.commit.message == "Update CHANGELOG for 0.0.3\n"
 
@@ -218,7 +218,7 @@ def test_commit(multiversion_repo):
 @pytest.mark.usefixtures("multiversion_repo")
 def test_commit_no_changes():
     with pytest.raises(errors.VcsError) as ex:
-        Git.commit("0.0.3")
+        Git().commit("0.0.3")
 
     assert str(ex.value) == "Unable to commit: On branch master\nnothing to commit, working tree clean"
 
@@ -236,6 +236,6 @@ def test_revert(multiversion_repo):
 
     assert multiversion_repo.api.head.commit.message == "commit log 2"
 
-    Git.revert()
+    Git().revert()
 
     assert multiversion_repo.api.head.commit.message == "commit log"

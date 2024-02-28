@@ -49,7 +49,7 @@ class TestMakeClient:
 
     def test_handle_no_auth_data_gracefully(self, monkeypatch):
         monkeypatch.setattr(
-            post_processor.typer,
+            post_processor.util.typer,
             "echo",
             mock.Mock(),
         )
@@ -59,7 +59,7 @@ class TestMakeClient:
         with pytest.raises(typer.Exit):
             post_processor.make_client(cfg)
 
-        assert post_processor.typer.echo.call_args == mock.call(
+        assert post_processor.util.typer.echo.call_args == mock.call(
             'Missing environment variable "MY_API_AUTH"',
         )
 
@@ -72,7 +72,7 @@ class TestMakeClient:
     )
     def test_handle_bad_auth_gracefully(self, monkeypatch, env_value):
         monkeypatch.setattr(
-            post_processor.typer,
+            post_processor.util.typer,
             "echo",
             mock.Mock(),
         )
@@ -83,7 +83,7 @@ class TestMakeClient:
         with pytest.raises(typer.Exit):
             post_processor.make_client(cfg)
 
-        assert post_processor.typer.echo.call_args == mock.call(
+        assert post_processor.util.typer.echo.call_args == mock.call(
             'Unexpected content in MY_API_AUTH, need "{username}:{api_key} for basic auth"',
         )
 
@@ -123,7 +123,7 @@ class TestPerIssuePostPrequest:
     def test_handle_http_errors_gracefully(self, httpx_mock, monkeypatch):
         issue_refs = ["1", "2", "3"]
 
-        cfg = PostProcessConfig(url="https://my-api.github.com/comments/::issue_ref::")
+        cfg = PostProcessConfig(url="https://my-api.github.com/comments/::issue_ref::", verbose=3)
 
         ep0 = cfg.url.replace("::issue_ref::", issue_refs[0])
         httpx_mock.add_response(
@@ -146,17 +146,74 @@ class TestPerIssuePostPrequest:
             status_code=HTTPStatus.OK,
         )
 
-        monkeypatch.setattr(post_processor.typer, "echo", mock.Mock())
+        monkeypatch.setattr(post_processor.util.typer, "echo", mock.Mock())
 
         post_processor.per_issue_post_process(cfg, issue_refs, "1.0.0")
 
-        # 1 line for each successful post and 2 lines for the failure
-        assert post_processor.typer.echo.call_count == 4  # noqa: PLR2004
-        assert post_processor.typer.echo.call_args_list == [
-            mock.call(f"POST {ep0}: OK"),
-            mock.call(f"POST {ep1}: NOT_FOUND"),
+        # 1 line for each successful post and 3 lines for the failure
+        assert post_processor.util.typer.echo.call_args_list == [
+            mock.call(f"Request: POST {ep0}"),
+            mock.call("Response: OK"),
+            mock.call(f"Request: POST {ep1}"),
+            mock.call("Response: NOT_FOUND"),
+            mock.call("Post process request failed."),
             mock.call(not_found_txt),
-            mock.call(f"POST {ep2}: OK"),
+            mock.call(f"Request: POST {ep2}"),
+            mock.call("Response: OK"),
+        ]
+
+    @pytest.mark.parametrize(
+        ("verbose", "expected_calls"),
+        [
+            (0, [4]),
+            (1, [4, 5]),
+            (2, [0, 1, 2, 3, 4, 5, 6, 7]),
+            (3, [0, 1, 2, 3, 4, 5, 6, 7]),
+        ],
+    )
+    def test_verbosity(self, httpx_mock, monkeypatch, verbose, expected_calls):
+        issue_refs = ["1", "2", "3"]
+
+        cfg = PostProcessConfig(url="https://my-api.github.com/comments/::issue_ref::", verbose=verbose)
+
+        ep0 = cfg.url.replace("::issue_ref::", issue_refs[0])
+        httpx_mock.add_response(
+            method="POST",
+            url=ep0,
+            status_code=HTTPStatus.OK,
+        )
+        ep1 = cfg.url.replace("::issue_ref::", issue_refs[1])
+        not_found_txt = f"{issue_refs[1]} NOT FOUND"
+        httpx_mock.add_response(
+            method="POST",
+            url=ep1,
+            status_code=HTTPStatus.NOT_FOUND,
+            content=bytes(not_found_txt, "utf-8"),
+        )
+        ep2 = cfg.url.replace("::issue_ref::", issue_refs[2])
+        httpx_mock.add_response(
+            method="POST",
+            url=ep2,
+            status_code=HTTPStatus.OK,
+        )
+
+        monkeypatch.setattr(post_processor.util.typer, "echo", mock.Mock())
+
+        post_processor.per_issue_post_process(cfg, issue_refs, "1.0.0")
+
+        assert post_processor.util.typer.echo.call_args_list == [
+            call
+            for i, call in enumerate([
+                mock.call(f"Request: POST {ep0}"),
+                mock.call("Response: OK"),
+                mock.call(f"Request: POST {ep1}"),
+                mock.call("Response: NOT_FOUND"),
+                mock.call("Post process request failed."),
+                mock.call(not_found_txt),
+                mock.call(f"Request: POST {ep2}"),
+                mock.call("Response: OK"),
+            ])
+            if i in expected_calls
         ]
 
     @pytest.mark.parametrize("cfg_verb", ["POST", "PUT", "GET"])
@@ -211,10 +268,11 @@ class TestPerIssuePostPrequest:
         cfg = PostProcessConfig(
             url="https://my-api.github.com/comments/::issue_ref::",
             verb=cfg_verb,
+            verbose=1,
             **kwargs,
         )
         monkeypatch.setattr(
-            post_processor.typer,
+            post_processor.util.typer,
             "echo",
             mock.Mock(),
         )
@@ -226,9 +284,9 @@ class TestPerIssuePostPrequest:
             dry_run=True,
         )
 
-        assert post_processor.typer.echo.call_args_list == [
+        assert post_processor.util.typer.echo.call_args_list == [
             mock.call(
-                f"{cfg_verb} {cfg.url.replace('::issue_ref::', issue)} {exp_body.replace('::issue_ref::', issue)}",
+                f"Request: {cfg_verb} {cfg.url.replace('::issue_ref::', issue)} {exp_body.replace('::issue_ref::', issue)}",  # noqa: E501
             )
             for issue in issue_refs
         ]
@@ -236,7 +294,7 @@ class TestPerIssuePostPrequest:
     def test_no_url_ignored(self, monkeypatch):
         cfg = PostProcessConfig()
         monkeypatch.setattr(
-            post_processor.typer,
+            post_processor.util.typer,
             "echo",
             mock.Mock(),
         )
@@ -248,4 +306,4 @@ class TestPerIssuePostPrequest:
             dry_run=True,
         )
 
-        assert post_processor.typer.echo.call_args_list == []
+        assert post_processor.util.typer.echo.call_args_list == []
