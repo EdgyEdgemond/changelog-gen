@@ -58,6 +58,7 @@ allowed_branches = [
 date_format = "- %Y-%m-%d"
 issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 commit_link = "https://github.com/EdgyEdgemond/changelog-gen/commit/::commit_hash::"
+post_process.url = "http://localhost/issue/::issue_ref::"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -111,15 +111,22 @@ class Git:
     def add_path(self: T, path: str) -> None:
         """Add path to git repository."""
         if self.dry_run:
-            util.debug_echo(f"Would add path {path} to Git", self.verbose)
+            util.debug_echo(f"  Would add path '{path}' to Git", self.verbose)
             return
         subprocess.check_output(["git", "add", "--update", path])  # noqa: S603, S607
 
-    def commit(self: T, version: str) -> None:
+    def commit(self: T, version: str, paths: list[str] | None = None) -> None:
         """Commit changes to git repository."""
+        util.debug_echo("Would prepare Git commit", self.verbose)
+        paths = paths or []
+
+        for path in paths:
+            self.add_path(path)
+
         if self.dry_run or not self._commit:
-            util.debug_echo(f"Would commit to Git with message 'Update CHANGELOG for {version}'", self.verbose)
+            util.debug_echo(f"  Would commit to Git with message 'Update CHANGELOG for {version}'", self.verbose)
             return
+
         try:
             subprocess.check_output(
                 ["git", "commit", "-m", f"Update CHANGELOG for {version}"],  # noqa: S603, S607

@@ -222,10 +222,10 @@ def _finalise(  # noqa: PLR0913
         writer.write()
         extractor.clean()
 
-        git.add_path(f"CHANGELOG.{extension.value}")
+        paths = [f"CHANGELOG.{extension.value}"]
         if Path("release_notes").exists():
-            git.add_path("release_notes")
-        git.commit(version_tag)
+            paths.append("release_notes")
+        git.commit(version_tag, paths)
 
         if cfg.commit and cfg.release:
             try:

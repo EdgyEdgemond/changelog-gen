@@ -169,6 +169,26 @@ def test_commit_adds_message_with_version_string(multiversion_repo):
     assert multiversion_repo.api.head.commit.message == "Update CHANGELOG for new_version\n"
 
 
+def test_commit_with_paths(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world! v3")
+
+    Git().commit("new_version", ["hello.txt"])
+
+    assert multiversion_repo.api.head.commit.message == "Update CHANGELOG for new_version\n"
+
+
+def test_commit_no_changes_staged(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world! v3")
+
+    Git().commit("new_version")
+
+    assert "Changes not staged for commit" in multiversion_repo.run("git status", capture=True)
+
+
 def test_get_logs(multiversion_repo):
     path = multiversion_repo.workspace
     f = path / "hello.txt"

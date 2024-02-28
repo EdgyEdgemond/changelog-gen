@@ -112,10 +112,11 @@ parts.release.optional_value = "final"
 
     @pytest.mark.skipif(version.bump_library == "bump2version", reason="bump2version installed")
     def test_release(self, monkeypatch):
-        monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())
+        monkeypatch.setattr(version.subprocess, "check_output", mock.Mock(return_value=b""))
         version.BumpVersion().release("1.2.3")
         assert version.subprocess.check_output.call_args == mock.call(
             ["bump-my-version", "bump", "patch", "--new-version", "1.2.3"],
+            stderr=version.subprocess.STDOUT,
         )
 
 
@@ -186,8 +187,9 @@ values =
         assert version.BumpVersion().get_version_info(semver) == {"current": current_version, "new": new_version}
 
     def test_release(self, monkeypatch):
-        monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())
+        monkeypatch.setattr(version.subprocess, "check_output", mock.Mock(return_value=b""))
         version.BumpVersion().release("1.2.3")
         assert version.subprocess.check_output.call_args == mock.call(
             ["bumpversion", "patch", "--new-version", "1.2.3"],
+            stderr=version.subprocess.STDOUT,
         )
