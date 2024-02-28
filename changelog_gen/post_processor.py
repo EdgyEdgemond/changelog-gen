@@ -84,15 +84,15 @@ def per_issue_post_process(
         if dry_run:
             util.debug_echo(f"  Would request: {cfg.verb} {url} {body}", cfg.verbose)
         else:
-            util.noisy_echo(f"    Request: {cfg.verb} {url}", cfg.verbose)
+            util.noisy_echo(f"  Request: {cfg.verb} {url}", cfg.verbose)
             r = client.request(
                 method=cfg.verb,
                 url=url,
                 content=body,
             )
             try:
-                util.noisy_echo(f"  Response: {HTTPStatus(r.status_code).name}", cfg.verbose)
+                util.noisy_echo(f"    Response: {HTTPStatus(r.status_code).name}", cfg.verbose)
                 r.raise_for_status()
             except httpx.HTTPError as e:
                 util.quiet_echo("  Post process request failed.", cfg.verbose)
-                util.debug_echo(f"  {e.response.text}", cfg.verbose)
+                util.debug_echo(f"    {e.response.text}", cfg.verbose)

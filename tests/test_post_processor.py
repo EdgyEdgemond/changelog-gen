@@ -152,23 +152,24 @@ class TestPerIssuePostPrequest:
 
         # 1 line for each successful post and 3 lines for the failure
         assert post_processor.util.typer.echo.call_args_list == [
-            mock.call(f"Request: POST {ep0}"),
-            mock.call("Response: OK"),
-            mock.call(f"Request: POST {ep1}"),
-            mock.call("Response: NOT_FOUND"),
-            mock.call("Post process request failed."),
-            mock.call(not_found_txt),
-            mock.call(f"Request: POST {ep2}"),
-            mock.call("Response: OK"),
+            mock.call("Post processing:"),
+            mock.call(f"  Request: POST {ep0}"),
+            mock.call("    Response: OK"),
+            mock.call(f"  Request: POST {ep1}"),
+            mock.call("    Response: NOT_FOUND"),
+            mock.call("  Post process request failed."),
+            mock.call(f"    {not_found_txt}"),
+            mock.call(f"  Request: POST {ep2}"),
+            mock.call("    Response: OK"),
         ]
 
     @pytest.mark.parametrize(
         ("verbose", "expected_calls"),
         [
-            (0, [4]),
-            (1, [4, 5]),
-            (2, [0, 1, 2, 3, 4, 5, 6, 7]),
-            (3, [0, 1, 2, 3, 4, 5, 6, 7]),
+            (0, [5]),
+            (1, [0, 5, 6]),
+            (2, [0, 1, 2, 3, 4, 5, 6, 7, 8]),
+            (3, [0, 1, 2, 3, 4, 5, 6, 7, 8]),
         ],
     )
     def test_verbosity(self, httpx_mock, monkeypatch, verbose, expected_calls):
@@ -203,16 +204,19 @@ class TestPerIssuePostPrequest:
 
         assert post_processor.util.typer.echo.call_args_list == [
             call
-            for i, call in enumerate([
-                mock.call(f"Request: POST {ep0}"),
-                mock.call("Response: OK"),
-                mock.call(f"Request: POST {ep1}"),
-                mock.call("Response: NOT_FOUND"),
-                mock.call("Post process request failed."),
-                mock.call(not_found_txt),
-                mock.call(f"Request: POST {ep2}"),
-                mock.call("Response: OK"),
-            ])
+            for i, call in enumerate(
+                [
+                    mock.call("Post processing:"),
+                    mock.call(f"  Request: POST {ep0}"),
+                    mock.call("    Response: OK"),
+                    mock.call(f"  Request: POST {ep1}"),
+                    mock.call("    Response: NOT_FOUND"),
+                    mock.call("  Post process request failed."),
+                    mock.call(f"    {not_found_txt}"),
+                    mock.call(f"  Request: POST {ep2}"),
+                    mock.call("    Response: OK"),
+                ],
+            )
             if i in expected_calls
         ]
 
@@ -286,7 +290,11 @@ class TestPerIssuePostPrequest:
 
         assert post_processor.util.typer.echo.call_args_list == [
             mock.call(
-                f"Request: {cfg_verb} {cfg.url.replace('::issue_ref::', issue)} {exp_body.replace('::issue_ref::', issue)}",  # noqa: E501
+                "Post processing:",
+            ),
+        ] + [
+            mock.call(
+                f"  Would request: {cfg_verb} {cfg.url.replace('::issue_ref::', issue)} {exp_body.replace('::issue_ref::', issue)}",  # noqa: E501
             )
             for issue in issue_refs
         ]

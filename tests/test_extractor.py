@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from changelog_gen import errors, extractor
+from changelog_gen import extractor
 from changelog_gen.config import Config
 from changelog_gen.extractor import Change, ReleaseNoteExtractor
 from changelog_gen.vcs import Git
@@ -224,16 +224,20 @@ Refs: #2
 
 @pytest.mark.backwards_compat()
 @pytest.mark.usefixtures("_valid_release_notes")
-def test_invalid_notes_extraction_raises():
+def test_invalid_notes_skipped():
     cfg = Config(type_headers={"fix": "Fix"})
-    git = mock.Mock()
+    git = Git()
 
     e = ReleaseNoteExtractor(cfg, git)
 
-    with pytest.raises(errors.InvalidSectionError) as ex:
-        e.extract()
+    sections = e.extract()
 
-    assert str(ex.value) == "Unsupported CHANGELOG commit type feat, derived from `./release_notes/2.feat`"
+    assert sections == {
+        "Fix": {
+            "1": Change("1", "Detail about 1", "fix"),
+            "4": Change("4", "Detail about 4", "fix"),
+        },
+    }
 
 
 def test_unique_issues():

@@ -76,61 +76,67 @@ def _empty_conventional_commits(): ...
 
 @pytest.fixture()
 def _conventional_commits(commit_factory):
-    commit_factory([
-        """fix: Detail about 4
+    commit_factory(
+        [
+            """fix: Detail about 4
 
 Refs: #4
 """,
-        """feat: Detail about 3
+            """feat: Detail about 3
 
 Refs: #3
 """,
-        """feat: Detail about 2
+            """feat: Detail about 2
 
 Refs: #2
 """,
-        """fix: Detail about 1
+            """fix: Detail about 1
 
 With some details
 
 Refs: #1
 """,
-    ])
+        ],
+    )
 
 
 @pytest.fixture()
 def _breaking_conventional_commits(commit_factory):
-    commit_factory([
-        """fix: Detail about 4
+    commit_factory(
+        [
+            """fix: Detail about 4
 
 Refs: #4
 """,
-        """feat: Detail about 3
+            """feat: Detail about 3
 
 Refs: #3
 """,
-        """feat!: Detail about 2
+            """feat!: Detail about 2
 
 Refs: #2
 """,
-        """fix: Detail about 1
+            """fix: Detail about 1
 
 With some details
 
 Refs: #1
 """,
-    ])
+        ],
+    )
 
 
 @pytest.fixture()
 def post_process_pyproject(cwd):
     p = cwd / "pyproject.toml"
-    p.write_text("""
+    p.write_text(
+        """
 [tool.changelog_gen]
 commit = true
 post_process.url = "https://my-api/::issue_ref::/release"
 post_process.auth_env = "MY_API_AUTH"
-""")
+""",
+    )
 
     return p
 
@@ -425,29 +431,31 @@ release = true
 """,
     )
 
-    commit_factory([
-        """feat: Detail about 2
+    commit_factory(
+        [
+            """feat: Detail about 2
 
 Refs: #2
 """,
-        "update readme",
-        """fix: Detail about 1
+            "update readme",
+            """fix: Detail about 1
 
 With some details
 
 BREAKING CHANGE:
 Refs: #1
 """,
-        """feat(docs)!: Detail about 3
+            """feat(docs)!: Detail about 3
 
 Refs: #3
 """,
-        "fix typo",
-        """fix(config): Detail about 4
+            "fix typo",
+            """fix(config): Detail about 4
 
 Refs: #4
 """,
-    ])
+        ],
+    )
 
     monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=True))
     result = gen_cli_runner.invoke()
