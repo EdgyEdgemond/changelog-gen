@@ -55,23 +55,23 @@ commands = {
 
 
 class BumpVersion:  # noqa: D101
-    @classmethod
-    def _version_info_cmd(cls: type[T], semver: str) -> list[str]:
+    def __init__(self: T, verbose: int = 0) -> None:
+        self.verbose = verbose
+
+    def _version_info_cmd(self: T, semver: str) -> list[str]:
         command = commands[bump_library]["get_version_info"]
         return [c.replace("SEMVER", semver) for c in command]
 
-    @classmethod
-    def _release_cmd(cls: type[T], version: str) -> list[str]:
+    def _release_cmd(self: T, version: str) -> list[str]:
         command = commands[bump_library]["release"]
         return [c.replace("VERSION", version) for c in command]
 
-    @classmethod
-    def get_version_info(cls: type[T], semver: str) -> dict[str, str]:
+    def get_version_info(self: T, semver: str) -> dict[str, str]:
         """Get version info for a semver release."""
         try:
             describe_out = (
                 subprocess.check_output(
-                    cls._version_info_cmd(semver),  # noqa: S603
+                    self._version_info_cmd(semver),  # noqa: S603
                     stderr=subprocess.STDOUT,
                 )
                 .decode()
@@ -88,9 +88,8 @@ class BumpVersion:  # noqa: D101
             "new": new,
         }
 
-    @classmethod
-    def release(cls: type[T], version: str) -> None:
+    def release(self: T, version: str) -> None:
         """Generate new release."""
         subprocess.check_output(
-            cls._release_cmd(version),  # noqa: S603
+            self._release_cmd(version),  # noqa: S603
         )

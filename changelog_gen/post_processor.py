@@ -56,6 +56,7 @@ def per_issue_post_process(
     dry_run: bool = False,
 ) -> None:
     """Run post process for all provided issue references."""
+    # cfg.verbose available
     if not cfg.url:
         return
 

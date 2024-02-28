@@ -65,29 +65,26 @@ def process_info(info: dict, cfg: config.Config, *, dry_run: bool) -> None:
 @app.command("init")
 def init(
     file_format: writer.Extension = typer.Option("md", help="File format to generate."),
-    _version: Optional[bool] = typer.Option(
-        None,
-        "-v",
-        "--version",
-        callback=_version_callback,
-        help="Print version and exit.",
-    ),
+    verbose: int = typer.Option(0, "-v", "--verbose", help="Set output verbosity.", count=True, max=3),
 ) -> None:
     """Generate an empty CHANGELOG file.
 
     Detect and raise if a CHANGELOG already exists, if not create a new file.
     """
+    cfg = config.Config(verbose=verbose)
     extension = util.detect_extension()
     if extension is not None:
         typer.echo(f"CHANGELOG.{extension.value} detected.")
         raise typer.Exit(code=1)
 
-    w = writer.new_writer(file_format)
+    w = writer.new_writer(file_format, cfg)
     w.write()
 
 
 @app.command("migrate")
-def migrate() -> None:
+def migrate(
+    verbose: int = typer.Option(0, "-v", "--verbose", help="Set output verbosity.", count=True, max=3),
+) -> None:
     """Generate toml configuration from setup.cfg."""
     setup = Path("setup.cfg")
 
@@ -95,7 +92,7 @@ def migrate() -> None:
         typer.echo("setup.cfg not found.")
         raise typer.Exit(code=1)
 
-    cfg = config._process_setup_cfg(setup)  # noqa: SLF001
+    cfg = config._process_setup_cfg(setup, verbose=verbose)  # noqa: SLF001
     config.check_deprecations(cfg)
     if "post_process" in cfg and "headers" in cfg["post_process"]:
         cfg["post_process"]["headers"] = json.loads(cfg["post_process"]["headers"])
@@ -122,9 +119,9 @@ def gen(  # noqa: PLR0913
     release: Optional[bool] = typer.Option(None, help="Use bumpversion to tag the release."),
     commit: Optional[bool] = typer.Option(None, help="Commit changes made to changelog after writing."),
     reject_empty: Optional[bool] = typer.Option(None, help="Don't accept changes if there are no release notes."),
+    verbose: int = typer.Option(0, "-v", "--verbose", help="Set output verbosity.", count=True, max=3),
     _version: Optional[bool] = typer.Option(
         None,
-        "-v",
         "--version",
         callback=_version_callback,
         help="Print version and exit.",
@@ -142,6 +139,7 @@ def gen(  # noqa: PLR0913
         date_format=date_format,
         post_process_url=post_process_url,
         post_process_auth_env=post_process_auth_env,
+        verbose=verbose,
     )
 
     try:
@@ -158,15 +156,18 @@ def _gen(
     *,
     dry_run: bool = False,
 ) -> None:
+    bv = BumpVersion(verbose=cfg.verbose)
+    git = Git(verbose=cfg.verbose)
+
     extension = util.detect_extension()
 
     if extension is None:
         typer.echo("No CHANGELOG file detected, run `changelog init`")
         raise typer.Exit(code=1)
 
-    process_info(Git.get_latest_tag_info(), cfg, dry_run=dry_run)
+    process_info(git.get_latest_tag_info(), cfg, dry_run=dry_run)
 
-    e = extractor.ReleaseNoteExtractor(dry_run=dry_run, type_headers=cfg.type_headers)
+    e = extractor.ReleaseNoteExtractor(cfg=cfg, git=git, dry_run=dry_run)
     sections = e.extract()
 
     unique_issues = e.unique_issues(sections)
@@ -175,11 +176,11 @@ def _gen(
         raise typer.Exit(code=0)
 
     if version_part is not None:
-        version_info_ = BumpVersion.get_version_info(version_part)
+        version_info_ = bv.get_version_info(version_part)
         version_tag = version_info_["new"]
 
     if version_tag is None:
-        version_tag = extract_version_tag(sections, cfg.semver_mapping)
+        version_tag = extract_version_tag(sections, cfg, bv)
 
     version_string = cfg.version_string.format(new_version=version_tag)
 
@@ -187,7 +188,7 @@ def _gen(
     if date_fmt:
         version_string += f" {datetime.now(timezone.utc).strftime(date_fmt)}"
 
-    w = writer.new_writer(extension, dry_run=dry_run, issue_link=cfg.issue_link, commit_link=cfg.commit_link)
+    w = writer.new_writer(extension, cfg, dry_run=dry_run)
 
     w.add_version(version_string)
     w.consume(cfg.type_headers, sections)
@@ -211,6 +212,9 @@ def _finalise(  # noqa: PLR0913
     *,
     dry_run: bool,
 ) -> bool:
+    bv = BumpVersion(verbose=cfg.verbose)
+    git = Git(verbose=cfg.verbose)
+
     if dry_run or typer.confirm(
         f"Write CHANGELOG for suggested version {version_tag}",
     ):
@@ -220,16 +224,16 @@ def _finalise(  # noqa: PLR0913
         if dry_run or not cfg.commit:
             return False
 
-        Git.add_path(f"CHANGELOG.{extension.value}")
+        git.add_path(f"CHANGELOG.{extension.value}")
         if Path("release_notes").exists():
-            Git.add_path("release_notes")
-        Git.commit(version_tag)
+            git.add_path("release_notes")
+        git.commit(version_tag)
 
         if cfg.release:
             try:
-                BumpVersion.release(version_tag)
+                bv.release(version_tag)
             except Exception as e:  # noqa: BLE001
-                Git.revert()
+                git.revert()
                 typer.echo("Error creating release: {e}")
                 raise typer.Exit(code=1) from e
         return True

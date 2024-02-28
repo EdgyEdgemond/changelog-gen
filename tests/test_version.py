@@ -42,7 +42,7 @@ class TestBumpMyVersion:
     @pytest.mark.usefixtures("cwd")
     def test_errors_wrapped(self):
         with pytest.raises(errors.VersionDetectionError):
-            version.BumpVersion.get_version_info("patch")
+            version.BumpVersion().get_version_info("patch")
 
     @pytest.mark.parametrize(
         ("current_version", "new_version", "semver"),
@@ -66,7 +66,7 @@ tag = false
         """.strip(),
         )
 
-        assert version.BumpVersion.get_version_info(semver) == {"current": current_version, "new": new_version}
+        assert version.BumpVersion().get_version_info(semver) == {"current": current_version, "new": new_version}
 
     @pytest.mark.parametrize(
         ("current_version", "new_version", "semver"),
@@ -108,12 +108,12 @@ parts.release.optional_value = "final"
         """.strip(),
         )
 
-        assert version.BumpVersion.get_version_info(semver) == {"current": current_version, "new": new_version}
+        assert version.BumpVersion().get_version_info(semver) == {"current": current_version, "new": new_version}
 
     @pytest.mark.skipif(version.bump_library == "bump2version", reason="bump2version installed")
     def test_release(self, monkeypatch):
         monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())
-        version.BumpVersion.release("1.2.3")
+        version.BumpVersion().release("1.2.3")
         assert version.subprocess.check_output.call_args == mock.call(
             ["bump-my-version", "bump", "patch", "--new-version", "1.2.3"],
         )
@@ -143,7 +143,7 @@ tag = false
         """.strip(),
         )
 
-        assert version.BumpVersion.get_version_info(semver) == {"current": current_version, "new": new_version}
+        assert version.BumpVersion().get_version_info(semver) == {"current": current_version, "new": new_version}
 
     @pytest.mark.parametrize(
         ("current_version", "new_version", "semver"),
@@ -183,11 +183,11 @@ values =
         """.strip(),
         )
 
-        assert version.BumpVersion.get_version_info(semver) == {"current": current_version, "new": new_version}
+        assert version.BumpVersion().get_version_info(semver) == {"current": current_version, "new": new_version}
 
     def test_release(self, monkeypatch):
         monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())
-        version.BumpVersion.release("1.2.3")
+        version.BumpVersion().release("1.2.3")
         assert version.subprocess.check_output.call_args == mock.call(
             ["bumpversion", "patch", "--new-version", "1.2.3"],
         )

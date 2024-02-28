@@ -7,9 +7,11 @@ from collections import defaultdict
 from pathlib import Path
 from warnings import warn
 
-from changelog_gen import errors
-from changelog_gen.vcs import Git
-from changelog_gen.version import BumpVersion
+from changelog_gen import config, errors
+
+if typing.TYPE_CHECKING:
+    from changelog_gen.vcs import Git
+    from changelog_gen.version import BumpVersion
 
 
 @dataclasses.dataclass
@@ -36,10 +38,12 @@ SectionDict = dict[str, dict[str, Change]]
 class ReleaseNoteExtractor:
     """Parse release notes and generate section dictionaries."""
 
-    def __init__(self: typing.Self, type_headers: dict[str, str], *, dry_run: bool = False) -> None:
+    def __init__(self: typing.Self, cfg: config.Config, git: Git, *, dry_run: bool = False) -> None:
         self.release_notes = Path("./release_notes")
         self.dry_run = dry_run
-        self.type_headers = type_headers
+        self.type_headers = cfg.type_headers
+        self.verbose = cfg.verbose
+        self.git = git
 
         self.has_release_notes = self.release_notes.exists() and self.release_notes.is_dir()
 
@@ -82,8 +86,8 @@ class ReleaseNoteExtractor:
         self: typing.Self,
         sections: dict[str, dict],
     ) -> None:
-        latest_info = Git.get_latest_tag_info()
-        logs = Git.get_logs(latest_info["current_tag"])
+        latest_info = self.git.get_latest_tag_info()
+        logs = self.git.get_logs(latest_info["current_tag"])
 
         # Build a conventional commit regex based on configured sections
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
@@ -159,7 +163,7 @@ class ReleaseNoteExtractor:
                     x.unlink()
 
 
-def extract_version_tag(sections: SectionDict, semver_mapping: dict[str, str]) -> str:
+def extract_version_tag(sections: SectionDict, cfg: config.Config, bv: BumpVersion) -> str:
     """Generate new version tag based on changelog sections.
 
     Breaking changes: major
@@ -167,7 +171,8 @@ def extract_version_tag(sections: SectionDict, semver_mapping: dict[str, str]) -
     Bugs/Fixes: patch
 
     """
-    version_info_ = BumpVersion.get_version_info("patch")
+    semver_mapping = cfg.semver_mapping
+    version_info_ = bv.get_version_info("patch")
     current = version_info_["current"]
 
     semvers = ["patch", "minor", "major"]
@@ -184,6 +189,6 @@ def extract_version_tag(sections: SectionDict, semver_mapping: dict[str, str]) -
         idx = semvers.index(semver)
         semver = semvers[max(idx - 1, 0)]
 
-    version_info = BumpVersion.get_version_info(semver)
+    version_info = bv.get_version_info(semver)
 
     return version_info["new"]

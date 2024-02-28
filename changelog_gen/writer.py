@@ -8,6 +8,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 if typing.TYPE_CHECKING:
+    from changelog_gen import config
     from changelog_gen.extractor import Change, SectionDict
 
 
@@ -28,8 +29,7 @@ class BaseWriter:
     def __init__(
         self: typing.Self,
         changelog: Path,
-        issue_link: str | None = None,
-        commit_link: str | None = None,
+        cfg: config.Config,
         *,
         dry_run: bool = False,
     ) -> None:
@@ -40,8 +40,9 @@ class BaseWriter:
             self.existing = lines[self.file_header_line_count + 1 :]
         self.content = []
         self.dry_run = dry_run
-        self.issue_link = issue_link
-        self.commit_link = commit_link
+        self.issue_link = cfg.issue_link
+        self.commit_link = cfg.commit_link
+        self.verbose = cfg.verbose
 
     def add_version(self: typing.Self, version: str) -> None:
         """Add a version string to changelog file."""
@@ -191,8 +192,7 @@ class RstWriter(BaseWriter):
 
 def new_writer(
     extension: Extension,
-    issue_link: str | None = None,
-    commit_link: str | None = None,
+    cfg: config.Config,
     *,
     dry_run: bool = False,
 ) -> BaseWriter:
@@ -200,9 +200,9 @@ def new_writer(
     changelog = Path(f"CHANGELOG.{extension.value}")
 
     if extension == Extension.MD:
-        return MdWriter(changelog, dry_run=dry_run, issue_link=issue_link, commit_link=commit_link)
+        return MdWriter(changelog, cfg, dry_run=dry_run)
     if extension == Extension.RST:
-        return RstWriter(changelog, dry_run=dry_run, issue_link=issue_link, commit_link=commit_link)
+        return RstWriter(changelog, cfg, dry_run=dry_run)
 
     msg = f'Changelog extension "{extension.value}" not supported.'
     raise ValueError(msg)

@@ -4,13 +4,13 @@ import pytest
 import typer
 from freezegun import freeze_time
 
-from changelog_gen import errors, extractor, vcs, version
+from changelog_gen import errors
 from changelog_gen.cli import command
 from changelog_gen.config import PostProcessConfig
 
 
 @pytest.fixture(autouse=True)
-def _subprocess_patch(monkeypatch):
+def mock_git(monkeypatch):
     mock_git = mock.Mock()
     mock_git.get_latest_tag_info.return_value = {
         "commit_sha": "commit-sha",
@@ -22,19 +22,22 @@ def _subprocess_patch(monkeypatch):
     }
     mock_git.get_logs.return_value = []
 
-    monkeypatch.setattr(command, "Git", mock_git)
-    monkeypatch.setattr(extractor, "Git", mock_git)
-    monkeypatch.setattr(vcs, "Git", mock_git)
+    monkeypatch.setattr(command, "Git", mock.Mock(return_value=mock_git))
 
+    return mock_git
+
+
+@pytest.fixture(autouse=True)
+def mock_bump(monkeypatch):
     mock_bump = mock.Mock()
     mock_bump.get_version_info.return_value = {
         "current": "0.0.0",
         "new": "0.0.1",
     }
 
-    monkeypatch.setattr(command, "BumpVersion", mock_bump)
-    monkeypatch.setattr(extractor, "BumpVersion", mock_bump)
-    monkeypatch.setattr(version, "BumpVersion", mock_bump)
+    monkeypatch.setattr(command, "BumpVersion", mock.Mock(return_value=mock_bump))
+
+    return mock_bump
 
 
 @pytest.fixture()
@@ -58,9 +61,11 @@ def _release_notes(cwd):
 
 
 @pytest.fixture()
-def commit_factory():
+def commit_factory(mock_git):
     def factory(commits):
-        vcs.Git.get_logs.return_value = [(f"short{i}", f"commit-hash{i}", message) for i, message in enumerate(commits)]
+        mock_git.get_logs.return_value = [
+            (f"short{i}", f"commit-hash{i}", message) for i, message in enumerate(commits)
+        ]
 
     return factory
 
@@ -148,8 +153,8 @@ def test_generate_aborts_if_changelog_missing(gen_cli_runner):
 
 
 @pytest.mark.usefixtures("changelog", "_conventional_commits")
-def test_generate_aborts_if_dirty(gen_cli_runner, cwd):
-    command.Git.get_latest_tag_info.return_value = {
+def test_generate_aborts_if_dirty(gen_cli_runner, cwd, mock_git):
+    mock_git.get_latest_tag_info.return_value = {
         "commit_sha": "commit-sha",
         "distance_to_latest_tag": 0,
         "current_version": "0.0.0",
@@ -351,16 +356,18 @@ def test_generate_writes_to_file(
 def test_generate_creates_release(
     gen_cli_runner,
     monkeypatch,
+    mock_git,
+    mock_bump,
 ):
     monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=True))
     result = gen_cli_runner.invoke(["--commit", "--release"])
 
     assert result.exit_code == 0
-    assert command.Git.add_path.call_args_list == [
+    assert mock_git.add_path.call_args_list == [
         mock.call("CHANGELOG.md"),
     ]
-    assert command.Git.commit.call_args == mock.call("0.0.1")
-    assert command.BumpVersion.release.call_args == mock.call("0.0.1")
+    assert mock_git.commit.call_args == mock.call("0.0.1")
+    assert mock_bump.release.call_args == mock.call("0.0.1")
 
 
 @pytest.mark.backwards_compat()
@@ -368,18 +375,20 @@ def test_generate_creates_release(
 def test_generate_creates_release_from_notes(
     gen_cli_runner,
     monkeypatch,
+    mock_git,
+    mock_bump,
 ):
     monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=True))
     result = gen_cli_runner.invoke(["--commit", "--release"])
 
     assert result.exit_code == 0
 
-    assert command.Git.add_path.call_args_list == [
+    assert mock_git.add_path.call_args_list == [
         mock.call("CHANGELOG.md"),
         mock.call("release_notes"),
     ]
-    assert command.Git.commit.call_args == mock.call("0.0.1")
-    assert command.BumpVersion.release.call_args == mock.call("0.0.1")
+    assert mock_git.commit.call_args == mock.call("0.0.1")
+    assert mock_bump.release.call_args == mock.call("0.0.1")
 
 
 @pytest.mark.usefixtures("changelog", "_conventional_commits")
@@ -387,6 +396,8 @@ def test_generate_creates_release_using_config(
     gen_cli_runner,
     cwd,
     monkeypatch,
+    mock_git,
+    mock_bump,
 ):
     p = cwd / "pyproject.toml"
     p.write_text(
@@ -401,8 +412,8 @@ release = true
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 0
-    assert command.Git.commit.call_args == mock.call("0.0.1")
-    assert command.BumpVersion.release.call_args == mock.call("0.0.1")
+    assert mock_git.commit.call_args == mock.call("0.0.1")
+    assert mock_bump.release.call_args == mock.call("0.0.1")
 
 
 @pytest.mark.usefixtures("changelog")
@@ -456,6 +467,8 @@ def test_generate_handles_bumpversion_failure_and_reverts_changelog_commit(
     gen_cli_runner,
     cwd,
     monkeypatch,
+    mock_git,
+    mock_bump,
 ):
     p = cwd / "pyproject.toml"
     p.write_text(
@@ -466,15 +479,15 @@ release = true
 """,
     )
 
-    command.BumpVersion.release.side_effect = Exception
+    mock_bump.release.side_effect = Exception
     monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=True))
 
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 1
-    assert command.Git.commit.call_args == mock.call("0.0.1")
-    assert command.BumpVersion.release.call_args == mock.call("0.0.1")
-    assert command.Git.revert.call_args == mock.call()
+    assert mock_git.commit.call_args == mock.call("0.0.1")
+    assert mock_bump.release.call_args == mock.call("0.0.1")
+    assert mock_git.revert.call_args == mock.call()
 
 
 @pytest.mark.usefixtures("_conventional_commits")
@@ -482,6 +495,7 @@ def test_generate_uses_supplied_version_tag(
     gen_cli_runner,
     changelog,
     monkeypatch,
+    mock_git,
 ):
     monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=True))
     result = gen_cli_runner.invoke(["--version-tag", "0.3.2", "--commit"])
@@ -505,19 +519,20 @@ def test_generate_uses_supplied_version_tag(
 - Detail about 4 [#4]
 """.lstrip()
     )
-    assert command.Git.commit.call_args == mock.call("0.3.2")
+    assert mock_git.commit.call_args == mock.call("0.3.2")
 
 
 @pytest.mark.usefixtures("_conventional_commits", "changelog")
 def test_generate_uses_supplied_version_part(
     gen_cli_runner,
     monkeypatch,
+    mock_bump,
 ):
     monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=True))
     result = gen_cli_runner.invoke(["--version-part", "major", "--commit"])
 
     assert result.exit_code == 0
-    assert version.BumpVersion.get_version_info.call_args == mock.call("major")
+    assert mock_bump.get_version_info.call_args == mock.call("major")
 
 
 @pytest.mark.usefixtures("_conventional_commits")

@@ -4,8 +4,9 @@ from unittest import mock
 import pytest
 
 from changelog_gen import errors, extractor
-from changelog_gen.config import TYPE_HEADERS
+from changelog_gen.config import Config
 from changelog_gen.extractor import Change, ReleaseNoteExtractor
+from changelog_gen.vcs import Git
 
 
 @pytest.fixture()
@@ -89,7 +90,9 @@ Refs: #2
 @pytest.mark.backwards_compat()
 @pytest.mark.usefixtures("multiversion_repo")
 def test_init_with_no_release_notes():
-    e = ReleaseNoteExtractor(TYPE_HEADERS)
+    cfg = Config()
+    git = mock.Mock()
+    e = ReleaseNoteExtractor(cfg, git)
     assert e.has_release_notes is False
 
 
@@ -99,7 +102,10 @@ def test_init_with_release_notes_non_dir(multiversion_repo):
     r = path / "release_notes"
     r.write_text("not a dir")
 
-    e = ReleaseNoteExtractor(TYPE_HEADERS)
+    cfg = Config()
+    git = mock.Mock()
+
+    e = ReleaseNoteExtractor(cfg, git)
 
     assert e.has_release_notes is False
 
@@ -107,7 +113,10 @@ def test_init_with_release_notes_non_dir(multiversion_repo):
 @pytest.mark.backwards_compat()
 @pytest.mark.usefixtures("_breaking_release_notes")
 def test_breaking_notes_extraction():
-    e = ReleaseNoteExtractor(TYPE_HEADERS)
+    cfg = Config()
+    git = Git()
+
+    e = ReleaseNoteExtractor(cfg, git)
 
     sections = e.extract()
 
@@ -125,7 +134,10 @@ def test_breaking_notes_extraction():
 
 def test_git_commit_extraction(conventional_commits):
     hashes = conventional_commits
-    e = ReleaseNoteExtractor(TYPE_HEADERS)
+    cfg = Config()
+    git = Git()
+
+    e = ReleaseNoteExtractor(cfg, git)
 
     sections = e.extract()
 
@@ -186,7 +198,10 @@ Refs: #2
         multiversion_repo.api.index.commit(msg)
         hashes.append(str(multiversion_repo.api.head.commit))
 
-    e = ReleaseNoteExtractor({"custom": "Bug fixes", "feat": "Features and Improvements", "bug": "Bug fixes"})
+    cfg = Config(type_headers={"custom": "Bug fixes", "feat": "Features and Improvements", "bug": "Bug fixes"})
+    git = Git()
+
+    e = ReleaseNoteExtractor(cfg, git)
 
     sections = e.extract()
 
@@ -210,7 +225,10 @@ Refs: #2
 @pytest.mark.backwards_compat()
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_invalid_notes_extraction_raises():
-    e = ReleaseNoteExtractor({"fix": "Fix"})
+    cfg = Config(type_headers={"fix": "Fix"})
+    git = mock.Mock()
+
+    e = ReleaseNoteExtractor(cfg, git)
 
     with pytest.raises(errors.InvalidSectionError) as ex:
         e.extract()
@@ -219,7 +237,10 @@ def test_invalid_notes_extraction_raises():
 
 
 def test_unique_issues():
-    e = ReleaseNoteExtractor({"bug": "BugFix", "feat": "Features"})
+    cfg = Config(type_headers={"bug": "BugFix", "feat": "Features"})
+    git = mock.Mock()
+
+    e = ReleaseNoteExtractor(cfg, git)
 
     assert e.unique_issues(
         {
@@ -241,7 +262,10 @@ def test_unique_issues():
 @pytest.mark.backwards_compat()
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_dry_run_clean_keeps_files(release_notes):
-    e = ReleaseNoteExtractor(TYPE_HEADERS, dry_run=True)
+    cfg = Config()
+    git = mock.Mock()
+
+    e = ReleaseNoteExtractor(cfg, git, dry_run=True)
 
     e.clean()
 
@@ -260,7 +284,10 @@ def test_dry_run_clean_keeps_files(release_notes):
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_clean_removes_all_non_dotfiles(release_notes):
     """Clean should not remove .gitkeep files etc."""
-    e = ReleaseNoteExtractor(TYPE_HEADERS)
+    cfg = Config()
+    git = mock.Mock()
+
+    e = ReleaseNoteExtractor(cfg, git)
 
     e.clean()
 
@@ -279,16 +306,14 @@ def test_clean_removes_all_non_dotfiles(release_notes):
         ({"header": {"1": Change("1", "desc", "custom", breaking=True)}}, {"custom": "minor"}, "minor"),
     ],
 )
-def test_extract_version_tag_version_zero(sections, semver_mapping, expected_semver, monkeypatch):
-    monkeypatch.setattr(
-        extractor.BumpVersion,
-        "get_version_info",
-        mock.Mock(return_value={"new": "0.0.0", "current": "0.0.0"}),
-    )
+def test_extract_version_tag_version_zero(sections, semver_mapping, expected_semver):
+    bv = mock.Mock()
+    bv.get_version_info = mock.Mock(return_value={"new": "0.0.0", "current": "0.0.0"})
+    cfg = Config(semver_mapping=semver_mapping)
 
-    extractor.extract_version_tag(sections, semver_mapping)
+    extractor.extract_version_tag(sections, cfg, bv)
 
-    assert extractor.BumpVersion.get_version_info.call_args == mock.call(expected_semver)
+    assert bv.get_version_info.call_args == mock.call(expected_semver)
 
 
 @pytest.mark.parametrize(
@@ -303,16 +328,14 @@ def test_extract_version_tag_version_zero(sections, semver_mapping, expected_sem
         ({"header": {"1": Change("1", "desc", "custom", breaking=True)}}, {"custom": "minor"}, "major"),
     ],
 )
-def test_extract_version_tag(sections, semver_mapping, expected_semver, monkeypatch):
-    monkeypatch.setattr(
-        extractor.BumpVersion,
-        "get_version_info",
-        mock.Mock(return_value={"new": "1.0.0", "current": "1.0.0"}),
-    )
+def test_extract_version_tag(sections, semver_mapping, expected_semver):
+    bv = mock.Mock()
+    bv.get_version_info = mock.Mock(return_value={"new": "1.0.0", "current": "1.0.0"})
+    cfg = Config(semver_mapping=semver_mapping)
 
-    extractor.extract_version_tag(sections, semver_mapping)
+    extractor.extract_version_tag(sections, cfg, bv)
 
-    assert extractor.BumpVersion.get_version_info.call_args == mock.call(expected_semver)
+    assert bv.get_version_info.call_args == mock.call(expected_semver)
 
 
 def test_change_ordering():
