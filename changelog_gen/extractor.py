@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 import re
 import typing
 from collections import defaultdict
 from pathlib import Path
 from warnings import warn
 
-from changelog_gen import config, util
-
 if typing.TYPE_CHECKING:
+    from changelog_gen import config
     from changelog_gen.vcs import Git
     from changelog_gen.version import BumpVersion
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -42,7 +44,6 @@ class ReleaseNoteExtractor:
         self.release_notes = Path("./release_notes")
         self.dry_run = dry_run
         self.type_headers = cfg.type_headers
-        self.verbose = cfg.verbose
         self.git = git
 
         self.has_release_notes = self.release_notes.exists() and self.release_notes.is_dir()
@@ -56,7 +57,7 @@ class ReleaseNoteExtractor:
             DeprecationWarning,
             stacklevel=2,
         )
-        util.debug_echo("Extracting release note changes.", self.verbose)
+        logger.warning("Extracting release note changes.")
         # Extract changelog details from release note files.
         for issue in sorted(self.release_notes.iterdir()):
             if issue.is_file and not issue.name.startswith("."):
@@ -70,13 +71,14 @@ class ReleaseNoteExtractor:
                 description = issue.read_text().strip()
 
                 if breaking:
-                    util.noisy_echo(f"  Breaking change detected:\n    {commit_type}: {description}", self.verbose)
+                    logger.info("  Breaking change detected:\n    %s: %s", commit_type, description)
                 header = self.type_headers.get(commit_type, commit_type)
 
                 if commit_type not in self.type_headers:
-                    util.debug_echo(
-                        f"  Skipping unsupported CHANGELOG commit type {commit_type}, derived from `./release_notes/{issue.name}`",  # noqa: E501
-                        self.verbose,
+                    logger.warning(
+                        "  Skipping unsupported CHANGELOG commit type %s, derived from './release_notes/%s'",
+                        commit_type,
+                        issue.name,
                     )
                     continue
 
@@ -98,14 +100,14 @@ class ReleaseNoteExtractor:
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
         types = "|".join(self.type_headers.keys())
         reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")
-        util.debug_echo("Extracting commit log changes.", self.verbose)
+        logger.warning("Extracting commit log changes.")
 
         for i, (short_hash, commit_hash, log) in enumerate(logs):
             m = reg.match(log)
             if m is None:
-                util.all_echo(f"  Skipping commit log (not conventional): {log}", self.verbose)
+                logger.debug("  Skipping commit log (not conventional): %s", log.strip())
             if m:
-                util.all_echo(f"  Parsing commit log: {log}", self.verbose)
+                logger.debug("  Parsing commit log: %s", log.strip())
                 commit_type = m[1]
                 scope = m[2] or ""
                 breaking = m[3] is not None
@@ -117,7 +119,7 @@ class ReleaseNoteExtractor:
                 breaking = breaking or "BREAKING CHANGE" in details
 
                 if breaking:
-                    util.noisy_echo(f"  Breaking change detected:\n    {commit_type}: {description}", self.verbose)
+                    logger.info("  Breaking change detected:\n    %s: %s", commit_type, description)
 
                 change = Change(
                     description=description,
@@ -136,7 +138,7 @@ class ReleaseNoteExtractor:
                     ]:
                         m = re.match(pattern, line)
                         if m:
-                            util.noisy_echo(f"  `{target}` footer extracted '{m[1]}'", self.verbose)
+                            logger.info("  '%s' footer extracted '%s'", target, m[1])
                             setattr(change, target, m[1])
 
                 header = self.type_headers.get(commit_type, commit_type)
@@ -171,11 +173,11 @@ class ReleaseNoteExtractor:
         a changelog.
         """
         if self.release_notes.exists():
-            util.debug_echo("Cleaning release notes.", self.verbose)
+            logger.info("Cleaning release notes.")
             for x in self.release_notes.iterdir():
                 if x.is_file and not x.name.startswith("."):
                     if self.dry_run:
-                        util.debug_echo(f"  Would remove release note '{x.name}'", self.verbose)
+                        logger.info("  Would remove release note '%s'", x.name)
                         continue
                     x.unlink()
 
@@ -188,6 +190,7 @@ def extract_version_tag(sections: SectionDict, cfg: config.Config, bv: BumpVersi
     Bugs/Fixes: patch
 
     """
+    logger.warning("Detecting semver from changes.")
     semver_mapping = cfg.semver_mapping
     version_info_ = bv.get_version_info("patch")
     current = version_info_["current"]
@@ -198,16 +201,16 @@ def extract_version_tag(sections: SectionDict, cfg: config.Config, bv: BumpVersi
         for issue in section_issues.values():
             if semvers.index(semver) < semvers.index(semver_mapping.get(issue.commit_type, "patch")):
                 semver = semver_mapping.get(issue.commit_type, "patch")
-                util.noisy_echo(f"  `{semver}` change detected from commit_type '{issue.commit_type}'", cfg.verbose)
+                logger.info("  '%s' change detected from commit_type '%s'", semver, issue.commit_type)
             if issue.breaking and semver != "major":
                 semver = "major"
-                util.noisy_echo(f"  `{semver}` change detected from breaking issue '{issue.issue_ref}'", cfg.verbose)
+                logger.info("  '%s' change detected from breaking issue '%s'", semver, issue.commit_type)
 
     if current.startswith("0."):
         # If currently on 0.X releases, downgrade semver by one, major -> minor etc.
         idx = semvers.index(semver)
         new_ = semvers[max(idx - 1, 0)]
-        util.noisy_echo(f"  `{semver}` change downgraded to `{new_}` for 0.x release.", cfg.verbose)
+        logger.info("  '%s' change downgraded to '%s' for 0.x release.", semver, new_)
         semver = new_
 
     version_info = bv.get_version_info(semver)

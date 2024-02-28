@@ -1,9 +1,8 @@
+import logging
 import re
 import subprocess
 from typing import TypeVar
 from warnings import warn
-
-from changelog_gen import util
 
 try:
     from bumpversion import bump  # noqa: F401
@@ -18,6 +17,8 @@ else:
     bump_library = "bump-my-version"
 
 from changelog_gen import errors
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound="BumpVersion")
 
@@ -95,7 +96,7 @@ class BumpVersion:  # noqa: D101
                 .split("\n")
             )
         except subprocess.CalledProcessError as e:
-            util.debug_echo(e.output, self.verbose)
+            logger.warning(e.output, self.verbose)
             msg = "Unable to get version data from bumpversion."
             raise errors.VersionDetectionError(msg) from e
 
@@ -118,8 +119,8 @@ class BumpVersion:  # noqa: D101
                 .split("\n")
             )
         except subprocess.CalledProcessError as e:
-            util.debug_echo(e.output, self.verbose)
+            logger.warning(e.output)
             raise
 
         for line in describe_out:
-            util.debug_echo(line, self.verbose)
+            logger.warning(line)

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import subprocess
 from typing import TypeVar
 
-from changelog_gen import errors, util
+from changelog_gen import errors
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound="Git")
 
@@ -11,8 +14,7 @@ T = TypeVar("T", bound="Git")
 class Git:
     """VCS implementation for git repositories."""
 
-    def __init__(self: T, verbose: int = 0, *, commit: bool = True, dry_run: bool = False) -> None:
-        self.verbose = verbose
+    def __init__(self: T, *, commit: bool = True, dry_run: bool = False) -> None:
         self._commit = commit
         self.dry_run = dry_run
 
@@ -111,20 +113,20 @@ class Git:
     def add_path(self: T, path: str) -> None:
         """Add path to git repository."""
         if self.dry_run:
-            util.debug_echo(f"  Would add path '{path}' to Git", self.verbose)
+            logger.warning("  Would add path '%s' to Git", path)
             return
         subprocess.check_output(["git", "add", "--update", path])  # noqa: S603, S607
 
     def commit(self: T, version: str, paths: list[str] | None = None) -> None:
         """Commit changes to git repository."""
-        util.debug_echo("Would prepare Git commit", self.verbose)
+        logger.warning("Would prepare Git commit")
         paths = paths or []
 
         for path in paths:
             self.add_path(path)
 
         if self.dry_run or not self._commit:
-            util.debug_echo(f"  Would commit to Git with message 'Update CHANGELOG for {version}'", self.verbose)
+            logger.warning("  Would commit to Git with message 'Update CHANGELOG for %s'", version)
             return
 
         try:
@@ -138,6 +140,6 @@ class Git:
     def revert(self: T) -> None:
         """Revert a commit."""
         if self.dry_run:
-            util.debug_echo("Would revert commit in Git", self.verbose)
+            logger.warning("Would revert commit in Git")
             return
         subprocess.check_output(["git", "reset", "HEAD~1", "--hard"])  # noqa: S603, S607

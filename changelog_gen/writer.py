@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+import logging
 import typing
 from enum import Enum
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from changelog_gen import util
-
 if typing.TYPE_CHECKING:
     from changelog_gen import config
     from changelog_gen.extractor import Change, SectionDict
+
+
+logger = logging.getLogger(__name__)
 
 
 class Extension(Enum):
@@ -44,7 +46,6 @@ class BaseWriter:
         self.dry_run = dry_run
         self.issue_link = cfg.issue_link
         self.commit_link = cfg.commit_link
-        self.verbose = cfg.verbose
 
     def add_version(self: typing.Self, version: str) -> None:
         """Add a version string to changelog file."""
@@ -96,7 +97,8 @@ class BaseWriter:
         pass
 
     def __str__(self: typing.Self) -> str:  # noqa: D105
-        return "\n".join(self.content)
+        content = "\n".join(self.content)
+        return f"\n\n{content}\n\n"
 
     def write(self: typing.Self) -> None:
         """Write file contents to destination."""
@@ -105,11 +107,11 @@ class BaseWriter:
 
     def _write(self: typing.Self, content: list[str]) -> None:
         if self.dry_run:
-            util.debug_echo(f"Would write to '{self.changelog.name}'", self.verbose)
+            logger.warning("Would write to '%s'", self.changelog.name)
             with NamedTemporaryFile("wb") as output_file:
                 output_file.write(("\n".join(content)).encode("utf-8"))
         else:
-            util.debug_echo(f"Writing to '{self.changelog.name}'", self.verbose)
+            logger.warning("Writing to '%s'", self.changelog.name)
             self.changelog.write_text("\n".join(content))
 
 
@@ -159,7 +161,8 @@ class RstWriter(BaseWriter):
         self._links = {}
 
     def __str__(self: typing.Self) -> str:  # noqa: D105
-        return "\n".join(self.content + self.links)
+        content = "\n".join(self.content + self.links)
+        return f"\n\n{content}\n\n"
 
     @property
     def links(self: typing.Self) -> list[str]:

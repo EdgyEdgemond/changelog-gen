@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import importlib.metadata
 import json
+import logging
+import logging.config
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+import click
 import rtoml
 import typer
+from rich.logging import RichHandler
 
 from changelog_gen import (
     config,
@@ -18,9 +22,39 @@ from changelog_gen import (
 from changelog_gen.cli import util
 from changelog_gen.extractor import extract_version_tag
 from changelog_gen.post_processor import per_issue_post_process
-from changelog_gen.util import quiet_echo
 from changelog_gen.vcs import Git
 from changelog_gen.version import BumpVersion
+
+logger = logging.getLogger(__name__)
+
+VERBOSITY = {
+    0: logging.ERROR,
+    1: logging.WARNING,
+    2: logging.INFO,
+    3: logging.DEBUG,
+}
+
+
+def setup_logging(verbose: int = 0) -> None:
+    """Configure the logging."""
+    logging.basicConfig(
+        level=VERBOSITY.get(verbose, logging.DEBUG),
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[
+            RichHandler(
+                rich_tracebacks=True,
+                show_level=False,
+                show_path=False,
+                show_time=False,
+                tracebacks_suppress=[click],
+            ),
+        ],
+    )
+    httpx_logger = logging.getLogger("httpx")
+    httpx_logger.disabled = True
+    root_logger = logging.getLogger("")
+    root_logger.setLevel(VERBOSITY.get(verbose, logging.DEBUG))
 
 
 def _version_callback(*, value: bool) -> None:
@@ -53,12 +87,12 @@ def process_info(info: dict, cfg: config.Config, *, dry_run: bool) -> None:
         return
 
     if info["dirty"] and not cfg.allow_dirty:
-        quiet_echo("Working directory is not clean. Use `allow_dirty` configuration to ignore.", cfg.verbose)
+        logger.error("Working directory is not clean. Use `allow_dirty` configuration to ignore.")
         raise typer.Exit(code=1)
 
     allowed_branches = cfg.allowed_branches
     if allowed_branches and info["branch"] not in allowed_branches:
-        quiet_echo("Current branch not in allowed generation branches.", cfg.verbose)
+        logger.error("Current branch not in allowed generation branches.")
         raise typer.Exit(code=1)
 
 
@@ -72,10 +106,11 @@ def init(
 
     Detect and raise if a CHANGELOG already exists, if not create a new file.
     """
-    cfg = config.Config(verbose=verbose)
+    setup_logging(verbose)
+    cfg = config.Config()
     extension = util.detect_extension()
     if extension is not None:
-        quiet_echo(f"CHANGELOG.{extension.value} detected.", cfg.verbose)
+        logger.error("CHANGELOG.%s detected.", extension.value)
         raise typer.Exit(code=1)
 
     w = writer.new_writer(file_format, cfg)
@@ -87,17 +122,18 @@ def migrate(
     verbose: int = typer.Option(0, "-v", "--verbose", help="Set output verbosity.", count=True, max=3),
 ) -> None:
     """Generate toml configuration from setup.cfg."""
+    setup_logging(verbose)
     setup = Path("setup.cfg")
 
     if not setup.exists():
-        quiet_echo("setup.cfg not found.", verbose)
+        logger.error("setup.cfg not found.")
         raise typer.Exit(code=1)
 
-    cfg = config._process_setup_cfg(setup, verbose=verbose)  # noqa: SLF001
+    cfg = config._process_setup_cfg(setup)  # noqa: SLF001
     config.check_deprecations(cfg)
     if "post_process" in cfg and "headers" in cfg["post_process"]:
         cfg["post_process"]["headers"] = json.loads(cfg["post_process"]["headers"])
-    quiet_echo(rtoml.dumps({"tool": {"changelog_gen": cfg}}), verbose)
+    typer.echo(rtoml.dumps({"tool": {"changelog_gen": cfg}}))
 
 
 @gen_app.command("generate")
@@ -132,6 +168,7 @@ def gen(  # noqa: PLR0913
 
     Read release notes and generate a new CHANGELOG entry for the current version.
     """
+    setup_logging(verbose)
     cfg = config.read(
         release=release,
         allow_dirty=allow_dirty,
@@ -146,7 +183,7 @@ def gen(  # noqa: PLR0913
     try:
         _gen(cfg, version_part, version_tag, dry_run=dry_run)
     except errors.ChangelogException as ex:
-        quiet_echo(ex, verbose)
+        logger.error("%s", ex)  # noqa: TRY400
         raise typer.Exit(code=1) from ex
 
 
@@ -158,12 +195,12 @@ def _gen(
     dry_run: bool = False,
 ) -> None:
     bv = BumpVersion(verbose=cfg.verbose, dry_run=dry_run)
-    git = Git(verbose=cfg.verbose, dry_run=dry_run)
+    git = Git(dry_run=dry_run)
 
     extension = util.detect_extension()
 
     if extension is None:
-        quiet_echo("No CHANGELOG file detected, run `changelog init`", cfg.verbose)
+        logger.error("No CHANGELOG file detected, run `changelog init`")
         raise typer.Exit(code=1)
 
     process_info(git.get_latest_tag_info(), cfg, dry_run=dry_run)
@@ -173,7 +210,7 @@ def _gen(
 
     unique_issues = e.unique_issues(sections)
     if not unique_issues and cfg.reject_empty:
-        quiet_echo("No changes present and reject_empty configured.", cfg.verbose)
+        logger.error("No changes present and reject_empty configured.")
         raise typer.Exit(code=0)
 
     if version_part is not None:
@@ -194,7 +231,7 @@ def _gen(
     w.add_version(version_string)
     w.consume(cfg.type_headers, sections)
 
-    quiet_echo(w, cfg.verbose)
+    logger.error(str(w))
 
     processed = _finalise(w, e, version_tag, extension, cfg, dry_run=dry_run)
 
@@ -214,7 +251,7 @@ def _finalise(  # noqa: PLR0913
     dry_run: bool,
 ) -> bool:
     bv = BumpVersion(verbose=cfg.verbose, dry_run=dry_run, allow_dirty=cfg.allow_dirty)
-    git = Git(verbose=cfg.verbose, dry_run=dry_run, commit=cfg.commit)
+    git = Git(dry_run=dry_run, commit=cfg.commit)
 
     if dry_run or typer.confirm(
         f"Write CHANGELOG for suggested version {version_tag}",
@@ -232,7 +269,7 @@ def _finalise(  # noqa: PLR0913
                 bv.release(version_tag)
             except Exception as e:  # noqa: BLE001
                 git.revert()
-                quiet_echo(f"Error creating release: {e}", cfg.verbose)
+                logger.error("Error creating release: %s", str(e))  # noqa: TRY400
                 raise typer.Exit(code=1) from e
         return True
 

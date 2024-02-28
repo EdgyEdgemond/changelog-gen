@@ -96,7 +96,7 @@ class TestBaseWriter:
         w = writer.BaseWriter(changelog, cfg)
         w.content = ["line1", "line2", "line3"]
 
-        assert str(w) == "line1\nline2\nline3"
+        assert str(w) == "\n\nline1\nline2\nline3\n\n"
 
     def test_base_methods_not_implemented(self, changelog, cfg):
         w = writer.BaseWriter(changelog, cfg)
@@ -500,6 +500,7 @@ header
         assert (
             str(w)
             == """
+
 0.0.1
 =====
 
@@ -515,7 +516,8 @@ header
 .. _`#1`: http://url/issues/1
 .. _`#2`: http://url/issues/2
 .. _`#3`: http://url/issues/3
-""".strip()
+
+"""
         )
 
     def test_write_dry_run_doesnt_write_to_file(self, changelog_rst, cfg):

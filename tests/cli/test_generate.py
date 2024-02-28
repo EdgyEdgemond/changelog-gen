@@ -147,7 +147,7 @@ def test_generate_wraps_changelog_errors(gen_cli_runner, monkeypatch):
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 1
-    assert result.output == "Unable to parse.\n"
+    assert result.output.strip() == "Unable to parse."
 
 
 @pytest.mark.usefixtures("cwd")
@@ -155,7 +155,7 @@ def test_generate_aborts_if_changelog_missing(gen_cli_runner):
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 1
-    assert result.output == "No CHANGELOG file detected, run `changelog init`\n"
+    assert result.output.strip() == "No CHANGELOG file detected, run `changelog init`"
 
 
 @pytest.mark.usefixtures("changelog", "_conventional_commits")
@@ -178,7 +178,7 @@ allow_dirty = false
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 1
-    assert result.output == "Working directory is not clean. Use `allow_dirty` configuration to ignore.\n"
+    assert result.output.strip() == "Working directory is not clean. Use `allow_dirty` configuration to ignore."
 
 
 @pytest.mark.usefixtures("changelog", "_conventional_commits")
@@ -222,7 +222,7 @@ allowed_branches = ["release_candidate"]
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 1
-    assert result.output == "Current branch not in allowed generation branches.\n"
+    assert result.output.strip() == "Current branch not in allowed generation branches."
 
 
 @pytest.mark.usefixtures("changelog", "_conventional_commits")
@@ -246,8 +246,9 @@ def test_generate_confirms_suggested_changes(gen_cli_runner):
 
     assert result.exit_code == 0
     assert (
-        result.output
+        "\n".join([f"{r.rstrip(' ')}" for r in result.output.split("\n")])
         == """
+
 ## v0.0.1
 
 ### Features and Improvements
@@ -260,7 +261,10 @@ def test_generate_confirms_suggested_changes(gen_cli_runner):
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 
-Write CHANGELOG for suggested version 0.0.1 [y/N]: \n""".lstrip()
+
+
+Write CHANGELOG for suggested version 0.0.1 [y/N]:
+"""
     )
 
 
@@ -279,8 +283,9 @@ section_mapping.feat = "fix"
 
     assert result.exit_code == 0
     assert (
-        result.output
+        "\n".join([f"{r.rstrip(' ')}" for r in result.output.split("\n")])
         == """
+
 ## v0.0.1
 
 ### Bug fixes
@@ -290,7 +295,10 @@ section_mapping.feat = "fix"
 - Detail about 3 [#3]
 - Detail about 4 [#4]
 
-Write CHANGELOG for suggested version 0.0.1 [y/N]: \n""".lstrip()
+
+
+Write CHANGELOG for suggested version 0.0.1 [y/N]:
+"""
     )
 
 
@@ -309,8 +317,9 @@ type_headers.fix = "My Fixes"
 
     assert result.exit_code == 0
     assert (
-        result.output
+        "\n".join([f"{r.rstrip(' ')}" for r in result.output.split("\n")])
         == """
+
 ## v0.0.1
 
 ### My Features
@@ -323,7 +332,10 @@ type_headers.fix = "My Fixes"
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 
-Write CHANGELOG for suggested version 0.0.1 [y/N]: \n""".lstrip()
+
+
+Write CHANGELOG for suggested version 0.0.1 [y/N]:
+"""
     )
 
 
@@ -563,7 +575,7 @@ def test_generate_reject_empty(
     result = gen_cli_runner.invoke(["--reject-empty"])
 
     assert result.exit_code == 0
-    assert result.output == "No changes present and reject_empty configured.\n"
+    assert result.output.strip() == "No changes present and reject_empty configured."
 
     assert (
         changelog.read_text()

@@ -127,8 +127,6 @@ def extract_string_value(parser: ConfigParser, valuename: str) -> str | None:
 class PostProcessConfig:
     """Post Processor configuration options."""
 
-    verbose: int = 0
-
     url: str | None = None
     verb: str = "POST"
     # The body to send as a post-processing command,
@@ -191,7 +189,7 @@ def _process_overrides(overrides: dict) -> tuple[dict, PostProcessConfig | None]
     return overrides, post_process
 
 
-def _process_pyproject(pyproject: Path, verbose: int = 0) -> dict:  # noqa: ARG001
+def _process_pyproject(pyproject: Path) -> dict:
     cfg = {}
     with pyproject.open() as f:
         data = rtoml.load(f)
@@ -202,7 +200,7 @@ def _process_pyproject(pyproject: Path, verbose: int = 0) -> dict:  # noqa: ARG0
         return data["tool"]["changelog_gen"]
 
 
-def _process_setup_cfg(setup: Path, verbose: int = 0) -> dict:  # noqa: ARG001
+def _process_setup_cfg(setup: Path) -> dict:
     cfg = {}
     parser = ConfigParser("")
 
@@ -245,7 +243,6 @@ def _process_setup_cfg(setup: Path, verbose: int = 0) -> dict:  # noqa: ARG001
 
 def check_deprecations(cfg: dict) -> None:
     """Check parsed configuration dict for deprecated features."""
-    verbose = cfg.get("verbose", 0)  # noqa: F841
     if cfg.get("post_process"):
         url = cfg["post_process"].get("url", "")
         body = cfg["post_process"].get("body", "")
@@ -305,7 +302,6 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
     * pyproject.toml
     * setup.cfg
     """
-    verbose = kwargs.get("verbose", 0)
     overrides, post_process = _process_overrides(kwargs)
     cfg = {}
 
@@ -314,10 +310,10 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
 
     if pyproject.exists():
         # parse pyproject
-        cfg = _process_pyproject(pyproject, verbose=verbose)
+        cfg = _process_pyproject(pyproject)
 
     if not cfg and setup.exists():
-        cfg = _process_setup_cfg(setup, verbose=verbose)
+        cfg = _process_setup_cfg(setup)
 
     if "post_process" not in cfg and post_process:
         cfg["post_process"] = {
@@ -335,7 +331,6 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
 
     if cfg.get("post_process"):
         pp = cfg["post_process"]
-        pp["verbose"] = verbose
         try:
             cfg["post_process"] = PostProcessConfig.from_dict(pp)
         except Exception as e:  # noqa: BLE001

@@ -62,7 +62,10 @@ post_process.url = "http://localhost/issue/::issue_ref::"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--random-order"
+addopts = [
+    "--random-order",
+    "-p no:logging",
+]
 filterwarnings = [
     "ignore::DeprecationWarning:changelog_gen.cli.command:97",
     "ignore::DeprecationWarning:changelog_gen.cli.command:98",

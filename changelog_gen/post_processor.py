@@ -1,3 +1,4 @@
+import logging
 import os
 import typing
 from http import HTTPStatus
@@ -5,10 +6,10 @@ from http import HTTPStatus
 import httpx
 import typer
 
-from changelog_gen import util
-
 if typing.TYPE_CHECKING:
     from changelog_gen.config import PostProcessConfig
+
+logger = logging.getLogger(__name__)
 
 
 class BearerAuth(httpx.Auth):
@@ -29,11 +30,7 @@ def make_client(cfg: "PostProcessConfig") -> httpx.Client:
     if cfg.auth_env:
         user_auth = os.environ.get(cfg.auth_env)
         if not user_auth:
-            util.verbose_echo(
-                f'Missing environment variable "{cfg.auth_env}"',
-                util.Verbosity.QUIET,
-                cfg.verbose,
-            )
+            logger.error('Missing environment variable "%s"', cfg.auth_env)
             raise typer.Exit(code=1)
 
         if cfg.auth_type == "bearer":
@@ -43,10 +40,9 @@ def make_client(cfg: "PostProcessConfig") -> httpx.Client:
             try:
                 username, api_key = user_auth.split(":")
             except ValueError as e:
-                util.verbose_echo(
-                    f'Unexpected content in {cfg.auth_env}, need "{{username}}:{{api_key}} for basic auth"',
-                    util.Verbosity.QUIET,
-                    cfg.verbose,
+                logger.error(  # noqa: TRY400
+                    "Unexpected content in %s, need '{username}:{api_key}' for basic auth",
+                    cfg.auth_env,
                 )
                 raise typer.Exit(code=1) from e
             else:
@@ -68,7 +64,7 @@ def per_issue_post_process(
     """Run post process for all provided issue references."""
     if not cfg.url:
         return
-    util.debug_echo("Post processing:", cfg.verbose)
+    logger.warning("Post processing:")
 
     client = make_client(cfg)
 
@@ -82,17 +78,17 @@ def per_issue_post_process(
             body = body.replace(find, replace)
 
         if dry_run:
-            util.debug_echo(f"  Would request: {cfg.verb} {url} {body}", cfg.verbose)
+            logger.warning("  Would request: %s %s %s", cfg.verb, url, body)
         else:
-            util.noisy_echo(f"  Request: {cfg.verb} {url}", cfg.verbose)
+            logger.info("  Request: %s %s", cfg.verb, url)
             r = client.request(
                 method=cfg.verb,
                 url=url,
                 content=body,
             )
             try:
-                util.noisy_echo(f"    Response: {HTTPStatus(r.status_code).name}", cfg.verbose)
+                logger.info("    Response: %s", HTTPStatus(r.status_code).name)
                 r.raise_for_status()
             except httpx.HTTPError as e:
-                util.quiet_echo("  Post process request failed.", cfg.verbose)
-                util.debug_echo(f"    {e.response.text}", cfg.verbose)
+                logger.error("Post process request failed.")  # noqa: TRY400
+                logger.warning("  %s", e.response.text)
