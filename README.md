@@ -67,7 +67,7 @@ and how to customize them.
 ```
 
 `description` allows typical `[a-zA-Z ]` sentences, as well as `[.,/]`
-punctuation, and `[\`]` for highlighting words.
+punctuation, and ``[`]`` for highlighting words.
 
 i.e.
 ```
