@@ -158,6 +158,16 @@ def test_add_path_stages_changes_for_commit(multiversion_repo):
     assert "Changes not staged for commit" not in multiversion_repo.run("git status", capture=True)
 
 
+def test_add_path_dry_run(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world! v3")
+
+    Git(dry_run=True).add_path("hello.txt")
+
+    assert "Changes not staged for commit" in multiversion_repo.run("git status", capture=True)
+
+
 def test_commit_adds_message_with_version_string(multiversion_repo):
     path = multiversion_repo.workspace
     f = path / "hello.txt"
@@ -177,6 +187,16 @@ def test_commit_with_paths(multiversion_repo):
     Git().commit("new_version", ["hello.txt"])
 
     assert multiversion_repo.api.head.commit.message == "Update CHANGELOG for new_version\n"
+
+
+def test_commit_dry_run(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world! v3")
+
+    Git(dry_run=True).commit("new_version", ["hello.txt"])
+
+    assert "Changes not staged for commit" in multiversion_repo.run("git status", capture=True)
 
 
 def test_commit_no_changes_staged(multiversion_repo):
@@ -260,3 +280,21 @@ def test_revert(multiversion_repo):
     Git().revert()
 
     assert multiversion_repo.api.head.commit.message == "commit log"
+
+
+def test_revert_dry_run(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world! v3")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("commit log")
+
+    f.write_text("hello world! v4")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("commit log 2")
+
+    assert multiversion_repo.api.head.commit.message == "commit log 2"
+
+    Git(dry_run=True).revert()
+
+    assert multiversion_repo.api.head.commit.message == "commit log 2"

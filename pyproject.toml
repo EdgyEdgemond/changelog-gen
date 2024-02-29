@@ -81,6 +81,7 @@ fail_under = 95
 show_missing = true
 skip_covered = true
 exclude_lines = [
+    "pragma: no cover",
     "if typing.TYPE_CHECKING:",
     "bump_library",
     'warn',

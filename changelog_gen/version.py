@@ -6,7 +6,7 @@ from warnings import warn
 
 try:
     from bumpversion import bump  # noqa: F401
-except ImportError:
+except ImportError:  # pragma: no cover
     bump_library = "bump2version"
     warn(
         "bump2version deprecated, recommend installing extras[bump-my-version].",
