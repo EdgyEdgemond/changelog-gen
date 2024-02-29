@@ -99,7 +99,7 @@ class ReleaseNoteExtractor:
         # Build a conventional commit regex based on configured sections
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
         types = "|".join(self.type_headers.keys())
-        reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .,\/]+)+([\s\S]*)")
+        reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .,`\/]+)+([\s\S]*)")
         logger.warning("Extracting commit log changes.")
 
         for i, (short_hash, commit_hash, log) in enumerate(logs):
@@ -109,7 +109,7 @@ class ReleaseNoteExtractor:
             if m:
                 logger.debug("  Parsing commit log: %s", log.strip())
                 commit_type = m[1]
-                scope = m[2] or ""
+                scope = (m[2] or "").replace("(", "(`").replace(")", "`)")
                 breaking = m[3] is not None
                 description = m[4]
                 details = m[5] or ""

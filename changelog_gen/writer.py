@@ -67,9 +67,7 @@ class BaseWriter:
         """Add a section to changelog file."""
         self._add_section_header(header)
         for change in sorted(changes.values()):
-            description = (
-                f"{self.italic_string(change.scope)} {change.description}" if change.scope else change.description
-            )
+            description = f"{change.scope} {change.description}" if change.scope else change.description
             description = f"{self.bold_string('Breaking:')} {description}" if change.breaking else description
             description = f"{description} {change.authors}" if change.authors else description
 
@@ -82,10 +80,6 @@ class BaseWriter:
     def bold_string(self: typing.Self, string: str) -> str:
         """Render a string as bold."""
         return f"**{string.strip()}**"
-
-    def italic_string(self: typing.Self, string: str) -> str:
-        """Render a string as italic."""
-        return f"*{string.strip()}*"
 
     def _add_section_header(self: typing.Self, header: str) -> None:
         raise NotImplementedError

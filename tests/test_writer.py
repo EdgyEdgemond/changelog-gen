@@ -507,7 +507,7 @@ header
 header
 ------
 
-* *(config)* line3 [`#3`_]
+* (config) line3 [`#3`_]
 
 * line1 [`#1`_]
 
