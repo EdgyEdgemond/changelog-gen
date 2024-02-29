@@ -295,7 +295,7 @@ def check_deprecations(cfg: dict) -> None:
         cfg["type_headers"] = type_headers
 
 
-def read(**kwargs) -> Config:  # noqa: C901, PLR0912
+def read(**kwargs) -> Config:  # noqa: C901
     """Read configuration from local environment.
 
     Supported configuration locations (checked in order):
@@ -329,6 +329,25 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
 
     check_deprecations(cfg)
 
+    for replace_key_path in [
+        ("issue_link",),
+        ("commit_link",),
+        ("post_process", "url"),
+        ("post_process", "body"),
+    ]:
+        data, value = cfg, None
+        for key in replace_key_path:
+            value = data.get(key)
+            if key in data:
+                data = data[key]
+
+        # check for non supported replace keys
+        supported = {"::issue_ref::", "::version::", "::commit_hash::"}
+        unsupported = sorted(set(re.findall(r"(::.*?::)", value or "") or []) - supported)
+        if unsupported:
+            msg = f"""Replace string(s) ('{"', '".join(unsupported)}') not supported."""
+            raise errors.UnsupportedReplaceError(msg)
+
     if cfg.get("post_process"):
         pp = cfg["post_process"]
         try:
@@ -336,32 +355,5 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
         except Exception as e:  # noqa: BLE001
             msg = f"Failed to create post_process: {e!s}"
             raise RuntimeError(msg) from e
-
-    # this feels messy, but later on there is an update that should assist in cleaning this up.
-    for key_path in [
-        ("issue_link",),
-        ("commit_link",),
-        ("post_process", "url"),
-        ("post_process", "body"),
-    ]:
-        data, value = cfg, None
-        for key in key_path:
-            if isinstance(data, dict):
-                if key in data:
-                    data = data[key]
-                    value = data
-                else:
-                    value = None
-            else:
-                value = getattr(data, key)
-
-        if value:
-            # check for non supported replace keys
-            m = re.findall(r"(::.*?::)", value)
-            if m:
-                for replace in m:
-                    if replace not in ["::issue_ref::", "::version::", "::commit_hash::"]:
-                        msg = f"Replace string {replace}, not supported."
-                        raise errors.UnsupportedReplaceError(msg)
 
     return Config(**cfg)
