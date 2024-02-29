@@ -81,11 +81,11 @@ class BaseWriter:
 
     def bold_string(self: typing.Self, string: str) -> str:
         """Render a string as bold."""
-        return f"**{string}**"
+        return f"**{string.strip()}**"
 
     def italic_string(self: typing.Self, string: str) -> str:
         """Render a string as italic."""
-        return f"*{string}*"
+        return f"*{string.strip()}*"
 
     def _add_section_header(self: typing.Self, header: str) -> None:
         raise NotImplementedError
