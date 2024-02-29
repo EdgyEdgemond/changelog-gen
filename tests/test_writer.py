@@ -136,7 +136,7 @@ class TestBaseWriter:
         assert w._add_section_header.call_args == mock.call("header")
         assert w._add_section_line.call_args_list == [
             mock.call("**Breaking:** line1", Change("1", "line1", "fix", breaking=True)),
-            mock.call("*(config)* line3", Change("3", "line3", "fix", scope="(config)")),
+            mock.call("(config) line3", Change("3", "line3", "fix", scope="(config)")),
             mock.call("line2 (a, b)", Change("2", "line2", "fix", authors="(a, b)")),
         ]
 
@@ -158,7 +158,7 @@ class TestBaseWriter:
         assert w._add_section_header.call_args == mock.call("header")
         assert w._add_section_line.call_args_list == [
             mock.call("**Breaking:** line3", Change("3", "line3", "fix", breaking=True)),
-            mock.call("*(config)* line1", Change("1", "line1", "fix", scope="(config)")),
+            mock.call("(config) line1", Change("1", "line1", "fix", scope="(config)")),
             mock.call("line2 (a, b)", Change("2", "line2", "fix", authors="(a, b)")),
         ]
 
@@ -304,7 +304,7 @@ class TestMdWriter:
 
 ### header
 
-- *(config)* line3 [#3]
+- (config) line3 [#3]
 - line1 [#1]
 - line2 [#2]
 """
@@ -345,7 +345,7 @@ class TestMdWriter:
 
 ### header
 
-- *(config)* line6 [#6]
+- (config) line6 [#6]
 - line4 [#4]
 - line5 [#5]
 
@@ -566,7 +566,7 @@ Changelog
 header
 ------
 
-* *(config)* line3 [#3]
+* (config) line3 [#3]
 
 * line1 [#1]
 
@@ -620,7 +620,7 @@ Changelog
 header
 ------
 
-* *(config)* line6 [`#6`_]
+* (config) line6 [`#6`_]
 
 * line4 [`#4`_]
 

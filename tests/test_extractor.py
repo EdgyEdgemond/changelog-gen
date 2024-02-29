@@ -148,7 +148,7 @@ def test_git_commit_extraction(conventional_commits):
                 "3",
                 "Detail about 3",
                 breaking=True,
-                scope="(docs)",
+                scope="(`docs`)",
                 short_hash=hashes[2][:7],
                 commit_hash=hashes[2],
                 commit_type="feat",
@@ -166,7 +166,7 @@ def test_git_commit_extraction(conventional_commits):
             "4": Change(
                 "4",
                 "Detail about 4",
-                scope="(config)",
+                scope="(`config`)",
                 short_hash=hashes[0][:7],
                 commit_hash=hashes[0],
                 commit_type="fix",
@@ -217,6 +217,45 @@ Refs: #2
                 short_hash=hashes[0][:7],
                 commit_hash=hashes[0],
                 commit_type="custom",
+            ),
+        },
+    }
+
+
+def test_git_commit_extraction_picks_up_additional_allowed_characted(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    hashes = []
+    for msg in [
+        """fix: Ensure one/two chars are allowed `and` highlighting, but random PR link ignored. (#20)
+
+With some details
+
+BREAKING CHANGE:
+Refs: #1
+""",
+    ]:
+        f.write_text(msg)
+        multiversion_repo.run("git add hello.txt")
+        multiversion_repo.api.index.commit(msg)
+        hashes.append(str(multiversion_repo.api.head.commit))
+
+    cfg = Config()
+    git = Git()
+
+    e = ReleaseNoteExtractor(cfg, git)
+
+    sections = e.extract()
+
+    assert sections == {
+        "Bug fixes": {
+            "1": Change(
+                "1",
+                "Ensure one/two chars are allowed `and` highlighting, but random PR link ignored.",
+                breaking=True,
+                short_hash=hashes[0][:7],
+                commit_hash=hashes[0],
+                commit_type="fix",
             ),
         },
     }

@@ -66,6 +66,14 @@ and how to customize them.
 [optional footer(s)]
 ```
 
+`description` allows typical `[a-zA-Z ]` sentences, as well as `[.,/]`
+punctuation, and `[\`]` for highlighting words.
+
+i.e.
+```
+fix: This is a valid description, with punctuation and a `highlighted` word.
+```
+
 Optional footers that are parsed by `changelog-gen` are:
 
 * `BREAKING CHANGE:`

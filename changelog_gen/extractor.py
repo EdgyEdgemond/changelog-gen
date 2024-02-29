@@ -111,7 +111,7 @@ class ReleaseNoteExtractor:
                 commit_type = m[1]
                 scope = (m[2] or "").replace("(", "(`").replace(")", "`)")
                 breaking = m[3] is not None
-                description = m[4]
+                description = m[4].strip()
                 details = m[5] or ""
 
                 # Handle missing refs in commit message, skip link generation in writer
