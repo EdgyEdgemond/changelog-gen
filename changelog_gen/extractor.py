@@ -99,7 +99,7 @@ class ReleaseNoteExtractor:
         # Build a conventional commit regex based on configured sections
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
         types = "|".join(self.type_headers.keys())
-        reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")
+        reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .,\/]+)+([\s\S]*)")
         logger.warning("Extracting commit log changes.")
 
         for i, (short_hash, commit_hash, log) in enumerate(logs):
@@ -117,6 +117,12 @@ class ReleaseNoteExtractor:
                 # Handle missing refs in commit message, skip link generation in writer
                 issue_ref = f"__{i}__"
                 breaking = breaking or "BREAKING CHANGE" in details
+
+                logger.info("  commit_type: '%s'", commit_type)
+                logger.info("  scope: '%s'", scope)
+                logger.info("  breaking: %s", breaking)
+                logger.info("  description: '%s'", description)
+                logger.info("  details: '%s'", details)
 
                 if breaking:
                     logger.info("  Breaking change detected:\n    %s: %s", commit_type, description)
@@ -206,7 +212,7 @@ def extract_version_tag(sections: SectionDict, cfg: config.Config, bv: BumpVersi
                 semver = "major"
                 logger.info("  '%s' change detected from breaking issue '%s'", semver, issue.commit_type)
 
-    if current.startswith("0."):
+    if current.startswith("0.") and semver != "patch":
         # If currently on 0.X releases, downgrade semver by one, major -> minor etc.
         idx = semvers.index(semver)
         new_ = semvers[max(idx - 1, 0)]

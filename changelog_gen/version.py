@@ -119,7 +119,8 @@ class BumpVersion:  # noqa: D101
                 .split("\n")
             )
         except subprocess.CalledProcessError as e:
-            logger.warning(e.output)
+            for line in e.output.decode().split("\n"):
+                logger.warning(line.strip())
             raise
 
         for line in describe_out:

@@ -16,6 +16,7 @@ httpx = "^0.25.0"
 rtoml = "^0.10.0"
 bump-my-version = { version = "^0.18.3", optional = true }
 bump2version = { version = "^1.0.1", optional = true }
+rich = "^13.7.1"
 
 [tool.poetry.extras]
 bump-my-version = ["bump-my-version"]
