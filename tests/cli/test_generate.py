@@ -82,7 +82,7 @@ def setup(git_repo):
     p.write_text(
         """
 [bumpversion]
-current_version = 0.0.0
+current_version = 1.0.0
 commit = true
 tag = true
 """,
@@ -249,7 +249,7 @@ def test_generate_confirms_suggested_changes(gen_cli_runner):
     assert (
         result.output
         == """
-## v0.1.0
+## v1.1.0
 
 ### Features and Improvements
 
@@ -261,7 +261,7 @@ def test_generate_confirms_suggested_changes(gen_cli_runner):
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 
-Write CHANGELOG for suggested version 0.1.0 [y/N]: \n""".lstrip()
+Write CHANGELOG for suggested version 1.1.0 [y/N]: \n""".lstrip()
     )
 
 
@@ -306,7 +306,7 @@ def test_generate_with_custom_sections(gen_cli_runner, git_repo):
     p.write_text(
         """
 [bumpversion]
-current_version = 0.0.0
+current_version = 1.1.0
 commit = true
 tag = true
 
@@ -323,7 +323,7 @@ sections =
     assert (
         result.output
         == """
-## v0.1.0
+## v1.2.0
 
 ### My Features
 
@@ -335,7 +335,7 @@ sections =
 - Detail about 1 [#1]
 - Detail about 4 [#4]
 
-Write CHANGELOG for suggested version 0.1.0 [y/N]: \n""".lstrip()
+Write CHANGELOG for suggested version 1.2.0 [y/N]: \n""".lstrip()
     )
 
 
@@ -355,7 +355,7 @@ def test_generate_writes_to_file(
         == """
 # Changelog
 
-## v0.1.0
+## v1.1.0
 
 ### Features and Improvements
 
@@ -387,7 +387,7 @@ def test_generate_suggests_major_version_for_breaking_change(
         == """
 # Changelog
 
-## v1.0.0
+## v2.0.0
 
 ### Features and Improvements
 
@@ -400,7 +400,7 @@ def test_generate_suggests_major_version_for_breaking_change(
 - Detail about 4 [#4]
 """.lstrip()
     )
-    assert git_repo.api.head.commit.message == "Update CHANGELOG for 1.0.0\n"
+    assert git_repo.api.head.commit.message == "Update CHANGELOG for 2.0.0\n"
 
 
 @pytest.mark.usefixtures("changelog", "_release_notes", "setup")
@@ -413,7 +413,7 @@ def test_generate_creates_release(
     result = gen_cli_runner.invoke(["--commit", "--release"])
 
     assert result.exit_code == 0
-    assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
+    assert git_repo.api.head.commit.message == "Bump version: 1.0.0 → 1.1.0\n"
 
 
 @pytest.mark.usefixtures("changelog", "_release_notes")
@@ -443,7 +443,7 @@ release = true
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 0
-    assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
+    assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.0.1\n"
 
 
 @pytest.mark.usefixtures("setup", "_release_notes")
@@ -538,7 +538,7 @@ class TestDelegatesToPerIssuePostProcess:
                     auth_env="MY_API_AUTH",
                 ),
                 ["1", "2", "3", "4"],
-                "0.1.0",
+                "0.0.1",
                 dry_run=False,
             ),
         ]
@@ -564,7 +564,7 @@ class TestDelegatesToPerIssuePostProcess:
                     auth_env="MY_API_AUTH",
                 ),
                 ["1", "2", "3", "4"],
-                "0.1.0",
+                "0.0.1",
                 dry_run=False,
             ),
         ]
@@ -589,7 +589,7 @@ class TestDelegatesToPerIssuePostProcess:
                     auth_env="OTHER_API_AUTH",
                 ),
                 ["1", "2", "3", "4"],
-                "0.1.0",
+                "0.0.1",
                 dry_run=False,
             ),
         ]
@@ -653,7 +653,7 @@ class TestGenerateWithDate:
 
         gen_cli_runner.invoke()
 
-        assert writer_mock.add_version.call_args == mock.call("v0.1.0 on 2022-04-14")
+        assert writer_mock.add_version.call_args == mock.call("v0.0.1 on 2022-04-14")
 
     @pytest.mark.usefixtures("_release_notes", "changelog", "setup")
     def test_using_cli(self, gen_cli_runner, monkeypatch):
@@ -663,7 +663,7 @@ class TestGenerateWithDate:
 
         gen_cli_runner.invoke(["--date-format", "(%Y-%m-%d at %H:%M)"])
 
-        assert writer_mock.add_version.call_args == mock.call("v0.1.0 (2022-04-14 at 16:45)")
+        assert writer_mock.add_version.call_args == mock.call("v1.1.0 (2022-04-14 at 16:45)")
 
     @pytest.mark.usefixtures("_release_notes", "changelog")
     def test_override_config(self, gen_cli_runner, git_repo, monkeypatch):
@@ -691,7 +691,7 @@ class TestGenerateWithDate:
 
         gen_cli_runner.invoke(["--date-format", "(%Y-%m-%d at %H:%M)"])
 
-        assert writer_mock.add_version.call_args == mock.call("v0.1.0 (2022-04-14 at 16:45)")
+        assert writer_mock.add_version.call_args == mock.call("v0.0.1 (2022-04-14 at 16:45)")
 
     @pytest.mark.usefixtures("_release_notes", "changelog")
     def test_override_config_and_disable(self, gen_cli_runner, git_repo, monkeypatch):
@@ -719,4 +719,4 @@ class TestGenerateWithDate:
 
         gen_cli_runner.invoke(["--date-format", ""])
 
-        assert writer_mock.add_version.call_args == mock.call("v0.1.0")
+        assert writer_mock.add_version.call_args == mock.call("v0.0.1")

@@ -82,13 +82,22 @@ def extract_version_tag(sections: SectionDict) -> str:
     Bugs/Fixes: patch
 
     """
+    version_info_ = BumpVersion.get_version_info("patch")
+    current = version_info_["current"]
     # TODO(edgy): In the case of 0.x releases, everything should be one semver lower.
     # https://github.com/EdgyEdgemond/changelog-gen/issues/50
+    semvers = ["patch", "minor", "major"]
     semver = "minor" if "feat" in sections else "patch"
     for section_issues in sections.values():
         for issue in section_issues.values():
             if issue["breaking"]:
                 semver = "major"
+
+    if current.startswith("0."):
+        # If currently on 0.X releases, downgrade semver by one, major -> minor etc.
+        idx = semvers.index(semver)
+        semver = semvers[max(idx - 1, 0)]
+
     version_info = BumpVersion.get_version_info(semver)
 
     return version_info["new"]
