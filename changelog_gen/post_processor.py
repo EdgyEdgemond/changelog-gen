@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import typing
 from http import HTTPStatus
@@ -9,6 +10,8 @@ import typer
 
 if typing.TYPE_CHECKING:
     from changelog_gen.config import PostProcessConfig
+
+logger = logging.getLogger(__name__)
 
 
 class BearerAuth(httpx.Auth):
@@ -29,7 +32,7 @@ def make_client(cfg: PostProcessConfig) -> httpx.Client:
     if cfg.auth_env:
         user_auth = os.environ.get(cfg.auth_env)
         if not user_auth:
-            typer.echo(f'Missing environment variable "{cfg.auth_env}"')
+            logger.error('Missing environment variable "%s"', cfg.auth_env)
             raise typer.Exit(code=1)
 
         if cfg.auth_type == "bearer":
@@ -39,7 +42,10 @@ def make_client(cfg: PostProcessConfig) -> httpx.Client:
             try:
                 username, api_key = user_auth.split(":")
             except ValueError as e:
-                typer.echo(f'Unexpected content in {cfg.auth_env}, need "{{username}}:{{api_key}} for basic auth"')
+                logger.error(  # noqa: TRY400
+                    "Unexpected content in %s, need '{username}:{api_key}' for basic auth",
+                    cfg.auth_env,
+                )
                 raise typer.Exit(code=1) from e
             else:
                 auth = httpx.BasicAuth(username=username, password=api_key)
@@ -60,6 +66,7 @@ def per_issue_post_process(
     """Run post process for all provided issue references."""
     if not cfg.url:
         return
+    logger.warning("Post processing:")
 
     client = make_client(cfg)
 
@@ -73,15 +80,17 @@ def per_issue_post_process(
             body = body.replace(find, replace)
 
         if dry_run:
-            typer.echo(f"{cfg.verb} {url} {body}")
+            logger.warning("  Would request: %s %s %s", cfg.verb, url, body)
         else:
+            logger.info("  Request: %s %s", cfg.verb, url)
             r = client.request(
                 method=cfg.verb,
                 url=url,
                 content=body,
             )
             try:
-                typer.echo(f"{cfg.verb} {url}: {HTTPStatus(r.status_code).name}")
+                logger.info("    Response: %s", HTTPStatus(r.status_code).name)
                 r.raise_for_status()
             except httpx.HTTPError as e:
-                typer.echo(e.response.text)
+                logger.error("Post process request failed.")  # noqa: TRY400
+                logger.warning("  %s", e.response.text)

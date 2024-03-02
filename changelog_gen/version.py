@@ -1,3 +1,4 @@
+import logging
 import re
 import subprocess
 from typing import TypeVar
@@ -5,7 +6,7 @@ from warnings import warn
 
 try:
     from bumpversion import bump  # noqa: F401
-except ImportError:
+except ImportError:  # pragma: no cover
     bump_library = "bump2version"
     warn(
         "bump2version deprecated, recommend installing extras[bump-my-version].",
@@ -16,6 +17,8 @@ else:
     bump_library = "bump-my-version"
 
 from changelog_gen import errors
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound="BumpVersion")
 
@@ -40,6 +43,11 @@ def parse_bump2version_info(_semver: str, lines: list[str]) -> tuple[str, str]:
     return bumpversion_data["current_version"], bumpversion_data["new_version"]
 
 
+def generate_verbosity(verbose: int = 0) -> list[str]:
+    """Generate verbose flags correctly for each supported bumpversion library."""
+    return ["--verbose"] * verbose if bump_library == "bump2version" else [f"-{'v' * verbose}"]
+
+
 commands = {
     "bump-my-version": {
         "get_version_info": ["bump-my-version", "show-bump", "--ascii"],
@@ -55,23 +63,32 @@ commands = {
 
 
 class BumpVersion:  # noqa: D101
-    @classmethod
-    def _version_info_cmd(cls: type[T], semver: str) -> list[str]:
+    def __init__(self: T, verbose: int = 0, *, allow_dirty: bool = False, dry_run: bool = False) -> None:
+        self.verbose = verbose
+        self.allow_dirty = allow_dirty
+        self.dry_run = dry_run
+
+    def _version_info_cmd(self: T, semver: str) -> list[str]:
         command = commands[bump_library]["get_version_info"]
         return [c.replace("SEMVER", semver) for c in command]
 
-    @classmethod
-    def _release_cmd(cls: type[T], version: str) -> list[str]:
+    def _release_cmd(self: T, version: str) -> list[str]:
         command = commands[bump_library]["release"]
-        return [c.replace("VERSION", version) for c in command]
+        args = [c.replace("VERSION", version) for c in command]
+        if self.verbose:
+            args.extend(generate_verbosity(self.verbose))
+        if self.dry_run:
+            args.append("--dry-run")
+        if self.allow_dirty:
+            args.append("--allow-dirty")
+        return args
 
-    @classmethod
-    def get_version_info(cls: type[T], semver: str) -> dict[str, str]:
+    def get_version_info(self: T, semver: str) -> dict[str, str]:
         """Get version info for a semver release."""
         try:
             describe_out = (
                 subprocess.check_output(
-                    cls._version_info_cmd(semver),  # noqa: S603
+                    self._version_info_cmd(semver),  # noqa: S603
                     stderr=subprocess.STDOUT,
                 )
                 .decode()
@@ -79,19 +96,32 @@ class BumpVersion:  # noqa: D101
                 .split("\n")
             )
         except subprocess.CalledProcessError as e:
+            logger.warning(e.output, self.verbose)
             msg = "Unable to get version data from bumpversion."
             raise errors.VersionDetectionError(msg) from e
 
         current, new = commands[bump_library]["parser"](semver, describe_out)
-
         return {
             "current": current,
             "new": new,
         }
 
-    @classmethod
-    def release(cls: type[T], version: str) -> None:
+    def release(self: T, version: str) -> None:
         """Generate new release."""
-        subprocess.check_output(
-            cls._release_cmd(version),  # noqa: S603
-        )
+        try:
+            describe_out = (
+                subprocess.check_output(
+                    self._release_cmd(version),  # noqa: S603
+                    stderr=subprocess.STDOUT,
+                )
+                .decode()
+                .strip()
+                .split("\n")
+            )
+        except subprocess.CalledProcessError as e:
+            for line in e.output.decode().split("\n"):
+                logger.warning(line.strip())
+            raise
+
+        for line in describe_out:
+            logger.warning(line)

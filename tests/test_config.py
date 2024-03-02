@@ -388,13 +388,15 @@ headers."content-type" = "application/json"
 [tool.changelog_gen.post_process]
 url = "https://fake_rest_api/::issue_ref::"
 verb = "PUT"
-body = '{"issue": "::issue_ref::", "comment": "Released in ::version::", "other": "::unexpected::"}'
+body = '{"issue": "::issue_ref::", "comment": "Released in ::version_tag::", "other": "::unexpected::"}'
 auth_env = "MY_API_AUTH"
         """,
         )
 
-        with pytest.raises(errors.UnsupportedReplaceError):
+        with pytest.raises(errors.UnsupportedReplaceError) as e:
             config.read()
+
+        assert str(e.value) == "Replace string(s) ('::unexpected::', '::version_tag::') not supported."
 
     @pytest.mark.backwards_compat()
     def test_read_picks_up_post_process_config_backwards_compat(self, config_factory):

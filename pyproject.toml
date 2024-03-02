@@ -16,6 +16,7 @@ httpx = "^0.25.0"
 rtoml = "^0.10.0"
 bump-my-version = { version = "^0.18.3", optional = true }
 bump2version = { version = "^1.0.1", optional = true }
+rich = "^13.7.1"
 
 [tool.poetry.extras]
 bump-my-version = ["bump-my-version"]
@@ -36,12 +37,9 @@ ruff = "^0.1.2"
 pre-commit = "^3.0.2"
 
 [tool.bumpversion]
-current_version = "0.8.2"
+current_version = "0.8.1"
 commit = true
 tag = true
-
-[[tool.bumpversion.files]]
-filename = "changelog_gen/__init__.py"
 
 [[tool.bumpversion.files]]
 filename = "README.md"
@@ -60,15 +58,18 @@ allowed_branches = [
 ]
 date_format = "- %Y-%m-%d"
 issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
-commit_link = "https://github.com/EdgyEdgemond/changelog-gen/commit/::commit_hash::"
+commit_link = "https://github.com/EdgyEdgemond/changelog-gen/commit/{commit_hash}"
+post_process.url = "http://localhost/issue/::issue_ref::"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--random-order"
+addopts = [
+    "--random-order",
+    "-p no:logging",
+]
 filterwarnings = [
-    "ignore::DeprecationWarning:changelog_gen.cli.command:97",
-    "ignore::DeprecationWarning:changelog_gen.cli.command:98",
-    "ignore::DeprecationWarning:changelog_gen.cli.command:99",
+    "ignore::FutureWarning:changelog_gen.cli.command:140",
+    "ignore::FutureWarning:changelog_gen.cli.command:141",
 ]
 markers = [
     "backwards_compat: marks tests as part of backwards compatibility checks.",
@@ -80,6 +81,7 @@ fail_under = 95
 show_missing = true
 skip_covered = true
 exclude_lines = [
+    "pragma: no cover",
     "if typing.TYPE_CHECKING:",
     "bump_library",
     'warn',

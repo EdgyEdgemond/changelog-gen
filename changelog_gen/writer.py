@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import logging
 import typing
 from enum import Enum
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 if typing.TYPE_CHECKING:
+    from changelog_gen import config
     from changelog_gen.extractor import Change, SectionDict
+
+
+logger = logging.getLogger(__name__)
 
 
 class Extension(Enum):
@@ -28,8 +33,7 @@ class BaseWriter:
     def __init__(
         self: typing.Self,
         changelog: Path,
-        issue_link: str | None = None,
-        commit_link: str | None = None,
+        cfg: config.Config,
         *,
         dry_run: bool = False,
     ) -> None:
@@ -40,8 +44,8 @@ class BaseWriter:
             self.existing = lines[self.file_header_line_count + 1 :]
         self.content = []
         self.dry_run = dry_run
-        self.issue_link = issue_link
-        self.commit_link = commit_link
+        self.issue_link = cfg.issue_link
+        self.commit_link = cfg.commit_link
 
     def add_version(self: typing.Self, version: str) -> None:
         """Add a version string to changelog file."""
@@ -63,9 +67,7 @@ class BaseWriter:
         """Add a section to changelog file."""
         self._add_section_header(header)
         for change in sorted(changes.values()):
-            description = (
-                f"{self.italic_string(change.scope)} {change.description}" if change.scope else change.description
-            )
+            description = f"{change.scope} {change.description}" if change.scope else change.description
             description = f"{self.bold_string('Breaking:')} {description}" if change.breaking else description
             description = f"{description} {change.authors}" if change.authors else description
 
@@ -77,11 +79,7 @@ class BaseWriter:
 
     def bold_string(self: typing.Self, string: str) -> str:
         """Render a string as bold."""
-        return f"**{string}**"
-
-    def italic_string(self: typing.Self, string: str) -> str:
-        """Render a string as italic."""
-        return f"*{string}*"
+        return f"**{string.strip()}**"
 
     def _add_section_header(self: typing.Self, header: str) -> None:
         raise NotImplementedError
@@ -93,7 +91,8 @@ class BaseWriter:
         pass
 
     def __str__(self: typing.Self) -> str:  # noqa: D105
-        return "\n".join(self.content)
+        content = "\n".join(self.content)
+        return f"\n\n{content}\n\n"
 
     def write(self: typing.Self) -> None:
         """Write file contents to destination."""
@@ -102,9 +101,11 @@ class BaseWriter:
 
     def _write(self: typing.Self, content: list[str]) -> None:
         if self.dry_run:
+            logger.warning("Would write to '%s'", self.changelog.name)
             with NamedTemporaryFile("wb") as output_file:
                 output_file.write(("\n".join(content)).encode("utf-8"))
         else:
+            logger.warning("Writing to '%s'", self.changelog.name)
             self.changelog.write_text("\n".join(content))
 
 
@@ -154,7 +155,8 @@ class RstWriter(BaseWriter):
         self._links = {}
 
     def __str__(self: typing.Self) -> str:  # noqa: D105
-        return "\n".join(self.content + self.links)
+        content = "\n".join(self.content + self.links)
+        return f"\n\n{content}\n\n"
 
     @property
     def links(self: typing.Self) -> list[str]:
@@ -191,8 +193,7 @@ class RstWriter(BaseWriter):
 
 def new_writer(
     extension: Extension,
-    issue_link: str | None = None,
-    commit_link: str | None = None,
+    cfg: config.Config,
     *,
     dry_run: bool = False,
 ) -> BaseWriter:
@@ -200,9 +201,9 @@ def new_writer(
     changelog = Path(f"CHANGELOG.{extension.value}")
 
     if extension == Extension.MD:
-        return MdWriter(changelog, dry_run=dry_run, issue_link=issue_link, commit_link=commit_link)
+        return MdWriter(changelog, cfg, dry_run=dry_run)
     if extension == Extension.RST:
-        return RstWriter(changelog, dry_run=dry_run, issue_link=issue_link, commit_link=commit_link)
+        return RstWriter(changelog, cfg, dry_run=dry_run)
 
     msg = f'Changelog extension "{extension.value}" not supported.'
     raise ValueError(msg)

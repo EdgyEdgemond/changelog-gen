@@ -150,6 +150,8 @@ class PostProcessConfig:
 class Config:
     """Changelog configuration options."""
 
+    verbose: int = 0
+
     issue_link: str | None = None
     commit_link: str | None = None
     date_format: str | None = None
@@ -232,7 +234,7 @@ def _process_setup_cfg(setup: Path) -> dict:
     if cfg != {}:
         warn(
             "setup.cfg use is deprecated, run `changelog migrate` to generate equivalent toml to paste into pyproject.toml",  # noqa: E501
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
 
@@ -247,14 +249,14 @@ def check_deprecations(cfg: dict) -> None:
         if "{issue_ref}" in url or "{new_version}" in url:
             warn(
                 "{replace} format strings are not supported in `post_process.url` configuration, use ::replace:: instead.",  # noqa: E501
-                DeprecationWarning,
+                FutureWarning,
                 stacklevel=2,
             )
             cfg["post_process"]["url"] = url.format(issue_ref="::issue_ref::", new_version="::version::")
         if "{issue_ref}" in body or "{new_version}" in body:
             warn(
                 "{replace} format strings are not supported in `post_process.body` configuration, use ::replace:: instead.",  # noqa: E501
-                DeprecationWarning,
+                FutureWarning,
                 stacklevel=2,
             )
             cfg["post_process"]["body"] = body.format(issue_ref="::issue_ref::", new_version="::version::")
@@ -262,7 +264,7 @@ def check_deprecations(cfg: dict) -> None:
     if cfg.get("issue_link") and "{issue_ref}" in cfg["issue_link"]:
         warn(
             "{replace} format strings are not supported in `issue_link` configuration, use ::replace:: instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         cfg["issue_link"] = cfg["issue_link"].format(issue_ref="::issue_ref::", new_version="::version::")
@@ -270,7 +272,7 @@ def check_deprecations(cfg: dict) -> None:
     if cfg.get("commit_link") and "{commit_hash}" in cfg["commit_link"]:
         warn(
             "{replace} format strings are not supported in `commit_link` configuration, use ::replace:: instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         cfg["commit_link"] = cfg["commit_link"].format(commit_hash="::commit_hash::")
@@ -278,7 +280,7 @@ def check_deprecations(cfg: dict) -> None:
     if cfg.get("section_mapping") or cfg.get("sections"):
         warn(
             "`sections` and `section_mapping` are no longer supported, use `type_headers` instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
 
@@ -293,7 +295,7 @@ def check_deprecations(cfg: dict) -> None:
         cfg["type_headers"] = type_headers
 
 
-def read(**kwargs) -> Config:  # noqa: C901, PLR0912
+def read(**kwargs) -> Config:  # noqa: C901
     """Read configuration from local environment.
 
     Supported configuration locations (checked in order):
@@ -327,6 +329,25 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
 
     check_deprecations(cfg)
 
+    for replace_key_path in [
+        ("issue_link",),
+        ("commit_link",),
+        ("post_process", "url"),
+        ("post_process", "body"),
+    ]:
+        data, value = cfg, None
+        for key in replace_key_path:
+            value = data.get(key)
+            if key in data:
+                data = data[key]
+
+        # check for non supported replace keys
+        supported = {"::issue_ref::", "::version::", "::commit_hash::"}
+        unsupported = sorted(set(re.findall(r"(::.*?::)", value or "") or []) - supported)
+        if unsupported:
+            msg = f"""Replace string(s) ('{"', '".join(unsupported)}') not supported."""
+            raise errors.UnsupportedReplaceError(msg)
+
     if cfg.get("post_process"):
         pp = cfg["post_process"]
         try:
@@ -334,32 +355,5 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
         except Exception as e:  # noqa: BLE001
             msg = f"Failed to create post_process: {e!s}"
             raise RuntimeError(msg) from e
-
-    # this feels messy, but later on there is an update that should assist in cleaning this up.
-    for key_path in [
-        ("issue_link",),
-        ("commit_link",),
-        ("post_process", "url"),
-        ("post_process", "body"),
-    ]:
-        data, value = cfg, None
-        for key in key_path:
-            if isinstance(data, dict):
-                if key in data:
-                    data = data[key]
-                    value = data
-                else:
-                    value = None
-            else:
-                value = getattr(data, key)
-
-        if value:
-            # check for non supported replace keys
-            m = re.findall(r"(::.*?::)", value)
-            if m:
-                for replace in m:
-                    if replace not in ["::issue_ref::", "::version::"]:
-                        msg = f"Replace string {replace}, not supported."
-                        raise errors.UnsupportedReplaceError(msg)
 
     return Config(**cfg)

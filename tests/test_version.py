@@ -38,11 +38,27 @@ def test_parse_bump2version_info():
     ) == ("0.1.0", "0.1.1rc0")
 
 
+@pytest.mark.parametrize(
+    ("verbose", "lib", "expected_verbosity"),
+    [
+        (1, "bump-my-version", ["-v"]),
+        (2, "bump-my-version", ["-vv"]),
+        (3, "bump-my-version", ["-vvv"]),
+        (1, "bump2version", ["--verbose"]),
+        (2, "bump2version", ["--verbose", "--verbose"]),
+        (3, "bump2version", ["--verbose", "--verbose", "--verbose"]),
+    ],
+)
+def test_generate_verbosity(monkeypatch, verbose, lib, expected_verbosity):
+    monkeypatch.setattr(version, "bump_library", lib)
+    assert version.generate_verbosity(verbose) == expected_verbosity
+
+
 class TestBumpMyVersion:
     @pytest.mark.usefixtures("cwd")
     def test_errors_wrapped(self):
         with pytest.raises(errors.VersionDetectionError):
-            version.BumpVersion.get_version_info("patch")
+            version.BumpVersion().get_version_info("patch")
 
     @pytest.mark.parametrize(
         ("current_version", "new_version", "semver"),
@@ -66,7 +82,7 @@ tag = false
         """.strip(),
         )
 
-        assert version.BumpVersion.get_version_info(semver) == {"current": current_version, "new": new_version}
+        assert version.BumpVersion().get_version_info(semver) == {"current": current_version, "new": new_version}
 
     @pytest.mark.parametrize(
         ("current_version", "new_version", "semver"),
@@ -108,15 +124,33 @@ parts.release.optional_value = "final"
         """.strip(),
         )
 
-        assert version.BumpVersion.get_version_info(semver) == {"current": current_version, "new": new_version}
+        assert version.BumpVersion().get_version_info(semver) == {"current": current_version, "new": new_version}
 
     @pytest.mark.skipif(version.bump_library == "bump2version", reason="bump2version installed")
-    def test_release(self, monkeypatch):
-        monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())
-        version.BumpVersion.release("1.2.3")
+    @pytest.mark.parametrize(
+        ("kwargs", "expected_command_args"),
+        [
+            ({}, []),
+            ({"dry_run": True}, ["--dry-run"]),
+            ({"allow_dirty": True}, ["--allow-dirty"]),
+            ({"verbose": 3}, ["-vvv"]),
+        ],
+    )
+    def test_release(self, monkeypatch, kwargs, expected_command_args):
+        monkeypatch.setattr(version.subprocess, "check_output", mock.Mock(return_value=b""))
+        version.BumpVersion(**kwargs).release("1.2.3")
         assert version.subprocess.check_output.call_args == mock.call(
-            ["bump-my-version", "bump", "patch", "--new-version", "1.2.3"],
+            ["bump-my-version", "bump", "patch", "--new-version", "1.2.3"] + expected_command_args,  # noqa: RUF005
+            stderr=version.subprocess.STDOUT,
         )
+
+    @pytest.mark.usefixtures("cwd")
+    def test_release_handles_error(self, monkeypatch):
+        monkeypatch.setattr(version.logger, "warning", mock.Mock())
+        with pytest.raises(version.subprocess.CalledProcessError) as e:
+            version.BumpVersion().release("1.2.3")
+
+        assert b"Unable to determine the current version." in e.value.output
 
 
 @pytest.mark.backwards_compat()
@@ -143,7 +177,7 @@ tag = false
         """.strip(),
         )
 
-        assert version.BumpVersion.get_version_info(semver) == {"current": current_version, "new": new_version}
+        assert version.BumpVersion().get_version_info(semver) == {"current": current_version, "new": new_version}
 
     @pytest.mark.parametrize(
         ("current_version", "new_version", "semver"),
@@ -183,11 +217,21 @@ values =
         """.strip(),
         )
 
-        assert version.BumpVersion.get_version_info(semver) == {"current": current_version, "new": new_version}
+        assert version.BumpVersion().get_version_info(semver) == {"current": current_version, "new": new_version}
 
-    def test_release(self, monkeypatch):
-        monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())
-        version.BumpVersion.release("1.2.3")
+    @pytest.mark.parametrize(
+        ("kwargs", "expected_command_args"),
+        [
+            ({}, []),
+            ({"dry_run": True}, ["--dry-run"]),
+            ({"allow_dirty": True}, ["--allow-dirty"]),
+            ({"verbose": 3}, ["--verbose", "--verbose", "--verbose"]),
+        ],
+    )
+    def test_release(self, monkeypatch, kwargs, expected_command_args):
+        monkeypatch.setattr(version.subprocess, "check_output", mock.Mock(return_value=b""))
+        version.BumpVersion(**kwargs).release("1.2.3")
         assert version.subprocess.check_output.call_args == mock.call(
-            ["bumpversion", "patch", "--new-version", "1.2.3"],
+            ["bumpversion", "patch", "--new-version", "1.2.3"] + expected_command_args,  # noqa: RUF005
+            stderr=version.subprocess.STDOUT,
         )

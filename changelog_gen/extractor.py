@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 import re
 import typing
 from collections import defaultdict
 from pathlib import Path
 from warnings import warn
 
-from changelog_gen import errors
-from changelog_gen.vcs import Git
-from changelog_gen.version import BumpVersion
+if typing.TYPE_CHECKING:
+    from changelog_gen import config
+    from changelog_gen.vcs import Git
+    from changelog_gen.version import BumpVersion
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -36,10 +40,11 @@ SectionDict = dict[str, dict[str, Change]]
 class ReleaseNoteExtractor:
     """Parse release notes and generate section dictionaries."""
 
-    def __init__(self: typing.Self, type_headers: dict[str, str], *, dry_run: bool = False) -> None:
+    def __init__(self: typing.Self, cfg: config.Config, git: Git, *, dry_run: bool = False) -> None:
         self.release_notes = Path("./release_notes")
         self.dry_run = dry_run
-        self.type_headers = type_headers
+        self.type_headers = cfg.type_headers
+        self.git = git
 
         self.has_release_notes = self.release_notes.exists() and self.release_notes.is_dir()
 
@@ -49,9 +54,10 @@ class ReleaseNoteExtractor:
     ) -> None:
         warn(
             "`release_notes` support will be dropped in a future version, please migrate to conventional commits.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
+        logger.warning("Extracting release note changes.")
         # Extract changelog details from release note files.
         for issue in sorted(self.release_notes.iterdir()):
             if issue.is_file and not issue.name.startswith("."):
@@ -62,17 +68,22 @@ class ReleaseNoteExtractor:
                     commit_type = commit_type[:-1]
                     breaking = True
 
+                description = issue.read_text().strip()
+
+                if breaking:
+                    logger.info("  Breaking change detected:\n    %s: %s", commit_type, description)
                 header = self.type_headers.get(commit_type, commit_type)
 
-                contents = issue.read_text().strip()
                 if commit_type not in self.type_headers:
-                    msg = (
-                        f"Unsupported CHANGELOG commit type {commit_type}, derived from `./release_notes/{issue.name}`"
+                    logger.warning(
+                        "  Skipping unsupported CHANGELOG commit type %s, derived from './release_notes/%s'",
+                        commit_type,
+                        issue.name,
                     )
-                    raise errors.InvalidSectionError(msg)
+                    continue
 
                 sections[header][issue_ref] = Change(
-                    description=contents,
+                    description=description,
                     issue_ref=issue_ref,
                     breaking=breaking,
                     commit_type=commit_type,
@@ -82,29 +93,42 @@ class ReleaseNoteExtractor:
         self: typing.Self,
         sections: dict[str, dict],
     ) -> None:
-        latest_info = Git.get_latest_tag_info()
-        logs = Git.get_logs(latest_info["current_tag"])
+        latest_info = self.git.get_latest_tag_info()
+        logs = self.git.get_logs(latest_info["current_tag"])
 
         # Build a conventional commit regex based on configured sections
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
         types = "|".join(self.type_headers.keys())
-        reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")
+        reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .,`\/]+)+([\s\S]*)")
+        logger.warning("Extracting commit log changes.")
 
         for i, (short_hash, commit_hash, log) in enumerate(logs):
             m = reg.match(log)
+            if m is None:
+                logger.debug("  Skipping commit log (not conventional): %s", log.strip())
             if m:
+                logger.debug("  Parsing commit log: %s", log.strip())
                 commit_type = m[1]
-                scope = m[2] or ""
+                scope = (m[2] or "").replace("(", "(`").replace(")", "`)")
                 breaking = m[3] is not None
-                message = m[4]
+                description = m[4].strip()
                 details = m[5] or ""
 
                 # Handle missing refs in commit message, skip link generation in writer
                 issue_ref = f"__{i}__"
                 breaking = breaking or "BREAKING CHANGE" in details
 
+                logger.info("  commit_type: '%s'", commit_type)
+                logger.info("  scope: '%s'", scope)
+                logger.info("  breaking: %s", breaking)
+                logger.info("  description: '%s'", description)
+                logger.info("  details: '%s'", details)
+
+                if breaking:
+                    logger.info("  Breaking change detected:\n    %s: %s", commit_type, description)
+
                 change = Change(
-                    description=message,
+                    description=description,
                     issue_ref=issue_ref,
                     breaking=breaking,
                     scope=scope,
@@ -120,6 +144,7 @@ class ReleaseNoteExtractor:
                     ]:
                         m = re.match(pattern, line)
                         if m:
+                            logger.info("  '%s' footer extracted '%s'", target, m[1])
                             setattr(change, target, m[1])
 
                 header = self.type_headers.get(commit_type, commit_type)
@@ -153,13 +178,17 @@ class ReleaseNoteExtractor:
         On dry_run, leave files where they are as they haven't been written to
         a changelog.
         """
-        if not self.dry_run and self.release_notes.exists():
+        if self.release_notes.exists():
+            logger.info("Cleaning release notes.")
             for x in self.release_notes.iterdir():
                 if x.is_file and not x.name.startswith("."):
+                    if self.dry_run:
+                        logger.info("  Would remove release note '%s'", x.name)
+                        continue
                     x.unlink()
 
 
-def extract_version_tag(sections: SectionDict, semver_mapping: dict[str, str]) -> str:
+def extract_version_tag(sections: SectionDict, cfg: config.Config, bv: BumpVersion) -> str:
     """Generate new version tag based on changelog sections.
 
     Breaking changes: major
@@ -167,7 +196,9 @@ def extract_version_tag(sections: SectionDict, semver_mapping: dict[str, str]) -
     Bugs/Fixes: patch
 
     """
-    version_info_ = BumpVersion.get_version_info("patch")
+    logger.warning("Detecting semver from changes.")
+    semver_mapping = cfg.semver_mapping
+    version_info_ = bv.get_version_info("patch")
     current = version_info_["current"]
 
     semvers = ["patch", "minor", "major"]
@@ -176,14 +207,18 @@ def extract_version_tag(sections: SectionDict, semver_mapping: dict[str, str]) -
         for issue in section_issues.values():
             if semvers.index(semver) < semvers.index(semver_mapping.get(issue.commit_type, "patch")):
                 semver = semver_mapping.get(issue.commit_type, "patch")
-            if issue.breaking:
+                logger.info("  '%s' change detected from commit_type '%s'", semver, issue.commit_type)
+            if issue.breaking and semver != "major":
                 semver = "major"
+                logger.info("  '%s' change detected from breaking issue '%s'", semver, issue.commit_type)
 
-    if current.startswith("0."):
+    if current.startswith("0.") and semver != "patch":
         # If currently on 0.X releases, downgrade semver by one, major -> minor etc.
         idx = semvers.index(semver)
-        semver = semvers[max(idx - 1, 0)]
+        new_ = semvers[max(idx - 1, 0)]
+        logger.info("  '%s' change downgraded to '%s' for 0.x release.", semver, new_)
+        semver = new_
 
-    version_info = BumpVersion.get_version_info(semver)
+    version_info = bv.get_version_info(semver)
 
     return version_info["new"]

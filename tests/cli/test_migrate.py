@@ -125,4 +125,4 @@ def test_migrate_no_setup(cli_runner):
     result = cli_runner.invoke(["migrate"])
 
     assert result.exit_code == 1
-    assert result.output == "setup.cfg not found.\n"
+    assert result.output.strip() == "setup.cfg not found."
