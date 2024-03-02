@@ -42,7 +42,7 @@ class ReleaseNoteExtractor:
 
                     contents = issue.read_text().strip()
                     if section not in self.supported_sections:
-                        msg = f"Unsupported CHANGELOG section {section}"
+                        msg = f"Unsupported CHANGELOG section {section}, derived from `./release_notes/{issue.name}`"
                         raise errors.InvalidSectionError(msg)
 
                     sections[section][issue_ref] = {

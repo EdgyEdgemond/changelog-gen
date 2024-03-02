@@ -24,7 +24,7 @@ class BumpVersion:  # noqa: D101
             msg = "Unable to get version data from bumpversion."
             raise errors.VersionDetectionError(msg) from e
 
-        bumpversion_data = {v.split("=")[0]: v.split("=")[1] for v in describe_out}
+        bumpversion_data = {v.split("=")[0].strip(): v.split("=")[1].strip() for v in describe_out}
 
         return {
             "current": bumpversion_data["current_version"],

@@ -1,15 +1,33 @@
 from unittest import mock
 
+import pytest
+
 from changelog_gen import version
 
 
-# TODO(edgy): mock a bumpversion config in cwd fixture instead of mocking subprocess
 class TestBumpVersion:
-    def test_get_version_info(self, monkeypatch):
-        monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())
-        version.subprocess.check_output.return_value = b"current_version=1.0.0\ncommit=False\nnew_version=1.1.0"
+    @pytest.mark.parametrize(
+        ("current_version", "new_version", "semver"),
+        [
+            ("0.0.0", "0.0.1", "patch"),
+            ("0.1.0", "0.1.1", "patch"),
+            ("1.2.3", "1.2.4", "patch"),
+            ("1.2.3", "1.3.0", "minor"),
+            ("1.2.3", "2.0.0", "major"),
+        ],
+    )
+    def test_get_version_info(self, cwd, current_version, new_version, semver):
+        p = cwd / "setup.cfg"
+        p.write_text(
+            f"""
+[bumpversion]
+current_version = {current_version}
+commit = false
+tag = false
+        """.strip(),
+        )
 
-        assert version.BumpVersion.get_version_info("patch") == {"current": "1.0.0", "new": "1.1.0"}
+        assert version.BumpVersion.get_version_info(semver) == {"current": current_version, "new": new_version}
 
     def test_release(self, monkeypatch):
         monkeypatch.setattr(version.subprocess, "check_output", mock.Mock())

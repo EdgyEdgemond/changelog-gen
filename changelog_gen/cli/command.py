@@ -18,9 +18,6 @@ from changelog_gen.post_processor import per_issue_post_process
 from changelog_gen.vcs import Git
 from changelog_gen.version import BumpVersion
 
-# TODO(edgy): use config to support reading from files, or from commits
-# TODO(edgy): support ConventionalCommits instead of reading from files?
-
 
 def _version_callback(*, value: bool) -> None:
     """Get current cli version."""
@@ -159,6 +156,7 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
         version_tag = extract_version_tag(sections)
 
     # TODO(edgy): take a note from bumpversion, read in versioning format string
+    # https://github.com/EdgyEdgemond/changelog-gen/issues/37
     version_string = f"v{version_tag}"
 
     date_fmt = cfg.date_format

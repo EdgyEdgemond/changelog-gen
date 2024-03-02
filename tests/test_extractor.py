@@ -144,10 +144,6 @@ Refs: #2
         f.write_text(msg)
         multiversion_repo.run("git add hello.txt")
         multiversion_repo.api.index.commit(msg)
-    multiversion_repo.api.index.commit("""Commit message 3
-
-Formatted
-""")
 
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
@@ -169,8 +165,10 @@ Formatted
 def test_invalid_notes_extraction_raises():
     e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
 
-    with pytest.raises(errors.InvalidSectionError):
+    with pytest.raises(errors.InvalidSectionError) as ex:
         e.extract()
+
+    assert str(ex.value) == "Unsupported CHANGELOG section bug, derived from `./release_notes/3.bug`"
 
 
 @pytest.mark.usefixtures("_invalid_release_notes")
