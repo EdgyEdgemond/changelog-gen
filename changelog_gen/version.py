@@ -24,11 +24,11 @@ def parse_bump_my_version_info(semver: str, lines: list[str]) -> tuple[str, str]
     """Parse output from bump-my-version info command."""
     reg = re.compile(rf".*({semver}) [-]+ (.*)")
 
-    current = lines[0].split(" -- ")[0]
+    current = lines[0].split(" -- ")[0].strip()
     for line in lines:
         m = reg.match(line)
         if m:
-            new = m[2]
+            new = m[2].strip()
 
     return current, new
 
