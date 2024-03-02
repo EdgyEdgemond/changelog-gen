@@ -28,8 +28,11 @@ poetry install
 Commits](https://www.conventionalcommits.org/en/v1.0.0/), as well as reading
 changes from a `release_notes` folder.
 
+<<<<<<< HEAD
 NOTE: `release_notes` support will be dropped in a future version, migration to
 conventional commits is recommended.
+=======
+>>>>>>> @{-1}
 By default supported sections are `feat`, `fix`, `docs` and `misc`. Additional types can be configured
 to map to these initial sections, custom sections can be added and mapped to types as well.
 
@@ -179,6 +182,7 @@ General configuration is grouped in a `[changelog_gen]` section.
 issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 ```
 
+<<<<<<< HEAD
 #### `commit_link =`
   _**[optional]**_<br />
   **default**: None
@@ -193,12 +197,18 @@ issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 commit_link = "http://github.com/EdgyEdgemond/changelog-gen/commit/$COMMIT_HASH"
 ```
 
+=======
+>>>>>>> @{-1}
 #### `version_string =`
   _**[optional]**_<br />
   **default**: `v{new_version}`
 
+<<<<<<< HEAD
   Format for the version tag, this will be passed into changelog, commit
   messages, and any post processing.
+=======
+  Format for the version tag, this will be passed into changelog, commit messages, and any post processing.
+>>>>>>> @{-1}
 
   Example:
 
@@ -225,7 +235,11 @@ version_string = "{new_version}"
 
 ```toml
 [tool.changelog_gen]
+<<<<<<< HEAD
 date_format = "on %Y-%m-%d"
+=======
+date_format = "on %%Y-%m-%d"
+>>>>>>> @{-1}
 ```
 
 #### `allowed_branches =`
@@ -359,8 +373,7 @@ url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/com
 verb = "POST"
 body = '{"body": "Released on ::version::"}'
 auth_env = "JIRA_AUTH"
-[tool.changelog_gen.post_process.headers]
-content-type = "application/json"
+headers."content-type" = "application/json"
 ```
   This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
   See
