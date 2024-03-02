@@ -199,6 +199,11 @@ def _process_pyproject(pyproject: Path) -> dict:
 
 
 def _process_setup_cfg(setup: Path) -> dict:
+    warn(
+        "setup.cfg use is deprecated, run `changelog migrate` to generate equivalent toml to paste into pyproject.toml",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     cfg = {}
     parser = ConfigParser("")
 
@@ -260,9 +265,9 @@ def check_deprecations(cfg: dict) -> None:
         )
         cfg["issue_link"] = cfg["issue_link"].format(issue_ref="::issue_ref::", new_version="::version::")
 
-    if cfg.get("commit_link") and "{commit_hash}" in cfg["config_link"]:
+    if cfg.get("commit_link") and "{commit_hash}" in cfg["commit_link"]:
         warn(
-            "{replace} format strings are not supported in `config_link` configuration, use ::replace:: instead.",
+            "{replace} format strings are not supported in `commit_link` configuration, use ::replace:: instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -274,6 +279,16 @@ def check_deprecations(cfg: dict) -> None:
             DeprecationWarning,
             stacklevel=2,
         )
+
+    if cfg.get("section_mapping") or cfg.get("sections") and not cfg.get("type_headers"):
+        sm = cfg.pop("section_mapping", DEFAULT_SECTION_MAPPING.copy())
+        s = cfg.pop("sections", SUPPORTED_SECTIONS.copy())
+
+        type_headers = s
+        for type_, section in sm.items():
+            type_headers[type_] = s.get(section, "Unknown")
+
+        cfg["type_headers"] = type_headers
 
 
 def read(**kwargs) -> Config:  # noqa: C901, PLR0912
@@ -317,16 +332,6 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
         except Exception as e:  # noqa: BLE001
             msg = f"Failed to create post_process: {e!s}"
             raise RuntimeError(msg) from e
-
-    if cfg.get("section_mapping") or cfg.get("sections") and not cfg.get("type_headers"):
-        sm = cfg.pop("section_mapping", DEFAULT_SECTION_MAPPING.copy())
-        s = cfg.pop("sections", SUPPORTED_SECTIONS.copy())
-
-        type_headers = s
-        for type_, section in sm.items():
-            type_headers[type_] = s.get(section, "Unknown")
-
-        cfg["type_headers"] = type_headers
 
     # this feels messy, but later on there is an update that should assist in cleaning this up.
     for key_path in [

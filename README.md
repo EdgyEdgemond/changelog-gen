@@ -103,6 +103,24 @@ Write CHANGELOG for suggested version 0.2.1 [y/N]: y
 Of the command line arguments, most of them can be configured in `setup.cfg` or `pyproject.toml` to remove
 the need to pass them in every time.
 
+Example `pyproject.toml`:
+
+```toml
+[tool.changelog_gen]
+commit = true
+release = true
+allow_dirty = false
+
+[changelog_gen.post_process]
+  url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment
+  verb = POST
+  body = {"body": "Released on v::version::"}
+  auth_env = JIRA_AUTH
+```
+
+NOTE: setup.cfg is being deprecated, use `changelog migrate` to generate valid
+toml from existing setup.cfg file.
+
 Example `setup.cfg`:
 
 ```ini
@@ -114,7 +132,7 @@ allow_dirty = false
 
 Example `pyproject.toml`:
 
-```tonl
+```toml
 [tool.changelog_gen]
 commit = true
 release = true
@@ -182,7 +200,7 @@ issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
   **default**: None
 
   Create links in the CHANGELOG to the originating commit. A url that contains
-  an `::commit_hash::` placeholder for replacement.
+  a `::commit_hash::` placeholder for replacement.
 
   Example:
 
@@ -245,18 +263,18 @@ allowed_branches = [
 
 #### `type_headers = `
   _**[optional]**_<br />
-  **default**: {
-      "feat": "Features and Improvements",
-      "fix": "Bug fixes",
-      "docs": "Documentation",
-      "bug": "Bug fixes",
-      "chore": "Miscellaneous",
-      "ci": "Miscellaneous",
-      "perf": "Miscellaneous",
-      "refactor": "Miscellaneous",
-      "revert": "Miscellaneous",
-      "style": "Miscellaneous",
-      "test": "Miscellaneous",
+  **default**: { <br />
+      "feat": "Features and Improvements", <br />
+      "fix": "Bug fixes", <br />
+      "docs": "Documentation", <br />
+      "bug": "Bug fixes", <br />
+      "chore": "Miscellaneous", <br />
+      "ci": "Miscellaneous", <br />
+      "perf": "Miscellaneous", <br />
+      "refactor": "Miscellaneous", <br />
+      "revert": "Miscellaneous", <br />
+      "style": "Miscellaneous", <br />
+      "test": "Miscellaneous", <br />
   }
 
   Define commit types and which headers in the changelog they should map to.
@@ -273,11 +291,11 @@ fix = "Bugfixes"
 
 #### `semver_mapping =`
   _**[optional]**_<br />
-  **default**: {
-      "feat": "minor"
-      "fix": "patch",
-      "docs": "patch"
-      "misc": "patch"
+  **default**: { <br />
+      "feat": "minor" <br />
+      "fix": "patch", <br />
+      "docs": "patch" <br />
+      "misc": "patch" <br />
   }
 
   Define custom type mappings for semver tagging. Any custom types need
@@ -295,11 +313,11 @@ remove = "minor"
 #### `sections =`
   _**[Deprecated]**_<br />
   _**[optional]**_<br />
-  **default**: {
-      "feat": "Features and Improvements",
-      "fix": "Bug fixes",
-      "docs": "Documentation",
-      "misc": "Miscellaneous",
+  **default**: { <br />
+      "feat": "Features and Improvements", <br />
+      "fix": "Bug fixes", <br />
+      "docs": "Documentation", <br />
+      "misc": "Miscellaneous", <br />
   }
 
   Define custom headers or new sections/headers, new sections will require a
@@ -320,16 +338,16 @@ fix = "Bugfixes"
 #### `section_mapping =`
   _**[Deprecated]**_<br />
   _**[optional]**_<br />
-  **default**: {
-      "bug": "fix",
-      "chore": "misc",
-      "ci": "misc",
-      "docs": "docs",
-      "perf": "misc",
-      "refactor": "misc",
-      "revert": "misc",
-      "style": "misc",
-      "test": "misc",
+  **default**: { <br />
+      "bug": "fix", <br />
+      "chore": "misc", <br />
+      "ci": "misc", <br />
+      "docs": "docs", <br />
+      "perf": "misc", <br />
+      "refactor": "misc", <br />
+      "revert": "misc", <br />
+      "style": "misc", <br />
+      "test": "misc", <br />
   }
 
   Configure additional supported commit types to supported changelog sections.
@@ -375,6 +393,7 @@ new = "feat"
   _**[optional]**_<br />
   **default**: None<br />
   Headers dictionary to inject into http requests.
+
   If using setup.cfg, provide a json string representation of the headers.
 
   `.auth_env =`<br />

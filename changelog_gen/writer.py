@@ -132,8 +132,6 @@ class MdWriter(BaseWriter):
 
         if self.commit_link and change.commit_hash:
             line = f"{line} [[{change.short_hash}]({self.commit_link})]"
-        elif change.commit_hash:
-            line = f"{line} [{change.short_hash}]"
 
         line = line.replace("::issue_ref::", change.issue_ref)
         line = line.replace("::commit_hash::", change.commit_hash or "")
@@ -182,8 +180,6 @@ class RstWriter(BaseWriter):
         if self.commit_link and change.commit_hash:
             line = f"{line} [`{change.short_hash}`_]"
             self._links[f"{change.short_hash}"] = self.commit_link.replace("::commit_hash::", change.commit_hash)
-        elif change.commit_hash:
-            line = f"{line} [{change.short_hash}]"
 
         self.content.extend([line, ""])
 
