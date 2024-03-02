@@ -121,11 +121,11 @@ commit = true
 release = true
 allow_dirty = false
 
-[changelog_gen.post_process]
-  url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment
-  verb = POST
-  body = {"body": "Released on v::version::"}
-  auth_env = JIRA_AUTH
+[tool.changelog_gen.post_process]
+  url = "https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment"
+  verb = "POST"
+  body = '{"body": "Released on v::version::"}'
+  auth_env = "JIRA_AUTH"
 ```
 
 NOTE: setup.cfg is being deprecated, use `changelog migrate` to generate valid
@@ -148,11 +148,11 @@ commit = true
 release = true
 allow_dirty = false
 
-[changelog_gen.post_process]
-  url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment
-  verb = POST
-  body = {"body": "Released on v::version::"}
-  auth_env = JIRA_AUTH
+[tool.changelog_gen.post_process]
+  url = "https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment"
+  verb = "POST"
+  body = '{"body": "Released on v::version::"}'
+  auth_env = "JIRA_AUTH"
 ```
 
 ### Configuration file -- Global configuration
