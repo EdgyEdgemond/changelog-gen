@@ -309,8 +309,8 @@ def test_generate_with_headers(gen_cli_runner, cwd):
         """
 [tool.changelog_gen]
 allow_dirty = true
-type_headers.feat = "My Features"
-type_headers.fix = "My Fixes"
+commit_types.feat.header = "My Features"
+commit_types.fix.header = "My Fixes"
 """,
     )
     result = gen_cli_runner.invoke()

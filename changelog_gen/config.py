@@ -5,6 +5,7 @@ import dataclasses
 import json
 import logging
 import re
+import typing
 from configparser import (
     ConfigParser,
     NoOptionError,
@@ -184,7 +185,7 @@ class Config:
     version_string: str = "v{new_version}"
 
     allowed_branches: list[str] = dataclasses.field(default_factory=list)
-    commit_types: dict = dataclasses.field(default_factory=lambda: SUPPORTED_TYPES)
+    commit_types: dict[str, CommitType] = dataclasses.field(default_factory=lambda: SUPPORTED_TYPES)
 
     release: bool = False
     commit: bool = False
@@ -192,6 +193,16 @@ class Config:
     reject_empty: bool = False
 
     post_process: PostProcessConfig | None = None
+
+    @property
+    def semver_mappings(self: typing.Self) -> dict[str, str]:
+        """Generate `type: semver` mapping from commit types."""
+        return {ct: c.semver for ct, c in self.commit_types.items()}
+
+    @property
+    def type_headers(self: typing.Self) -> dict[str, str]:
+        """Generate `type: header` mapping from commit types."""
+        return {ct: c.header for ct, c in self.commit_types.items()}
 
     @classmethod
     def from_dict(cls: type[Config], data: dict) -> Config:
