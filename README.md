@@ -271,32 +271,67 @@ allowed_branches = [
 ]
 ```
 
-#### `type_headers = `
+#### `commit_types = `
   _**[optional]**_<br />
   **default**: { <br />
-      "feat": "Features and Improvements", <br />
-      "fix": "Bug fixes", <br />
-      "docs": "Documentation", <br />
-      "bug": "Bug fixes", <br />
-      "chore": "Miscellaneous", <br />
-      "ci": "Miscellaneous", <br />
-      "perf": "Miscellaneous", <br />
-      "refactor": "Miscellaneous", <br />
-      "revert": "Miscellaneous", <br />
-      "style": "Miscellaneous", <br />
-      "test": "Miscellaneous", <br />
+      "feat": { <br />
+        "header": "Features and Improvements", <br />
+        "semver": "minor",
+      }<br />
+      "fix": {<br />
+        "header": "Bug fixes", <br />
+        "semver": "patch",<br />
+      },<br />
+      "docs": {<br />
+        "header": "Documentation", <br />
+        "semver": "patch",<br />
+      },<br />
+      "bug": {<br />
+        "header": "Bug fixes", <br />
+        "semver": "patch",<br />
+      },<br />
+      "chore": {<br />
+        "header": "Miscellaneous", <br />
+        "semver": "patch",<br />
+      },<br />
+      "ci": {<br />
+        "header": "Miscellaneous", <br />
+        "semver": "patch",<br />
+      },<br />
+      "perf": {<br />
+        "header": "Miscellaneous", <br />
+        "semver": "patch",<br />
+      },<br />
+      "refactor": {<br />
+        "header": "Miscellaneous", <br />
+        "semver": "patch",<br />
+      },<br />
+      "revert": {<br />
+        "header": "Miscellaneous", <br />
+        "semver": "patch",<br />
+      },<br />
+      "style": {<br />
+        "header": "Miscellaneous", <br />
+        "semver": "patch",<br />
+      },<br />
+      "test": {<br />
+        "header": "Miscellaneous", <br />
+        "semver": "patch",<br />
+      },<br />
   }
 
-  Define commit types and which headers in the changelog they should map to.
+  Define commit types and which headers and semver in the changelog they should map to, default semver is `patch`.
 
   Example:
 
 ```toml
-[tool.changelog_gen.sections]
-feat = "New Features"
-change = "Changes"
-remove = "Removals"
-fix = "Bugfixes"
+[tool.changelog_gen.commit_types]
+feat.header = "New Features"
+feat.semver = "minor"
+change.header = "Changes"
+remove.header = "Removals"
+remove.semver = "minor"
+fix.header = "Bugfixes"
 ```
 
 #### `semver_mapping =`
@@ -333,7 +368,7 @@ remove = "minor"
   Define custom headers or new sections/headers, new sections will require a
   matching section_mapping configuration.
 
-  This configuration has been deprecated, use `type_headers` instead.
+  This configuration has been deprecated, use `commit_types` instead.
 
   Example:
 
@@ -362,7 +397,7 @@ fix = "Bugfixes"
 
   Configure additional supported commit types to supported changelog sections.
 
-  This configuration has been deprecated, use `type_headers` instead.
+  This configuration has been deprecated, use `commit_types` instead.
 
   Example:
 
