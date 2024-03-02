@@ -352,7 +352,11 @@ def test_clean_removes_all_non_dotfiles(release_notes):
         ({"header": {"1": Change("1", "desc", "feat", breaking=True)}}, {"feat": CommitType("h", "minor")}, "minor"),
         ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": CommitType("h", "patch")}, "patch"),
         ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": CommitType("h", "minor")}, "patch"),
-        ({"header": {"1": Change("1", "desc", "custom", breaking=True)}}, {"custom": CommitType("h", "minor")}, "minor"),  # noqa: E501
+        (
+            {"header": {"1": Change("1", "desc", "custom", breaking=True)}},
+            {"custom": CommitType("h", "minor")},
+            "minor",
+        ),
     ],
 )
 def test_extract_version_tag_version_zero(sections, commit_types, expected_semver):
@@ -374,7 +378,11 @@ def test_extract_version_tag_version_zero(sections, commit_types, expected_semve
         ({"header": {"1": Change("1", "desc", "feat", breaking=True)}}, {"feat": CommitType("h", "minor")}, "major"),
         ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": CommitType("h", "patch")}, "patch"),
         ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": CommitType("h", "minor")}, "minor"),
-        ({"header": {"1": Change("1", "desc", "custom", breaking=True)}}, {"custom": CommitType("h", "minor")}, "major"),  # noqa: E501
+        (
+            {"header": {"1": Change("1", "desc", "custom", breaking=True)}},
+            {"custom": CommitType("h", "minor")},
+            "major",
+        ),
     ],
 )
 def test_extract_version_tag(sections, commit_types, expected_semver):

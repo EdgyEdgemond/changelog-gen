@@ -19,9 +19,11 @@ from changelog_gen import errors
 
 logger = logging.getLogger(__name__)
 
+
 @dataclasses.dataclass
 class CommitType:
     """Represent a supported commit_type."""
+
     header: str
     semver: str = "patch"
 
@@ -332,10 +334,7 @@ def check_deprecations(cfg: dict) -> None:
         sm = cfg.pop("section_mapping", DEFAULT_SECTION_MAPPING.copy())
         s = cfg.pop("sections", SUPPORTED_SECTIONS.copy())
 
-        commit_types = {
-            k: {"header": v, "semver": "minor" if k == "feat" else "patch"}
-            for k, v in s.items()
-        }
+        commit_types = {k: {"header": v, "semver": "minor" if k == "feat" else "patch"} for k, v in s.items()}
         for type_, section in sm.items():
             header = s.get(section, "Unknown")
             commit_types[type_] = {"header": header, "semver": "minor" if section == "feat" else "patch"}
