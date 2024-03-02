@@ -117,13 +117,20 @@ class TestBaseWriter:
 
         w = writer.BaseWriter(changelog)
 
-        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
+        w.add_section(
+            "header",
+            {
+                "1": {"description": "line1"},
+                "2": {"description": "line2"},
+                "3": {"description": "line3", "scope": "(config)"},
+            },
+        )
 
         assert w._add_section_header.call_args == mock.call("header")
         assert w._add_section_line.call_args_list == [
-            mock.call("line1", "1"),
-            mock.call("line2", "2"),
-            mock.call("line3", "3"),
+            mock.call("line1", "1", None),
+            mock.call("line2", "2", None),
+            mock.call("line3", "3", "(config)"),
         ]
 
 
@@ -193,6 +200,13 @@ class TestMdWriter:
 
         assert w.content == ["- line [#1]"]
 
+    def test_add_section_line_ignores_placeholder(self, changelog_md):
+        w = writer.MdWriter(changelog_md)
+
+        w._add_section_line("line", "__1__")
+
+        assert w.content == ["- line"]
+
     def test_add_section_line_with_issue_link(self, changelog_md):
         w = writer.MdWriter(changelog_md, issue_link="http://url/issues/{issue_ref}")
 
@@ -200,10 +214,24 @@ class TestMdWriter:
 
         assert w.content == ["- line [[#1](http://url/issues/1)]"]
 
+    def test_add_section_line_with_issue_link_ignores_placeholder(self, changelog_md):
+        w = writer.MdWriter(changelog_md, issue_link="http://url/issues/{issue_ref}")
+
+        w._add_section_line("line", "__1__")
+
+        assert w.content == ["- line"]
+
     def test_write_dry_run_doesnt_write_to_file(self, changelog_md):
         w = writer.MdWriter(changelog_md, dry_run=True)
         w.add_version("0.0.1")
-        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
+        w.add_section(
+            "header",
+            {
+                "1": {"description": "line1"},
+                "2": {"description": "line2"},
+                "3": {"description": "line3", "scope": "(config)"},
+            },
+        )
 
         w.write()
         assert changelog_md.read_text() == """# Changelog\n"""
@@ -211,7 +239,14 @@ class TestMdWriter:
     def test_write(self, changelog_md):
         w = writer.MdWriter(changelog_md)
         w.add_version("0.0.1")
-        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
+        w.add_section(
+            "header",
+            {
+                "1": {"description": "line1"},
+                "2": {"description": "line2"},
+                "3": {"description": "line3", "scope": "(config)"},
+            },
+        )
 
         w.write()
         assert (
@@ -224,7 +259,7 @@ class TestMdWriter:
 
 - line1 [#1]
 - line2 [#2]
-- line3 [#3]
+- (config) line3 [#3]
 """
         )
 
@@ -244,7 +279,14 @@ class TestMdWriter:
 
         w = writer.MdWriter(changelog_md)
         w.add_version("0.0.2")
-        w.add_section("header", {"4": "line4", "5": "line5", "6": "line6"})
+        w.add_section(
+            "header",
+            {
+                "4": {"description": "line4"},
+                "5": {"description": "line5"},
+                "6": {"description": "line6", "scope": "(config)"},
+            },
+        )
 
         w.write()
 
@@ -258,7 +300,7 @@ class TestMdWriter:
 
 - line4 [#4]
 - line5 [#5]
-- line6 [#6]
+- (config) line6 [#6]
 
 ## 0.0.1
 
@@ -347,6 +389,13 @@ header
 
         assert w.content == ["* line [#1]", ""]
 
+    def test_add_section_line_ignores_placeholder(self, changelog_rst):
+        w = writer.RstWriter(changelog_rst)
+
+        w._add_section_line("line", "__1__")
+
+        assert w.content == ["* line", ""]
+
     def test_add_section_line_with_issue_link(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/{issue_ref}")
 
@@ -356,10 +405,26 @@ header
         assert w._links == {"#1": "http://url/issues/1"}
         assert w.links == [".. _`#1`: http://url/issues/1"]
 
+    def test_add_section_line_with_issue_link_skips_placeholder(self, changelog_rst):
+        w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/{issue_ref}")
+
+        w._add_section_line("line", "__1__")
+
+        assert w.content == ["* line", ""]
+        assert w._links == {}
+        assert w.links == []
+
     def test_str_with_links(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/{issue_ref}")
         w.add_version("0.0.1")
-        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
+        w.add_section(
+            "header",
+            {
+                "1": {"description": "line1"},
+                "2": {"description": "line2"},
+                "3": {"description": "line3", "scope": "(config)"},
+            },
+        )
 
         assert (
             str(w)
@@ -374,7 +439,7 @@ header
 
 * line2 [`#2`_]
 
-* line3 [`#3`_]
+* (config) line3 [`#3`_]
 
 .. _`#1`: http://url/issues/1
 .. _`#2`: http://url/issues/2
@@ -385,7 +450,14 @@ header
     def test_write_dry_run_doesnt_write_to_file(self, changelog_rst):
         w = writer.RstWriter(changelog_rst, dry_run=True)
         w.add_version("0.0.1")
-        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
+        w.add_section(
+            "header",
+            {
+                "1": {"description": "line1"},
+                "2": {"description": "line2"},
+                "3": {"description": "line3", "scope": "(config)"},
+            },
+        )
 
         w.write()
         assert (
@@ -399,7 +471,14 @@ Changelog
     def test_write(self, changelog_rst):
         w = writer.RstWriter(changelog_rst)
         w.add_version("0.0.1")
-        w.add_section("header", {"1": "line1", "2": "line2", "3": "line3"})
+        w.add_section(
+            "header",
+            {
+                "1": {"description": "line1"},
+                "2": {"description": "line2"},
+                "3": {"description": "line3", "scope": "(config)"},
+            },
+        )
 
         w.write()
         assert (
@@ -418,7 +497,7 @@ header
 
 * line2 [#2]
 
-* line3 [#3]
+* (config) line3 [#3]
 """
         )
 
@@ -444,7 +523,14 @@ header
 
         w = writer.RstWriter(changelog_rst, issue_link="http://url/issues/{issue_ref}")
         w.add_version("0.0.2")
-        w.add_section("header", {"4": "line4", "5": "line5", "6": "line6"})
+        w.add_section(
+            "header",
+            {
+                "4": {"description": "line4"},
+                "5": {"description": "line5"},
+                "6": {"description": "line6", "scope": "(config)"},
+            },
+        )
 
         w.write()
 
@@ -464,7 +550,7 @@ header
 
 * line5 [`#5`_]
 
-* line6 [`#6`_]
+* (config) line6 [`#6`_]
 
 0.0.1
 =====

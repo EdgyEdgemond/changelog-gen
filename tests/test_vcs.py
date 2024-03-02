@@ -104,6 +104,20 @@ def test_get_latest_info_current_version_vtag():
     assert info["current_version"] == "0.0.2"
 
 
+@pytest.mark.usefixtures("multiversion_repo")
+def test_get_latest_info_current_tag():
+    info = Git.get_latest_tag_info()
+
+    assert info["current_tag"] == "0.0.2"
+
+
+@pytest.mark.usefixtures("multiversion_v_repo")
+def test_get_latest_info_current_tag_vtag():
+    info = Git.get_latest_tag_info()
+
+    assert info["current_tag"] == "v0.0.2"
+
+
 def test_get_latest_info_commit_sha(multiversion_repo):
     head_hash = multiversion_repo.api.head.commit
 
@@ -153,3 +167,25 @@ def test_commit_adds_message_with_version_string(multiversion_repo):
     Git.commit("new_version")
 
     assert multiversion_repo.api.head.commit.message == "Update CHANGELOG for new_version\n"
+
+
+def test_get_logs(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world! v3")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("commit log")
+
+    f.write_text("hello world! v4")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("commit log 2")
+
+    f.write_text("hello world! v5")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("""Commit message 3
+
+Formatted
+""")
+
+    logs = Git.get_logs("0.0.2")
+    assert logs == ["Commit message 3\n\nFormatted\n", "commit log 2", "commit log"]

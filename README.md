@@ -24,12 +24,35 @@ poetry install
 
 ## Usage
 
-`changelog` currently only supports reading changes from a `release_notes` folder.
-
-Files in the folder should use the format `{issue_number}.{type}`.
+`changelog` currently supports generating from commit logs using [Conventional
+Commits](https://www.conventionalcommits.org/en/v1.0.0/), as well as reading
+changes from a `release_notes` folder.
 
 By default supported types are currently `fix` and `feat`. Additional types can be configured
 to map to these initial types.
+
+### Conventional commits
+
+```
+<type>[(optional scope)][!]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Optional footers that are parsed by `changelog-gen` are:
+
+* `BREAKING CHANGE:`
+* `Refs: [#]<issue_ref>`
+
+The description is used to populate the changelog file. If the type includes
+the optional `!` flag, or the `BREAKING CHANGE` footer, this will lead to a
+major release being suggested.
+
+### Release Notes
+
+Files in the folder should use the format `{issue_number}.{type}`.
 
 The contents of each file is used to populate the changelog file. If the type
 ends with a `!` it denotes a breaking change has been made, this will lead to a

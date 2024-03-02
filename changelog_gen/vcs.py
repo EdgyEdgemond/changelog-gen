@@ -73,9 +73,33 @@ class Git:
 
         info["commit_sha"] = describe_out.pop().lstrip("g")
         info["distance_to_latest_tag"] = int(describe_out.pop())
-        info["current_version"] = "-".join(describe_out).lstrip("v")
+        tag = "-".join(describe_out)
+        info["current_version"] = tag.lstrip("v")
+        info["current_tag"] = tag
 
         return info
+
+    @classmethod
+    def get_logs(cls: type[T], tag: str) -> list:
+        """Fetch logs since last tag."""
+        return [
+            m
+            for m in (
+                subprocess.check_output(
+                    [  # noqa: S603, S607
+                        "git",
+                        "log",
+                        f"{tag}..HEAD",  # between last tag and HEAd
+                        "--format=%B",  # message only
+                        "-z",  # separate with \x00 rather than \n to differentiate multiline commits
+                    ],
+                )
+                .decode()
+                .strip()
+                .split("\x00")
+            )
+            if m
+        ]
 
     @classmethod
     def add_path(cls: type[T], path: str) -> None:
