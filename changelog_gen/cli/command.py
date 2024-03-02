@@ -7,6 +7,7 @@ import logging.config
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+from warnings import warn
 
 import click
 import rtoml
@@ -96,9 +97,10 @@ def process_info(info: dict, cfg: config.Config, *, dry_run: bool) -> None:
         raise typer.Exit(code=1)
 
 
-@init_app.command("init")
+@init_app.command("changelog-init")
 @app.command("init")
 def init(
+    ctx: typer.Context,
     file_format: writer.Extension = typer.Option("md", help="File format to generate."),
     verbose: int = typer.Option(0, "-v", "--verbose", help="Set output verbosity.", count=True, max=3),
 ) -> None:
@@ -106,6 +108,12 @@ def init(
 
     Detect and raise if a CHANGELOG already exists, if not create a new file.
     """
+    if ctx.command.name == "changelog-init":
+        warn(
+            "`changelog-init` has been deprecated, please use `changelog init`",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     setup_logging(verbose)
     cfg = config.Config()
     extension = util.detect_extension()
@@ -136,9 +144,10 @@ def migrate(
     typer.echo(rtoml.dumps({"tool": {"changelog_gen": cfg}}))
 
 
-@gen_app.command("generate")
+@gen_app.command("changelog-gen")
 @app.command("generate")
 def gen(  # noqa: PLR0913
+    ctx: typer.Context,
     version_tag: Optional[str] = typer.Option(None, help="Provide the desired version tag, skip auto generation."),
     version_part: Optional[str] = typer.Option(None, help="Provide the desired version part, skip auto generation."),
     post_process_url: Optional[str] = typer.Option(
@@ -168,6 +177,12 @@ def gen(  # noqa: PLR0913
 
     Read release notes and generate a new CHANGELOG entry for the current version.
     """
+    if ctx.command.name == "changelog-gen":
+        warn(
+            "`changelog-gen` has been deprecated, please use `changelog generate`",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     setup_logging(verbose)
     cfg = config.read(
         release=release,
