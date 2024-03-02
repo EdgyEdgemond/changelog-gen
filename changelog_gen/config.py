@@ -9,6 +9,8 @@ from configparser import (
 )
 from pathlib import Path
 
+import rtoml
+
 logger = logging.getLogger(__name__)
 
 SUPPORTED_SECTIONS = {
@@ -121,24 +123,22 @@ def _process_overrides(overrides: dict) -> tuple[dict, PostProcessConfig | None]
     return overrides, post_process
 
 
-# TODO(edgy): Support pyproject.toml configuration
-# https://github.com/EdgyEdgemond/changelog-gen/issues/50
-def read(**kwargs) -> Config:
-    """Read configuration from local environment.
+def _process_pyproject(pyproject: Path) -> dict:
+    cfg = {}
+    with pyproject.open() as f:
+        data = rtoml.load(f)
 
-    Supported configuration locations:
-    * setup.cfg
-    """
+        if "tool" not in data or "changelog_gen" not in data["tool"]:
+            return cfg
+
+        return data["tool"]["changelog_gen"]
+
+
+def _process_setup_cfg(setup: Path) -> dict:
+    cfg = {}
     parser = ConfigParser("")
 
     parser.add_section("changelog_gen")
-
-    overrides, post_process = _process_overrides(kwargs)
-    cfg = {}
-
-    setup = Path("setup.cfg")
-    if not setup.exists():
-        return Config()
 
     with setup.open(encoding="utf-8") as config_fp:
         config_content = config_fp.read()
@@ -171,6 +171,29 @@ def read(**kwargs) -> Config:
         except Exception as e:  # noqa: BLE001
             msg = f"Failed to create {objectname}: {e!s}"
             raise RuntimeError(msg) from e
+
+    return cfg
+
+
+def read(**kwargs) -> Config:
+    """Read configuration from local environment.
+
+    Supported configuration locations (checked in order):
+    * pyproject.toml
+    * setup.cfg
+    """
+    overrides, post_process = _process_overrides(kwargs)
+    cfg = {}
+
+    pyproject = Path("pyproject.toml")
+    setup = Path("setup.cfg")
+
+    if pyproject.exists():
+        # parse pyproject
+        cfg = _process_pyproject(pyproject)
+
+    if not cfg and setup.exists():
+        cfg = _process_setup_cfg(setup)
 
     if "post_process" not in cfg and post_process:
         cfg["post_process"] = post_process

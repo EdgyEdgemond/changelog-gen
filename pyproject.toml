@@ -14,6 +14,7 @@ python = "^3.9"
 typer = "^0.9.0"
 bump2version = "^1.0.1"
 httpx = "^0.25.0"
+rtoml = "^0.10.0"
 
 [tool.poetry.dev-dependencies]
 
@@ -28,6 +29,20 @@ pytest-git = "^1.7.0"
 # Style
 ruff = "^0.1.2"
 pre-commit = "^3.0.2"
+
+[tool.changelog_gen]
+release = true
+commit = true
+allowed_branches = [
+    "master",
+]
+issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
+
+[tool.changelog_gen.sesion_mapping]
+feature = "feat"
+test = "fix"
+docs = "fix"
+bug = "fix"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

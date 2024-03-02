@@ -15,6 +15,17 @@ def config_factory(cwd):
 
 
 @pytest.fixture()
+def pyproject_factory(cwd):
+    def factory(contents=None):
+        p = cwd / "pyproject.toml"
+        p.touch()
+        if contents:
+            p.write_text(contents)
+
+    return factory
+
+
+@pytest.fixture()
 def _empty_config(config_factory):
     config_factory()
 
@@ -29,88 +40,163 @@ def test_read_handles_empty_file():
     assert config.read() == config.Config()
 
 
-@pytest.mark.parametrize(
-    ("value", "exp_key", "exp_value"),
-    [
-        ("release=true", "release", True),
-        ("commit = true", "commit", True),
-        ("allow_dirty=True", "allow_dirty", True),
-        ("reject_empty = True", "reject_empty", True),
-        ("release=false", "release", False),
-        ("commit = false", "commit", False),
-        ("allow_dirty=False", "allow_dirty", False),
-        ("reject_empty = False", "reject_empty", False),
-    ],
-)
-def test_read_picks_up_boolean_values(config_factory, value, exp_key, exp_value):
-    config_factory(
-        f"""
+class TestPyprojectToml:
+    @pytest.mark.parametrize(
+        ("value", "exp_key", "exp_value"),
+        [
+            ("release = true", "release", True),
+            ("commit = true", "commit", True),
+            ("allow_dirty = true", "allow_dirty", True),
+            ("reject_empty = true", "reject_empty", True),
+            ("release = false", "release", False),
+            ("commit = false", "commit", False),
+            ("allow_dirty = false", "allow_dirty", False),
+            ("reject_empty = false", "reject_empty", False),
+        ],
+    )
+    def test_read_picks_up_boolean_values(self, pyproject_factory, value, exp_key, exp_value):
+        pyproject_factory(
+            f"""
+[tool.changelog_gen]
+{value}
+""",
+        )
+
+        c = config.read()
+        assert getattr(c, exp_key) == exp_value
+
+    def test_read_picks_up_strings_values(self, pyproject_factory):
+        pyproject_factory(
+            """
+[tool.changelog_gen]
+issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/{}"
+""",
+        )
+
+        c = config.read()
+        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/{}"
+
+    def test_read_picks_up_list_values(self, pyproject_factory):
+        pyproject_factory(
+            """
+[tool.changelog_gen]
+allowed_branches = [
+    "master",
+    "feature/11",
+]
+""",
+        )
+
+        c = config.read()
+        assert c.allowed_branches == ["master", "feature/11"]
+
+    def test_read_picks_up_section_mapping(self, pyproject_factory):
+        pyproject_factory(
+            """
+[tool.changelog_gen.section_mapping]
+feature = "feat"
+bug = "fix"
+test = "fix"
+""",
+        )
+
+        c = config.read()
+        assert c.section_mapping == {"feature": "feat", "bug": "fix", "test": "fix"}
+
+    def test_read_picks_up_custom_sections(self, pyproject_factory):
+        pyproject_factory(
+            """
+[tool.changelog_gen.sections]
+bug = "Bugfixes"
+feat = "New Features"
+remove = "Chore"
+ci = "Chore"
+""",
+        )
+
+        c = config.read()
+        assert c.sections == {"bug": "Bugfixes", "feat": "New Features", "remove": "Chore", "ci": "Chore"}
+
+
+class TestSetupConfig:
+    @pytest.mark.parametrize(
+        ("value", "exp_key", "exp_value"),
+        [
+            ("release=true", "release", True),
+            ("commit = true", "commit", True),
+            ("allow_dirty=True", "allow_dirty", True),
+            ("reject_empty = True", "reject_empty", True),
+            ("release=false", "release", False),
+            ("commit = false", "commit", False),
+            ("allow_dirty=False", "allow_dirty", False),
+            ("reject_empty = False", "reject_empty", False),
+        ],
+    )
+    def test_read_picks_up_boolean_values(self, config_factory, value, exp_key, exp_value):
+        config_factory(
+            f"""
 [changelog_gen]
 {value}
 """,
+        )
+
+        c = config.read()
+        assert getattr(c, exp_key) == exp_value
+
+    @pytest.mark.parametrize(
+        "issue_link",
+        [
+            "issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/{}",
+            "issue_link=https://github.com/EdgyEdgemond/changelog-gen/issues/{}",
+        ],
     )
-
-    c = config.read()
-    assert getattr(c, exp_key) == exp_value
-
-
-@pytest.mark.parametrize(
-    "issue_link",
-    [
-        "issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/{}",
-        "issue_link=https://github.com/EdgyEdgemond/changelog-gen/issues/{}",
-    ],
-)
-def test_read_picks_up_strings_values(config_factory, issue_link):
-    config_factory(
-        f"""
+    def test_read_picks_up_strings_values(self, config_factory, issue_link):
+        config_factory(
+            f"""
 [changelog_gen]
 {issue_link}
 """,
+        )
+
+        c = config.read()
+        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/{}"
+
+    @pytest.mark.parametrize(
+        "branches",
+        [
+            "allowed_branches = master,feature/11",
+            "allowed_branches=master,feature/11",
+            "allowed_branches = \n  master\n  feature/11",
+        ],
     )
-
-    c = config.read()
-    assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/{}"
-
-
-@pytest.mark.parametrize(
-    "branches",
-    [
-        "allowed_branches = master,feature/11",
-        "allowed_branches=master,feature/11",
-        "allowed_branches = \n  master\n  feature/11",
-    ],
-)
-def test_read_picks_up_list_values(config_factory, branches):
-    config_factory(
-        f"""
+    def test_read_picks_up_list_values(self, config_factory, branches):
+        config_factory(
+            f"""
 [changelog_gen]
 {branches}
 """,
-    )
+        )
 
-    c = config.read()
-    assert c.allowed_branches == ["master", "feature/11"]
+        c = config.read()
+        assert c.allowed_branches == ["master", "feature/11"]
 
-
-def test_read_picks_up_section_mapping(config_factory):
-    config_factory(
-        """
+    def test_read_picks_up_section_mapping(self, config_factory):
+        config_factory(
+            """
 [changelog_gen]
 section_mapping =
   feature=feat
   bug=fix
   test=fix
 """,
-    )
+        )
 
-    c = config.read()
-    assert c.section_mapping == {"feature": "feat", "bug": "fix", "test": "fix"}
+        c = config.read()
+        assert c.section_mapping == {"feature": "feat", "bug": "fix", "test": "fix"}
 
-
-def test_read_picks_up_custom_sections(config_factory):
-    config_factory(
-        """
+    def test_read_picks_up_custom_sections(self, config_factory):
+        config_factory(
+            """
 [changelog_gen]
 sections =
   bug= Bugfixes
@@ -118,10 +204,10 @@ sections =
   remove = Chore
   ci=Chore
 """,
-    )
+        )
 
-    c = config.read()
-    assert c.sections == {"bug": "Bugfixes", "feat": "New Features", "remove": "Chore", "ci": "Chore"}
+        c = config.read()
+        assert c.sections == {"bug": "Bugfixes", "feat": "New Features", "remove": "Chore", "ci": "Chore"}
 
 
 class TestPostProcessConfig:
@@ -198,8 +284,29 @@ post_process =
 def test_read_overrides(config_factory, key, value):
     config_factory(
         """
-[changelog_gen]
-place=holder
+[bumpversion]
+commit=true
+""",
+    )
+
+    c = config.read(**{key: value})
+    assert getattr(c, key) == value
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("release", True),
+        ("commit", True),
+        ("allow_dirty", True),
+        ("reject_empty", True),
+        ("date_format", "%Y-%m-%d"),
+    ],
+)
+def test_read_overrides_pyproject(pyproject_factory, key, value):
+    pyproject_factory(
+        """[tool.changelog-gen]
+place = "holder"
 """,
     )
 
