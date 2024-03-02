@@ -3,6 +3,7 @@ from unittest import mock
 import pytest
 
 from changelog_gen import writer
+from changelog_gen.extractor import Change
 
 
 @pytest.mark.parametrize(
@@ -120,16 +121,16 @@ class TestBaseWriter:
         w.add_section(
             "header",
             {
-                "1": {"description": "line1"},
-                "2": {"description": "line2"},
-                "3": {"description": "line3", "scope": "(config)"},
+                "1": Change("1", "line1", breaking=True),
+                "2": Change("2", "line2", authors="(a, b)"),
+                "3": Change("3", "line3", scope="(config)"),
             },
         )
 
         assert w._add_section_header.call_args == mock.call("header")
         assert w._add_section_line.call_args_list == [
-            mock.call("line1", "1"),
-            mock.call("line2", "2"),
+            mock.call("**Breaking:** line1", "1"),
+            mock.call("line2 (a, b)", "2"),
             mock.call("(config) line3", "3"),
         ]
 
@@ -227,9 +228,9 @@ class TestMdWriter:
         w.add_section(
             "header",
             {
-                "1": {"description": "line1"},
-                "2": {"description": "line2"},
-                "3": {"description": "line3", "scope": "(config)"},
+                "1": Change("1", "line1"),
+                "2": Change("2", "line2"),
+                "3": Change("3", "line3", scope="(config)"),
             },
         )
 
@@ -242,9 +243,9 @@ class TestMdWriter:
         w.add_section(
             "header",
             {
-                "1": {"description": "line1"},
-                "2": {"description": "line2"},
-                "3": {"description": "line3", "scope": "(config)"},
+                "1": Change("1", "line1"),
+                "2": Change("2", "line2"),
+                "3": Change("3", "line3", scope="(config)"),
             },
         )
 
@@ -282,9 +283,9 @@ class TestMdWriter:
         w.add_section(
             "header",
             {
-                "4": {"description": "line4"},
-                "5": {"description": "line5"},
-                "6": {"description": "line6", "scope": "(config)"},
+                "4": Change("4", "line4"),
+                "5": Change("5", "line5"),
+                "6": Change("6", "line6", scope="(config)"),
             },
         )
 
@@ -420,9 +421,9 @@ header
         w.add_section(
             "header",
             {
-                "1": {"description": "line1"},
-                "2": {"description": "line2"},
-                "3": {"description": "line3", "scope": "(config)"},
+                "1": Change("1", "line1"),
+                "2": Change("2", "line2"),
+                "3": Change("3", "line3", scope="(config)"),
             },
         )
 
@@ -453,9 +454,9 @@ header
         w.add_section(
             "header",
             {
-                "1": {"description": "line1"},
-                "2": {"description": "line2"},
-                "3": {"description": "line3", "scope": "(config)"},
+                "1": Change("1", "line1"),
+                "2": Change("2", "line2"),
+                "3": Change("3", "line3", scope="(config)"),
             },
         )
 
@@ -474,9 +475,9 @@ Changelog
         w.add_section(
             "header",
             {
-                "1": {"description": "line1"},
-                "2": {"description": "line2"},
-                "3": {"description": "line3", "scope": "(config)"},
+                "1": Change("1", "line1"),
+                "2": Change("2", "line2"),
+                "3": Change("3", "line3", scope="(config)"),
             },
         )
 
@@ -526,9 +527,9 @@ header
         w.add_section(
             "header",
             {
-                "4": {"description": "line4"},
-                "5": {"description": "line5"},
-                "6": {"description": "line6", "scope": "(config)"},
+                "4": Change("4", "line4"),
+                "5": Change("5", "line5"),
+                "6": Change("6", "line6", scope="(config)"),
             },
         )
 

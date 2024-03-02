@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import re
 import typing
 from collections import defaultdict
@@ -9,7 +10,18 @@ from changelog_gen import errors
 from changelog_gen.vcs import Git
 from changelog_gen.version import BumpVersion
 
-SectionDict = dict[str, dict[str, dict[str, str]]]
+
+@dataclasses.dataclass
+class Change:  # noqa: D101
+    issue_ref: str
+    description: str
+
+    authors: str = ""
+    scope: str = ""
+    breaking: bool = False
+
+
+SectionDict = dict[str, dict[str, Change]]
 
 
 class ReleaseNoteExtractor:
@@ -22,34 +34,38 @@ class ReleaseNoteExtractor:
 
         self.has_release_notes = self.release_notes.exists() and self.release_notes.is_dir()
 
-    def extract(self: typing.Self, section_mapping: dict[str, str] | None = None) -> SectionDict:
-        """Iterate over release note files extracting sections and issues."""
-        section_mapping = section_mapping or {}
+    def _extract_release_notes(
+        self: typing.Self,
+        section_mapping: dict[str, str] | None,
+        sections: dict[str, dict],
+    ) -> None:
+        # Extract changelog details from release note files.
+        for issue in sorted(self.release_notes.iterdir()):
+            if issue.is_file and not issue.name.startswith("."):
+                issue_ref, section = issue.name.split(".")
+                section = section_mapping.get(section, section)
 
-        sections = defaultdict(dict)
+                breaking = False
+                if section.endswith("!"):
+                    section = section[:-1]
+                    breaking = True
 
-        if self.has_release_notes:
-            # Extract changelog details from release note files.
-            for issue in sorted(self.release_notes.iterdir()):
-                if issue.is_file and not issue.name.startswith("."):
-                    issue_ref, section = issue.name.split(".")
-                    section = section_mapping.get(section, section)
+                contents = issue.read_text().strip()
+                if section not in self.supported_sections:
+                    msg = f"Unsupported CHANGELOG section {section}, derived from `./release_notes/{issue.name}`"
+                    raise errors.InvalidSectionError(msg)
 
-                    breaking = False
-                    if section.endswith("!"):
-                        section = section[:-1]
-                        breaking = True
+                sections[section][issue_ref] = Change(
+                    description=contents,
+                    issue_ref=issue_ref,
+                    breaking=breaking,
+                )
 
-                    contents = issue.read_text().strip()
-                    if section not in self.supported_sections:
-                        msg = f"Unsupported CHANGELOG section {section}, derived from `./release_notes/{issue.name}`"
-                        raise errors.InvalidSectionError(msg)
-
-                    sections[section][issue_ref] = {
-                        "description": contents,
-                        "breaking": breaking,
-                    }
-
+    def _extract_commit_logs(
+        self: typing.Self,
+        section_mapping: dict[str, str] | None,
+        sections: dict[str, dict],
+    ) -> None:
         latest_info = Git.get_latest_tag_info()
         logs = Git.get_logs(latest_info["current_tag"])
 
@@ -62,7 +78,7 @@ class ReleaseNoteExtractor:
             m = reg.match(log)
             if m:
                 section = m[1]
-                scope = m[2]
+                scope = m[2] or ""
                 breaking = m[3] is not None
                 message = m[4]
                 details = m[5] or ""
@@ -70,17 +86,37 @@ class ReleaseNoteExtractor:
                 # Handle missing refs in commit message, skip link generation in writer
                 issue_ref = f"__{i}__"
                 breaking = breaking or "BREAKING CHANGE" in details
+
+                change = Change(
+                    description=message,
+                    issue_ref=issue_ref,
+                    breaking=breaking,
+                    scope=scope,
+                )
+
                 for line in details.split("\n"):
-                    m = re.match(r"Refs: #?([\w-]+)", line)
-                    if m:
-                        issue_ref = m[1]
+                    for target, pattern in [
+                        ("issue_ref", r"Refs: #?([\w-]+)"),
+                        ("authors", r"Authors: (.*)"),
+                    ]:
+                        m = re.match(pattern, line)
+                        if m:
+                            setattr(change, target, m[1])
 
                 section = section_mapping.get(section, section)
-                sections[section][issue_ref] = {
-                    "description": message,
-                    "breaking": breaking,
-                    "scope": scope,
-                }
+                sections[section][change.issue_ref] = change
+
+    def extract(self: typing.Self, section_mapping: dict[str, str] | None = None) -> SectionDict:
+        """Iterate over release note files extracting sections and issues."""
+        section_mapping = section_mapping or {}
+
+        sections = defaultdict(dict)
+
+        if self.has_release_notes:
+            self._extract_release_notes(section_mapping, sections)
+
+        self._extract_commit_logs(section_mapping, sections)
+
         return sections
 
     def unique_issues(self: typing.Self, sections: SectionDict) -> list[str]:
@@ -120,7 +156,7 @@ def extract_version_tag(sections: SectionDict, semver_mapping: dict[str, str]) -
         if semvers.index(semver) < semvers.index(semver_mapping.get(section, "patch")):
             semver = semver_mapping.get(section, "patch")
         for issue in section_issues.values():
-            if issue["breaking"]:
+            if issue.breaking:
                 semver = "major"
 
     if current.startswith("0."):
