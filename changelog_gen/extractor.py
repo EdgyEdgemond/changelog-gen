@@ -103,7 +103,7 @@ class ReleaseNoteExtractor:
                     x.unlink()
 
 
-def extract_version_tag(sections: SectionDict) -> str:
+def extract_version_tag(sections: SectionDict, semver_mapping: dict[str, str]) -> str:
     """Generate new version tag based on changelog sections.
 
     Breaking changes: major
@@ -115,8 +115,10 @@ def extract_version_tag(sections: SectionDict) -> str:
     current = version_info_["current"]
 
     semvers = ["patch", "minor", "major"]
-    semver = "minor" if "feat" in sections else "patch"
-    for section_issues in sections.values():
+    semver = "patch"
+    for section, section_issues in sections.items():
+        if semvers.index(semver) < semvers.index(semver_mapping.get(section, "patch")):
+            semver = semver_mapping.get(section, "patch")
         for issue in section_issues.values():
             if issue["breaking"]:
                 semver = "major"

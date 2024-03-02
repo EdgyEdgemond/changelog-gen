@@ -246,6 +246,27 @@ remove = "Removals"
 fix = "Bugfixes"
 ```
 
+#### `semver_mapping =`
+  _**[optional]**_<br />
+  **default**: {
+      "feat": "minor"
+      "fix": "patch",
+      "docs": "patch"
+      "misc": "patch"
+  }
+
+  Define custom section mappings for semver tagging. Any custom sections need
+  to be mapped to `major`, `minor`, `patch`. Any unknown sections will be
+  treated as a `patch`.
+
+  Example:
+
+```toml
+[tool.changelog_gen.sections]
+change = "patch"
+remove = "minor"
+```
+
 #### `section_mapping =`
   _**[optional]**_<br />
   **default**: {
@@ -280,18 +301,18 @@ new = "feat"
 
   See example on Jira configuration information.
 
- `.url=`<br />
+ `.url =`<br />
   _**[required]**_<br />
   **default**: None<br />
   The url to contact.
   Can have the placeholders `::issue_ref::` and `::version::``.
 
-  `.verb=`<br />
+  `.verb =`<br />
   _**[optional]**_<br />
   **default**: POST<br />
   HTTP method to use.
 
-  `.body=`<br />
+  `.body =`<br />
   _**[optional]**_<br />
   **default**: `{"body": "Released on ::version::"}`<br />
   The text to send to the API.

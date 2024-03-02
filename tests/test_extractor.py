@@ -1,6 +1,8 @@
+from unittest import mock
+
 import pytest
 
-from changelog_gen import errors
+from changelog_gen import errors, extractor
 from changelog_gen.config import SUPPORTED_SECTIONS
 from changelog_gen.extractor import ReleaseNoteExtractor
 
@@ -283,3 +285,51 @@ def test_clean_removes_all_non_dotfiles(release_notes):
     e.clean()
 
     assert [f.name for f in release_notes.iterdir()] == [".file"]
+
+
+@pytest.mark.parametrize(
+    ("sections", "semver_mapping", "expected_semver"),
+    [
+        ({"fix": {"1": {"breaking": False}}}, {"feat": "minor"}, "patch"),
+        ({"feat": {"1": {"breaking": False}}}, {"feat": "minor"}, "patch"),
+        ({"fix": {"1": {"breaking": True}}}, {"feat": "minor"}, "minor"),
+        ({"feat": {"1": {"breaking": True}}}, {"feat": "minor"}, "minor"),
+        ({"custom": {"1": {"breaking": False}}}, {"custom": "patch"}, "patch"),
+        ({"custom": {"1": {"breaking": False}}}, {"custom": "minor"}, "patch"),
+        ({"custom": {"1": {"breaking": True}}}, {"custom": "minor"}, "minor"),
+    ],
+)
+def test_extract_version_tag_version_zero(sections, semver_mapping, expected_semver, monkeypatch):
+    monkeypatch.setattr(
+        extractor.BumpVersion,
+        "get_version_info",
+        mock.Mock(return_value={"new": "0.0.0", "current": "0.0.0"}),
+    )
+
+    extractor.extract_version_tag(sections, semver_mapping)
+
+    assert extractor.BumpVersion.get_version_info.call_args == mock.call(expected_semver)
+
+
+@pytest.mark.parametrize(
+    ("sections", "semver_mapping", "expected_semver"),
+    [
+        ({"fix": {"1": {"breaking": False}}}, {"feat": "minor"}, "patch"),
+        ({"feat": {"1": {"breaking": False}}}, {"feat": "minor"}, "minor"),
+        ({"fix": {"1": {"breaking": True}}}, {"feat": "minor"}, "major"),
+        ({"feat": {"1": {"breaking": True}}}, {"feat": "minor"}, "major"),
+        ({"custom": {"1": {"breaking": False}}}, {"custom": "patch"}, "patch"),
+        ({"custom": {"1": {"breaking": False}}}, {"custom": "minor"}, "minor"),
+        ({"custom": {"1": {"breaking": True}}}, {"custom": "minor"}, "major"),
+    ],
+)
+def test_extract_version_tag(sections, semver_mapping, expected_semver, monkeypatch):
+    monkeypatch.setattr(
+        extractor.BumpVersion,
+        "get_version_info",
+        mock.Mock(return_value={"new": "1.0.0", "current": "1.0.0"}),
+    )
+
+    extractor.extract_version_tag(sections, semver_mapping)
+
+    assert extractor.BumpVersion.get_version_info.call_args == mock.call(expected_semver)
