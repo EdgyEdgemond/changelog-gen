@@ -68,10 +68,7 @@ Optional footers that are parsed by `changelog-gen` are:
 
 * `BREAKING CHANGE:`
 * `Refs: [#]<issue_ref>`
-<<<<<<< HEAD
 * `Authors: (<author>, ...)`
-=======
->>>>>>> @{-1}
 
 The description is used to populate the changelog file. If the type includes
 the optional `!` flag, or the `BREAKING CHANGE` footer, this will lead to a
