@@ -244,7 +244,6 @@ feat = "New Features"
 change = "Changes"
 remove = "Removals"
 fix = "Bugfixes"
-<<<<<<< HEAD
 ```
 
 #### `semver_mapping =`
@@ -266,8 +265,6 @@ fix = "Bugfixes"
 [tool.changelog_gen.sections]
 change = "patch"
 remove = "minor"
-=======
->>>>>>> @{-1}
 ```
 
 #### `section_mapping =`
