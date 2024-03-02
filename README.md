@@ -7,19 +7,21 @@
 [![codecov](https://codecov.io/gh/EdgyEdgemond/changelog-gen/branch/master/graph/badge.svg)](https://codecov.io/gh/EdgyEdgemond/changelog-gen)
 
 `changelog-gen` is a CHANGELOG generator intended to be used in conjunction
-with [bumpversion](https://github.com/c4urself/bump2version) to generate
+with [bump-my-version](https://github.com/callowayproject/bump-my-version) to generate
 changelogs and create release tags.
 
 ## Installation
 
 ```bash
-pip install changelog-gen
+pip install changelog-gen[bump-my-version]   # recommended
+
+pip install changelog-gen[bump2version]  # bump2version support will be dropped in the future
 ```
 
 or clone this repo and install with poetry.
 
 ```bash
-poetry install
+poetry install --extras=bump-my-version
 ```
 
 ## Usage
@@ -425,6 +427,16 @@ headers."content-type" = "application/json"
   to generate a key.
 
   Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog generate --post-process-url 'http://my-api-url.domain/comment/::issue_ref::' --post-process-auth-env MY_API_AUTH`)
+
+### Pre-release flows
+
+If your versioning uses prerelease version parts, after a major/minor/patch update creates e.g. `v0.0.1rc0`, use
+`--version-part=<part>` to trigger release flows, based on your configuration.
+
+```bash
+$ changelog generate --version-part build
+... v0.0.1rc1
+```
 
 ## Contributing
 

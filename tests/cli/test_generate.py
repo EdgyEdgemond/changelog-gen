@@ -118,48 +118,7 @@ Refs: #1
 
 
 @pytest.fixture()
-def setup_release(cwd):
-    p = cwd / "setup.cfg"
-    p.write_text(
-        """
-[bumpversion]
-current_version = 1.0.0
-commit = true
-tag = true
-""",
-    )
-
-    return p
-
-
-@pytest.fixture()
-def setup_prerelease(cwd):
-    p = cwd / "setup.cfg"
-    p.write_text(
-        """
-[bumpversion]
-current_version = 1.0.0
-commit = true
-tag = true
-""",
-    )
-
-    p = cwd / "pyproject.toml"
-    p.write_text("")
-
-    return p
-
-
-@pytest.fixture()
 def post_process_pyproject(cwd):
-    p = cwd / "setup.cfg"
-    p.write_text("""
-[bumpversion]
-current_version = 0.0.0
-commit = true
-tag = true
-""")
-
     p = cwd / "pyproject.toml"
     p.write_text("""
 [tool.changelog_gen]
@@ -188,7 +147,7 @@ def test_generate_aborts_if_changelog_missing(gen_cli_runner):
     assert result.output == "No CHANGELOG file detected, run `changelog init`\n"
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_aborts_if_dirty(gen_cli_runner, cwd):
     command.Git.get_latest_tag_info.return_value = {
         "commit_sha": "commit-sha",
@@ -211,7 +170,7 @@ allow_dirty = false
     assert result.output == "Working directory is not clean. Use `allow_dirty` configuration to ignore.\n"
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_allows_dirty(gen_cli_runner, cwd):
     p = cwd / "pyproject.toml"
     p.write_text(
@@ -225,7 +184,7 @@ allow_dirty = false
     assert result.exit_code == 0
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_continues_if_allow_dirty_configured(gen_cli_runner, cwd):
     p = cwd / "pyproject.toml"
     p.write_text(
@@ -239,7 +198,7 @@ allow_dirty = true
     assert result.exit_code == 0
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_aborts_if_unsupported_current_branch(gen_cli_runner, cwd):
     p = cwd / "pyproject.toml"
     p.write_text(
@@ -255,7 +214,7 @@ allowed_branches = ["release_candidate"]
     assert result.output == "Current branch not in allowed generation branches.\n"
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_allows_supported_branch(gen_cli_runner, cwd):
     p = cwd / "pyproject.toml"
     p.write_text(
@@ -270,7 +229,7 @@ allowed_branches = ["main"]
     assert result.exit_code == 0
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_release")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_confirms_suggested_changes(gen_cli_runner):
     result = gen_cli_runner.invoke()
 
@@ -294,7 +253,7 @@ Write CHANGELOG for suggested version 0.0.1 [y/N]: \n""".lstrip()
     )
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 @pytest.mark.backwards_compat()
 def test_generate_with_section_mapping_backwards_compat(gen_cli_runner, cwd):
     p = cwd / "pyproject.toml"
@@ -324,7 +283,7 @@ Write CHANGELOG for suggested version 0.0.1 [y/N]: \n""".lstrip()
     )
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_release")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_with_headers(gen_cli_runner, cwd):
     p = cwd / "pyproject.toml"
     p.write_text(
@@ -357,7 +316,7 @@ Write CHANGELOG for suggested version 0.0.1 [y/N]: \n""".lstrip()
     )
 
 
-@pytest.mark.usefixtures("_conventional_commits", "setup_release")
+@pytest.mark.usefixtures("_conventional_commits")
 def test_generate_writes_to_file(
     gen_cli_runner,
     changelog,
@@ -388,7 +347,7 @@ def test_generate_writes_to_file(
     )
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_release")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_creates_release(
     gen_cli_runner,
     monkeypatch,
@@ -405,7 +364,7 @@ def test_generate_creates_release(
 
 
 @pytest.mark.backwards_compat()
-@pytest.mark.usefixtures("changelog", "_release_notes", "setup_release")
+@pytest.mark.usefixtures("changelog", "_release_notes")
 def test_generate_creates_release_from_notes(
     gen_cli_runner,
     monkeypatch,
@@ -423,7 +382,7 @@ def test_generate_creates_release_from_notes(
     assert command.BumpVersion.release.call_args == mock.call("0.0.1")
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_creates_release_using_config(
     gen_cli_runner,
     cwd,
@@ -446,7 +405,7 @@ release = true
     assert command.BumpVersion.release.call_args == mock.call("0.0.1")
 
 
-@pytest.mark.usefixtures("changelog", "setup_prerelease")
+@pytest.mark.usefixtures("changelog")
 def test_generate_creates_release_without_release_notes(
     gen_cli_runner,
     cwd,
@@ -492,7 +451,7 @@ Refs: #4
     assert result.exit_code == 0
 
 
-@pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_handles_bumpversion_failure_and_reverts_changelog_commit(
     gen_cli_runner,
     cwd,
@@ -518,7 +477,7 @@ release = true
     assert command.Git.revert.call_args == mock.call()
 
 
-@pytest.mark.usefixtures("setup_prerelease", "_conventional_commits")
+@pytest.mark.usefixtures("_conventional_commits")
 def test_generate_uses_supplied_version_tag(
     gen_cli_runner,
     changelog,
@@ -549,7 +508,7 @@ def test_generate_uses_supplied_version_tag(
     assert command.Git.commit.call_args == mock.call("0.3.2")
 
 
-@pytest.mark.usefixtures("setup_release", "_conventional_commits", "changelog")
+@pytest.mark.usefixtures("_conventional_commits", "changelog")
 def test_generate_uses_supplied_version_part(
     gen_cli_runner,
     monkeypatch,
@@ -561,7 +520,7 @@ def test_generate_uses_supplied_version_part(
     assert version.BumpVersion.get_version_info.call_args == mock.call("major")
 
 
-@pytest.mark.usefixtures("_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("_conventional_commits")
 def test_generate_dry_run(
     gen_cli_runner,
     changelog,
@@ -580,7 +539,7 @@ def test_generate_dry_run(
     )
 
 
-@pytest.mark.usefixtures("_empty_conventional_commits", "setup_prerelease")
+@pytest.mark.usefixtures("_empty_conventional_commits")
 def test_generate_reject_empty(
     gen_cli_runner,
     changelog,
@@ -710,7 +669,7 @@ class TestDelegatesToPerIssuePostProcess:
 
 @freeze_time("2022-04-14T16:45:03")
 class TestGenerateWithDate:
-    @pytest.mark.usefixtures("_conventional_commits", "changelog", "setup_prerelease")
+    @pytest.mark.usefixtures("_conventional_commits", "changelog")
     def test_using_config(self, gen_cli_runner, cwd, monkeypatch):
         p = cwd / "pyproject.toml"
         p.write_text(
@@ -731,7 +690,7 @@ date_format = "on %Y-%m-%d"
         assert r.exit_code == 0, r.output
         assert writer_mock.add_version.call_args == mock.call("v0.0.1 on 2022-04-14")
 
-    @pytest.mark.usefixtures("_conventional_commits", "changelog", "setup_release")
+    @pytest.mark.usefixtures("_conventional_commits", "changelog")
     def test_using_cli(self, gen_cli_runner, monkeypatch):
         monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=True))
         writer_mock = mock.MagicMock()
@@ -742,7 +701,7 @@ date_format = "on %Y-%m-%d"
         assert r.exit_code == 0, r.output
         assert writer_mock.add_version.call_args == mock.call("v0.0.1 (2022-04-14 at 16:45)")
 
-    @pytest.mark.usefixtures("_conventional_commits", "changelog", "setup_prerelease")
+    @pytest.mark.usefixtures("_conventional_commits", "changelog")
     def test_override_config(self, gen_cli_runner, cwd, monkeypatch):
         p = cwd / "pyproject.toml"
         p.write_text(
@@ -763,7 +722,7 @@ date_format = "on %Y-%m-%d"
         assert r.exit_code == 0, r.output
         assert writer_mock.add_version.call_args == mock.call("v0.0.1 (2022-04-14 at 16:45)")
 
-    @pytest.mark.usefixtures("_conventional_commits", "changelog", "setup_prerelease")
+    @pytest.mark.usefixtures("_conventional_commits", "changelog")
     def test_override_config_and_disable(self, gen_cli_runner, cwd, monkeypatch):
         p = cwd / "pyproject.toml"
         p.write_text(
