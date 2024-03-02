@@ -180,7 +180,6 @@ General configuration is grouped in a `[changelog_gen]` section.
 issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 ```
 
-<<<<<<< HEAD
 #### `commit_link =`
   _**[optional]**_<br />
   **default**: None
@@ -195,18 +194,12 @@ issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 commit_link = "http://github.com/EdgyEdgemond/changelog-gen/commit/$COMMIT_HASH"
 ```
 
-=======
->>>>>>> @{-1}
 #### `version_string =`
   _**[optional]**_<br />
   **default**: `v{new_version}`
 
-<<<<<<< HEAD
   Format for the version tag, this will be passed into changelog, commit
   messages, and any post processing.
-=======
-  Format for the version tag, this will be passed into changelog, commit messages, and any post processing.
->>>>>>> @{-1}
 
   Example:
 
@@ -233,11 +226,7 @@ version_string = "{new_version}"
 
 ```toml
 [tool.changelog_gen]
-<<<<<<< HEAD
 date_format = "on %Y-%m-%d"
-=======
-date_format = "on %%Y-%m-%d"
->>>>>>> @{-1}
 ```
 
 #### `allowed_branches =`
