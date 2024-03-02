@@ -19,7 +19,7 @@ feat(scope): change to scope
 ```
 
 ```
-More details bout the change.
+More details about the change.
 
 BREAKING CHANGE:
 Refs: #{issue}
