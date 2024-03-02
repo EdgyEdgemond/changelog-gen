@@ -383,7 +383,7 @@ def test_generate_suggests_major_version_for_breaking_change(
 
 ### Features and Improvements
 
-- Detail about 2 [#2]
+- **Breaking:** Detail about 2 [#2]
 - Detail about 3 [#3]
 
 ### Bug fixes

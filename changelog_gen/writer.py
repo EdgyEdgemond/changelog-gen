@@ -55,7 +55,17 @@ class BaseWriter:
         """Add a section to changelog file."""
         self._add_section_header(header)
         for issue_ref, details in sorted(lines.items()):
-            self._add_section_line(details["description"], issue_ref, details.get("scope"))
+            description = details["description"]
+            scope = details.get("scope")
+            breaking = details.get("breaking", False)
+
+            description = f"{scope} {description}" if scope else description
+            description = f"**Breaking:** {description}" if breaking else description
+
+            self._add_section_line(
+                description,
+                issue_ref,
+            )
         self._post_section()
 
     def _add_section_header(self: typing.Self, header: str) -> None:
@@ -96,8 +106,7 @@ class MdWriter(BaseWriter):
     def _add_section_header(self: typing.Self, header: str) -> None:
         self.content.extend([f"### {header}", ""])
 
-    def _add_section_line(self: typing.Self, description: str, issue_ref: str, scope: str | None = None) -> None:
-        description = f"{scope} {description}" if scope else description
+    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
         # Skip __{i}__ placeholder refs
         if issue_ref.startswith("__"):
             line = f"- {description}"
@@ -139,8 +148,7 @@ class RstWriter(BaseWriter):
     def _add_section_header(self: typing.Self, header: str) -> None:
         self.content.extend([header, "-" * len(header), ""])
 
-    def _add_section_line(self: typing.Self, description: str, issue_ref: str, scope: str | None = None) -> None:
-        description = f"{scope} {description}" if scope else description
+    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
         # Skip __{i}__ placeholder refs
         if issue_ref.startswith("__"):
             line = f"* {description}"
