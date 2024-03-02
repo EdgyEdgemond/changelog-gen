@@ -78,7 +78,7 @@ class BaseWriter:
     def _add_section_header(self: typing.Self, header: str) -> None:
         raise NotImplementedError
 
-    def _add_section_line(self: typing.Self, description: str, issue_ref: str) -> None:
+    def _add_section_line(self: typing.Self, description: str, issue_ref: str, scope: str | None = None) -> None:
         raise NotImplementedError
 
     def _post_section(self: typing.Self) -> None:
