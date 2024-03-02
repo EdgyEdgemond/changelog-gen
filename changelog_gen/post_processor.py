@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import typing
 from http import HTTPStatus
@@ -9,7 +11,19 @@ if typing.TYPE_CHECKING:
     from changelog_gen.config import PostProcessConfig
 
 
-def make_client(cfg: "PostProcessConfig") -> httpx.Client:
+class BearerAuth(httpx.Auth):
+    """Implement Bearer token auth class for httpx."""
+
+    def __init__(self: typing.Self, token: str) -> None:
+        self.token = f"Bearer {token}"
+
+    def auth_flow(self: typing.Self, request: httpx.Request) -> typing.Generator[httpx.Request, httpx.Response, None]:
+        """Send the request, with bearer token."""
+        request.headers["Authorization"] = self.token
+        yield request
+
+
+def make_client(cfg: PostProcessConfig) -> httpx.Client:
     """Generate HTTPx client with authorization if configured."""
     auth = None
     if cfg.auth_env:
@@ -18,13 +32,17 @@ def make_client(cfg: "PostProcessConfig") -> httpx.Client:
             typer.echo(f'Missing environment variable "{cfg.auth_env}"')
             raise typer.Exit(code=1)
 
-        try:
-            username, api_key = user_auth.split(":")
-        except ValueError as e:
-            typer.echo(f'Unexpected content in {cfg.auth_env}, need "{{username}}:{{api_key}}"')
-            raise typer.Exit(code=1) from e
+        if cfg.auth_type == "bearer":
+            auth = BearerAuth(user_auth)
         else:
-            auth = httpx.BasicAuth(username=username, password=api_key)
+            # Fall back to basic auth
+            try:
+                username, api_key = user_auth.split(":")
+            except ValueError as e:
+                typer.echo(f'Unexpected content in {cfg.auth_env}, need "{{username}}:{{api_key}} for basic auth"')
+                raise typer.Exit(code=1) from e
+            else:
+                auth = httpx.BasicAuth(username=username, password=api_key)
 
     return httpx.Client(
         auth=auth,
@@ -33,7 +51,7 @@ def make_client(cfg: "PostProcessConfig") -> httpx.Client:
 
 
 def per_issue_post_process(
-    cfg: "PostProcessConfig",
+    cfg: PostProcessConfig,
     issue_refs: list[str],
     version_tag: str,
     *,

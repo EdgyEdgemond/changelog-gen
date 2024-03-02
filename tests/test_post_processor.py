@@ -9,8 +9,19 @@ from changelog_gen import post_processor
 from changelog_gen.config import PostProcessConfig
 
 
+def test_bearer_auth_flow():
+    req = mock.Mock(
+        headers={},
+    )
+    a = post_processor.BearerAuth("token")
+
+    assert a.token == "Bearer token"
+    r = next(a.auth_flow(req))
+    assert r.headers["Authorization"] == "Bearer token"
+
+
 class TestMakeClient:
-    def test_create_client_with_auth_token(self, monkeypatch):
+    def test_create_client_with_basic_auth_token(self, monkeypatch):
         monkeypatch.setenv("MY_API_AUTH", "fake_auth@domain:hex_api_key")
         cfg = PostProcessConfig(auth_env="MY_API_AUTH", headers={"content-type": "application/json"})
 
@@ -18,6 +29,15 @@ class TestMakeClient:
 
         assert client.headers["content-type"] == "application/json"
         assert client.auth._auth_header == "Basic ZmFrZV9hdXRoQGRvbWFpbjpoZXhfYXBpX2tleQ=="
+
+    def test_create_client_with_bearer_auth_token(self, monkeypatch):
+        monkeypatch.setenv("AUTH_TOKEN", "hex_api_key")
+        cfg = PostProcessConfig(auth_env="AUTH_TOKEN", headers={"content-type": "application/json"}, auth_type="bearer")
+
+        client = post_processor.make_client(cfg)
+
+        assert client.headers["content-type"] == "application/json"
+        assert client.auth.token == "Bearer hex_api_key"
 
     def test_create_client_without_auth_token(self):
         cfg = PostProcessConfig(headers={"content-type": "application/json"})
@@ -64,7 +84,7 @@ class TestMakeClient:
             post_processor.make_client(cfg)
 
         assert post_processor.typer.echo.call_args == mock.call(
-            'Unexpected content in MY_API_AUTH, need "{username}:{api_key}"',
+            'Unexpected content in MY_API_AUTH, need "{username}:{api_key} for basic auth"',
         )
 
 
