@@ -138,7 +138,7 @@ def setup_prerelease(cwd):
     p.write_text(
         """
 [bumpversion]
-current_version = 0.0.0
+current_version = 1.0.0
 commit = true
 tag = true
 """,
