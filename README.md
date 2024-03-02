@@ -28,6 +28,9 @@ poetry install
 Commits](https://www.conventionalcommits.org/en/v1.0.0/), as well as reading
 changes from a `release_notes` folder.
 
+NOTE: `release_notes` support will be dropped in a future version, migration to
+conventional commits is recommended.
+
 By default supported sections are `feat`, `fix`, `docs` and `misc`. Additional types can be configured
 to map to these initial sections, custom sections can be added and mapped to types as well.
 
@@ -177,11 +180,26 @@ General configuration is grouped in a `[changelog_gen]` section.
 issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 ```
 
+#### `commit_link =`
+  _**[optional]**_<br />
+  **default**: None
+
+  Create links in the CHANGELOG to the originating commit. A url that contains
+  an `$COMMIT_HASH` placeholder for replacement.
+
+  Example:
+
+```toml
+[toolchangelog_gen]
+commit_link = "http://github.com/EdgyEdgemond/changelog-gen/commit/$COMMIT_HASH"
+```
+
 #### `version_string =`
   _**[optional]**_<br />
   **default**: `v{new_version}`
 
-  Format for the version tag, this will be passed into changelog, commit messages, and any post processing.
+  Format for the version tag, this will be passed into changelog, commit
+  messages, and any post processing.
 
   Example:
 
@@ -194,10 +212,13 @@ version_string = "{new_version}"
   _**[optional]**_<br />
   **default**: None
 
-  Add a date on the version line, use [strftime and strptime format codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes).
-  The format string can include any character, a space is included between the version tag and the date tag.
+  Add a date on the version line, use [strftime and strptime format
+  codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes).
+  The format string can include any character, a space is included between the
+  version tag and the date tag.
 
-  When using in `setup.cfg` be sure to protect the `%` signs (see example below) and be mindful about spacing as the string is taken straight from the `=` sign.
+  When using in `setup.cfg` be sure to protect the `%` signs by using `%%` and
+  be mindful about spacing as the string is taken straight from the `=` sign.
 
   Also available as `--date-format` (e.g. `--date-format '%Y-%m-%d'`).
 
@@ -205,15 +226,15 @@ version_string = "{new_version}"
 
 ```toml
 [tool.changelog_gen]
-date_format = "on %%Y-%m-%d"
+date_format = "on %Y-%m-%d"
 ```
 
 #### `allowed_branches =`
   _**[optional]**_<br />
   **default**: None
 
-  Prevent changelog being generated if the current branch is not in the supplied list. By
-  default all branches are allowed.
+  Prevent changelog being generated if the current branch is not in the
+  supplied list. By default all branches are allowed.
 
   Example:
 
@@ -234,8 +255,8 @@ allowed_branches = [
       "misc": "Miscellaneous",
   }
 
-  Define custom headers or new sections/headers, new sections will require a matching
-  section_mapping configuration.
+  Define custom headers or new sections/headers, new sections will require a
+  matching section_mapping configuration.
 
   Example:
 
@@ -350,4 +371,5 @@ headers."content-type" = "application/json"
 
 ## Contributing
 
-This project uses pre-commit hooks, please run `pre-commit install` after cloning and installing dev dependencies.
+This project uses pre-commit hooks, please run `pre-commit install` after
+cloning and installing dev dependencies.

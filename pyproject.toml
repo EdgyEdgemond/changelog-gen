@@ -37,7 +37,9 @@ reject_empty = true
 allowed_branches = [
     "master",
 ]
-issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
+date_format = "- %Y-%m-%d"
+issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
+commit_link = "https://github.com/EdgyEdgemond/changelog-gen/commit/$COMMIT_HASH"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

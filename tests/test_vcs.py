@@ -175,20 +175,29 @@ def test_get_logs(multiversion_repo):
     f.write_text("hello world! v3")
     multiversion_repo.run("git add hello.txt")
     multiversion_repo.api.index.commit("commit log")
+    hash1 = str(multiversion_repo.api.head.commit)
 
     f.write_text("hello world! v4")
     multiversion_repo.run("git add hello.txt")
-    multiversion_repo.api.index.commit("commit log 2")
+    multiversion_repo.api.index.commit("commit log 2: electric boogaloo")
+    hash2 = str(multiversion_repo.api.head.commit)
 
     f.write_text("hello world! v5")
     multiversion_repo.run("git add hello.txt")
-    multiversion_repo.api.index.commit("""Commit message 3
+    multiversion_repo.api.index.commit(
+        """Commit message 3
 
 Formatted
-""")
+""",
+    )
+    hash3 = str(multiversion_repo.api.head.commit)
 
     logs = Git.get_logs("0.0.2")
-    assert logs == ["Commit message 3\n\nFormatted\n", "commit log 2", "commit log"]
+    assert logs == [
+        [hash3[:7], hash3, "Commit message 3\n\nFormatted\n"],
+        [hash2[:7], hash2, "commit log 2: electric boogaloo"],
+        [hash1[:7], hash1, "commit log"],
+    ]
 
 
 def test_revert(multiversion_repo):
