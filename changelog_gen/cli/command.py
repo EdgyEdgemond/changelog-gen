@@ -156,9 +156,7 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
         # https://github.com/EdgyEdgemond/changelog-gen/issues/68
         version_tag = extract_version_tag(sections)
 
-    # TODO(edgy): take a note from bumpversion, read in versioning format string
-    # https://github.com/EdgyEdgemond/changelog-gen/issues/37
-    version_string = f"v{version_tag}"
+    version_string = cfg.version_string.format(new_version=version_tag)
 
     date_fmt = cfg.date_format
     if date_fmt:
