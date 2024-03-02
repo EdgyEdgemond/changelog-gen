@@ -106,6 +106,7 @@ def migrate() -> None:
 @app.command("generate")
 def gen(  # noqa: PLR0913
     version_tag: Optional[str] = typer.Option(None, help="Provide the desired version tag, skip auto generation."),
+    version_part: Optional[str] = typer.Option(None, help="Provide the desired version part, skip auto generation."),
     post_process_url: Optional[str] = typer.Option(
         None,
         help="Rest API endpoint to post release version notifications to.",
@@ -144,13 +145,19 @@ def gen(  # noqa: PLR0913
     )
 
     try:
-        _gen(cfg, version_tag, dry_run=dry_run)
+        _gen(cfg, version_part, version_tag, dry_run=dry_run)
     except errors.ChangelogException as ex:
         typer.echo(ex)
         raise typer.Exit(code=1) from ex
 
 
-def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = False) -> None:
+def _gen(
+    cfg: config.Config,
+    version_part: str | None = None,
+    version_tag: str | None = None,
+    *,
+    dry_run: bool = False,
+) -> None:
     extension = util.detect_extension()
 
     if extension is None:
@@ -166,6 +173,10 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
     if not unique_issues and cfg.reject_empty:
         typer.echo("No changes present and reject_empty configured.")
         raise typer.Exit(code=0)
+
+    if version_part is not None:
+        version_info_ = BumpVersion.get_version_info(version_part)
+        version_tag = version_info_["new"]
 
     if version_tag is None:
         version_tag = extract_version_tag(sections, cfg.semver_mapping)

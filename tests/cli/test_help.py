@@ -11,6 +11,8 @@ def test_generate_help(cli_runner):
 Options:
   --version-tag TEXT              Provide the desired version tag, skip auto
                                   generation.
+  --version-part TEXT             Provide the desired version part, skip auto
+                                  generation.
   --post-process-url TEXT         Rest API endpoint to post release version
                                   notifications to.
   --post-process-auth-env TEXT    Name of the ENV variable that contains the
