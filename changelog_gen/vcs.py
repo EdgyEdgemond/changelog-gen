@@ -59,7 +59,11 @@ class Git:
                 .split("\n")
             )
         except subprocess.CalledProcessError as e:
-            msg = "Unable to get current git branch."
+            msg = (
+                f"Unable to get current git branch: {e.output.decode().strip()}"
+                if e.output
+                else "Unable to get current git branch."
+            )
             raise errors.VcsError(msg) from e
 
         info = {
@@ -109,9 +113,13 @@ class Git:
     @classmethod
     def commit(cls: type[T], version: str) -> None:
         """Commit changes to git repository."""
-        subprocess.check_output(
-            ["git", "commit", "-m", f"Update CHANGELOG for {version}"],  # noqa: S603, S607
-        )
+        try:
+            subprocess.check_output(
+                ["git", "commit", "-m", f"Update CHANGELOG for {version}"],  # noqa: S603, S607
+            )
+        except subprocess.CalledProcessError as e:
+            msg = f"Unable to commit: {e.output.decode().strip()}" if e.output else "Unable to commit."
+            raise errors.VcsError(msg) from e
 
     @classmethod
     def revert(cls: type[T]) -> None:

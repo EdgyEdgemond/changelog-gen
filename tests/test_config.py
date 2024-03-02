@@ -6,6 +6,17 @@ from changelog_gen import config, errors
 @pytest.fixture()
 def config_factory(cwd):
     def factory(contents=None):
+        p = cwd / "pyproject.toml"
+        p.touch()
+        if contents:
+            p.write_text(contents)
+
+    return factory
+
+
+@pytest.fixture()
+def setup_factory(cwd):
+    def factory(contents=None):
         p = cwd / "setup.cfg"
         p.touch()
         if contents:
@@ -54,8 +65,8 @@ class TestPyprojectToml:
             ("reject_empty = false", "reject_empty", False),
         ],
     )
-    def test_read_picks_up_boolean_values(self, pyproject_factory, value, exp_key, exp_value):
-        pyproject_factory(
+    def test_read_picks_up_boolean_values(self, config_factory, value, exp_key, exp_value):
+        config_factory(
             f"""
 [tool.changelog_gen]
 {value}
@@ -65,8 +76,8 @@ class TestPyprojectToml:
         c = config.read()
         assert getattr(c, exp_key) == exp_value
 
-    def test_read_picks_up_strings_values(self, pyproject_factory):
-        pyproject_factory(
+    def test_read_picks_up_strings_values(self, config_factory):
+        config_factory(
             """
 [tool.changelog_gen]
 issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
@@ -76,8 +87,9 @@ issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::
         c = config.read()
         assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 
-    def test_read_issue_link_backwards_compat(self, pyproject_factory):
-        pyproject_factory(
+    @pytest.mark.backwards_compat()
+    def test_read_issue_link_backwards_compat(self, config_factory):
+        config_factory(
             """
 [tool.changelog_gen]
 issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
@@ -87,8 +99,8 @@ issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
         c = config.read()
         assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 
-    def test_read_picks_up_list_values(self, pyproject_factory):
-        pyproject_factory(
+    def test_read_picks_up_list_values(self, config_factory):
+        config_factory(
             """
 [tool.changelog_gen]
 allowed_branches = [
@@ -101,8 +113,8 @@ allowed_branches = [
         c = config.read()
         assert c.allowed_branches == ["master", "feature/11"]
 
-    def test_read_picks_up_type_headers(self, pyproject_factory):
-        pyproject_factory(
+    def test_read_picks_up_type_headers(self, config_factory):
+        config_factory(
             """
 [tool.changelog_gen.type_headers]
 bug = "Bug fixes"
@@ -126,8 +138,9 @@ test = "Bug fixes"
             "test": "Bug fixes",
         }
 
-    def test_read_picks_up_section_mapping(self, pyproject_factory):
-        pyproject_factory(
+    @pytest.mark.backwards_compat()
+    def test_read_picks_up_section_mapping_backwards_compat(self, config_factory):
+        config_factory(
             """
 [tool.changelog_gen.section_mapping]
 feature = "feat"
@@ -147,8 +160,9 @@ test = "fix"
             "test": "Bug fixes",
         }
 
-    def test_read_picks_up_custom_sections(self, pyproject_factory):
-        pyproject_factory(
+    @pytest.mark.backwards_compat()
+    def test_read_picks_up_custom_sections_backwards_compat(self, config_factory):
+        config_factory(
             """
 [tool.changelog_gen.sections]
 bug = "Bugfixes"
@@ -185,6 +199,7 @@ test = "misc"
         }
 
 
+@pytest.mark.backwards_compat()
 class TestSetupConfig:
     @pytest.mark.parametrize(
         ("value", "exp_key", "exp_value"),
@@ -199,8 +214,8 @@ class TestSetupConfig:
             ("reject_empty = False", "reject_empty", False),
         ],
     )
-    def test_read_picks_up_boolean_values(self, config_factory, value, exp_key, exp_value):
-        config_factory(
+    def test_read_picks_up_boolean_values(self, setup_factory, value, exp_key, exp_value):
+        setup_factory(
             f"""
 [changelog_gen]
 {value}
@@ -213,12 +228,12 @@ class TestSetupConfig:
     @pytest.mark.parametrize(
         "issue_link",
         [
-            "issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/{}",
-            "issue_link=https://github.com/EdgyEdgemond/changelog-gen/issues/{}",
+            "issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::",
+            "issue_link=https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::",
         ],
     )
-    def test_read_picks_up_strings_values(self, config_factory, issue_link):
-        config_factory(
+    def test_read_picks_up_strings_values(self, setup_factory, issue_link):
+        setup_factory(
             f"""
 [changelog_gen]
 {issue_link}
@@ -226,7 +241,7 @@ class TestSetupConfig:
         )
 
         c = config.read()
-        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/{}"
+        assert c.issue_link == "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 
     @pytest.mark.parametrize(
         "branches",
@@ -236,8 +251,8 @@ class TestSetupConfig:
             "allowed_branches = \n  master\n  feature/11",
         ],
     )
-    def test_read_picks_up_list_values(self, config_factory, branches):
-        config_factory(
+    def test_read_picks_up_list_values(self, setup_factory, branches):
+        setup_factory(
             f"""
 [changelog_gen]
 {branches}
@@ -247,8 +262,8 @@ class TestSetupConfig:
         c = config.read()
         assert c.allowed_branches == ["master", "feature/11"]
 
-    def test_read_picks_up_type_headers(self, config_factory):
-        config_factory(
+    def test_read_picks_up_type_headers(self, setup_factory):
+        setup_factory(
             """
 [changelog_gen]
 type_headers =
@@ -273,8 +288,8 @@ type_headers =
             "test": "Bug fixes",
         }
 
-    def test_read_picks_up_section_mapping(self, config_factory):
-        config_factory(
+    def test_read_picks_up_section_mapping(self, setup_factory):
+        setup_factory(
             """
 [changelog_gen]
 section_mapping =
@@ -295,8 +310,8 @@ section_mapping =
             "test": "Bug fixes",
         }
 
-    def test_read_picks_up_custom_sections(self, config_factory):
-        config_factory(
+    def test_read_picks_up_custom_sections(self, setup_factory):
+        setup_factory(
             """
 [changelog_gen]
 sections =
@@ -338,7 +353,7 @@ class TestPostProcessConfig:
     def test_read_picks_up_no_post_process_config(self, config_factory):
         config_factory(
             """
-[changelog_gen]
+[tool.changelog_gen]
 release = true
         """,
         )
@@ -346,16 +361,15 @@ release = true
         c = config.read()
         assert c.post_process is None
 
-    def test_read_picks_up_post_process_config(self, config_factory):
+    def test_read_picks_up_post_process_config_pyproject(self, config_factory):
         config_factory(
             """
-[changelog_gen]
-post_process =
-    url=https://fake_rest_api/::issue_ref::
-    verb=PUT
-    body={"issue": "::issue_ref::", "comment": "Released in ::version::"}
-    auth_env=MY_API_AUTH
-    headers={"content-type": "application/json"}
+[tool.changelog_gen.post_process]
+url = "https://fake_rest_api/::issue_ref::"
+verb = "PUT"
+body = '{"issue": "::issue_ref::", "comment": "Released in ::version::"}'
+auth_env = "MY_API_AUTH"
+headers."content-type" = "application/json"
 """,
         )
 
@@ -364,28 +378,6 @@ post_process =
             url="https://fake_rest_api/::issue_ref::",
             verb="PUT",
             body='{"issue": "::issue_ref::", "comment": "Released in ::version::"}',
-            auth_env="MY_API_AUTH",
-            headers={"content-type": "application/json"},
-        )
-
-    def test_read_picks_up_post_process_config_pyproject(self, pyproject_factory):
-        pyproject_factory(
-            """
-[tool.changelog_gen.post_process]
-url = "https://fake_rest_api/$ISSUE_REF"
-verb = "PUT"
-body = '{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}'
-auth_env = "MY_API_AUTH"
-[tool.changelog_gen.post_process.headers]
-content-type = "application/json"
-""",
-        )
-
-        c = config.read()
-        assert c.post_process == config.PostProcessConfig(
-            url="https://fake_rest_api/$ISSUE_REF",
-            verb="PUT",
-            body='{"issue": "$ISSUE_REF", "comment": "Released in $VERSION"}',
             auth_env="MY_API_AUTH",
             headers={"content-type": "application/json"},
         )
@@ -393,28 +385,28 @@ content-type = "application/json"
     def test_read_picks_up_unexpected_replaces(self, config_factory):
         config_factory(
             """
-[changelog_gen]
-post_process =
-    url=https://fake_rest_api/::issue_ref::
-    verb=PUT
-    body={"issue": "::issue_ref::", "comment": "Released in ::version::", "other": "::unexpected::"}
-    auth_env=MY_API_AUTH
+[tool.changelog_gen.post_process]
+url = "https://fake_rest_api/::issue_ref::"
+verb = "PUT"
+body = '{"issue": "::issue_ref::", "comment": "Released in ::version::", "other": "::unexpected::"}'
+auth_env = "MY_API_AUTH"
         """,
         )
 
         with pytest.raises(errors.UnsupportedReplaceError):
             config.read()
 
+    @pytest.mark.backwards_compat()
     def test_read_picks_up_post_process_config_backwards_compat(self, config_factory):
         config_factory(
             """
-[changelog_gen]
-post_process =
-    url=https://fake_rest_api/{issue_ref}
-    verb=PUT
-    body={{"issue": "{issue_ref}", "comment": "Released in {new_version}"}}
-    auth_env=MY_API_AUTH
-        """,
+[tool.changelog_gen.post_process]
+url = "https://fake_rest_api/{issue_ref}"
+verb = "PUT"
+body = '{{"issue": "{issue_ref}", "comment": "Released in {new_version}"}}'
+auth_env = "MY_API_AUTH"
+headers = '{"content-type": "application/json"}'
+""",
         )
 
         c = config.read()
@@ -423,14 +415,15 @@ post_process =
             verb="PUT",
             body='{"issue": "::issue_ref::", "comment": "Released in ::version::"}',
             auth_env="MY_API_AUTH",
+            headers={"content-type": "application/json"},
         )
 
     def test_read_picks_up_post_process_override(self, config_factory):
         config_factory(
             """
-[changelog_gen]
-commit=False
-        """,
+[tool.changelog_gen]
+commit = false
+""",
         )
 
         c = config.read(
@@ -445,10 +438,9 @@ commit=False
     def test_read_rejects_unknown_fields(self, config_factory):
         config_factory(
             """
-[changelog_gen]
-post_process =
-    enabled=false
-        """,
+[tool.changelog_gen.post_process]
+enabled = false
+""",
         )
         with pytest.raises(RuntimeError, match="^Failed to create post_process: .*"):
             config.read()
@@ -486,12 +478,8 @@ commit=true
         ("date_format", "%Y-%m-%d"),
     ],
 )
-def test_read_overrides_pyproject(pyproject_factory, key, value):
-    pyproject_factory(
-        """[tool.changelog-gen]
-place = "holder"
-""",
-    )
+def test_read_overrides_pyproject(config_factory, key, value):
+    config_factory("")
 
     c = config.read(**{key: value})
     assert getattr(c, key) == value

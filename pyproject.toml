@@ -44,6 +44,14 @@ commit_link = "https://github.com/EdgyEdgemond/changelog-gen/commit/::commit_has
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--random-order"
+filterwarnings = [
+    "ignore::DeprecationWarning:changelog_gen.cli.command:97",
+    "ignore::DeprecationWarning:changelog_gen.cli.command:98",
+    "ignore::DeprecationWarning:changelog_gen.cli.command:99",
+]
+markers = [
+    "backwards_compat: marks tests as part of backwards compatibility checks.",
+]
 
 [tool.coverage.report]
 sort = "cover"

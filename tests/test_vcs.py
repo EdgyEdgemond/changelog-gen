@@ -200,6 +200,29 @@ Formatted
     ]
 
 
+def test_commit(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world! v3")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("commit log")
+
+    f.write_text("hello world! v4")
+    multiversion_repo.run("git add hello.txt")
+
+    Git.commit("0.0.3")
+
+    assert multiversion_repo.api.head.commit.message == "Update CHANGELOG for 0.0.3\n"
+
+
+@pytest.mark.usefixtures("multiversion_repo")
+def test_commit_no_changes():
+    with pytest.raises(errors.VcsError) as ex:
+        Git.commit("0.0.3")
+
+    assert str(ex.value) == "Unable to commit: On branch master\nnothing to commit, working tree clean"
+
+
 def test_revert(multiversion_repo):
     path = multiversion_repo.workspace
     f = path / "hello.txt"

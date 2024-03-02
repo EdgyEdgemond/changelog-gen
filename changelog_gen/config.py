@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 TYPE_HEADERS = {
     "feat": "Features and Improvements",
     "fix": "Bug fixes",
-    "docs": "Documentation",
     "bug": "Bug fixes",
+    "docs": "Documentation",
     "chore": "Miscellaneous",
     "ci": "Miscellaneous",
     "perf": "Miscellaneous",
@@ -199,11 +199,6 @@ def _process_pyproject(pyproject: Path) -> dict:
 
 
 def _process_setup_cfg(setup: Path) -> dict:
-    warn(
-        "setup.cfg use is deprecated, run `changelog migrate` to generate equivalent toml to paste into pyproject.toml",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     cfg = {}
     parser = ConfigParser("")
 
@@ -233,6 +228,13 @@ def _process_setup_cfg(setup: Path) -> dict:
         value = extract_func(parser, valuename)
         if value:
             cfg[valuename] = value
+
+    if cfg != {}:
+        warn(
+            "setup.cfg use is deprecated, run `changelog migrate` to generate equivalent toml to paste into pyproject.toml",  # noqa: E501
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     return cfg
 
