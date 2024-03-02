@@ -105,11 +105,7 @@ the need to pass them in every time.
 
 Example `pyproject.toml`:
 
-<<<<<<< HEAD
-```tonl
-=======
 ```toml
->>>>>>> @{-1}
 [tool.changelog_gen]
 commit = true
 release = true
