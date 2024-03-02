@@ -519,7 +519,7 @@ Refs: #2
     result = gen_cli_runner.invoke()
 
     assert result.exit_code == 0
-    assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.1.0\n"
+    assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.0.1\n"
 
 
 @pytest.mark.usefixtures("changelog", "_conventional_commits", "setup_prerelease")
