@@ -18,32 +18,58 @@ from changelog_gen import errors
 
 logger = logging.getLogger(__name__)
 
-TYPE_HEADERS = {
-    "feat": "Features and Improvements",
-    "fix": "Bug fixes",
-    "bug": "Bug fixes",
-    "docs": "Documentation",
-    "chore": "Miscellaneous",
-    "ci": "Miscellaneous",
-    "perf": "Miscellaneous",
-    "refactor": "Miscellaneous",
-    "revert": "Miscellaneous",
-    "style": "Miscellaneous",
-    "test": "Miscellaneous",
-}
+@dataclasses.dataclass
+class CommitType:
+    """Represent a supported commit_type."""
+    header: str
+    semver: str = "patch"
 
-SEMVER_MAPPING = {
-    "feat": "minor",
-    "fix": "patch",
-    "bug": "patch",
-    "chore": "patch",
-    "ci": "patch",
-    "docs": "patch",
-    "perf": "patch",
-    "refactor": "patch",
-    "revert": "patch",
-    "style": "patch",
-    "test": "patch",
+
+SUPPORTED_TYPES = {
+    "feat": CommitType(
+        header="Features and Improvements",
+        semver="minor",
+    ),
+    "fix": CommitType(
+        header="Bug fixes",
+        semver="patch",
+    ),
+    "bug": CommitType(
+        header="Bug fixes",
+        semver="patch",
+    ),
+    "docs": CommitType(
+        header="Documentation",
+        semver="patch",
+    ),
+    "chore": CommitType(
+        header="Miscellaneous",
+        semver="patch",
+    ),
+    "ci": CommitType(
+        header="Miscellaneous",
+        semver="patch",
+    ),
+    "perf": CommitType(
+        header="Miscellaneous",
+        semver="patch",
+    ),
+    "refactor": CommitType(
+        header="Miscellaneous",
+        semver="patch",
+    ),
+    "revert": CommitType(
+        header="Miscellaneous",
+        semver="patch",
+    ),
+    "style": CommitType(
+        header="Miscellaneous",
+        semver="patch",
+    ),
+    "test": CommitType(
+        header="Miscellaneous",
+        semver="patch",
+    ),
 }
 
 # Deprecated
@@ -158,8 +184,7 @@ class Config:
     version_string: str = "v{new_version}"
 
     allowed_branches: list[str] = dataclasses.field(default_factory=list)
-    type_headers: dict = dataclasses.field(default_factory=lambda: TYPE_HEADERS)
-    semver_mapping: dict = dataclasses.field(default_factory=lambda: SEMVER_MAPPING)
+    commit_types: dict = dataclasses.field(default_factory=lambda: SUPPORTED_TYPES)
 
     release: bool = False
     commit: bool = False
@@ -167,6 +192,15 @@ class Config:
     reject_empty: bool = False
 
     post_process: PostProcessConfig | None = None
+
+    @classmethod
+    def from_dict(cls: type[Config], data: dict) -> Config:
+        """Convert a dictionary of key value pairs into a Config object."""
+        if "commit_types" in data:
+            for k, v in data["commit_types"].items():
+                value = json.loads(v) if isinstance(v, str) else v
+                data["commit_types"][k] = CommitType(**value)
+        return cls(**data)
 
 
 def _process_overrides(overrides: dict) -> tuple[dict, PostProcessConfig | None]:
@@ -217,9 +251,8 @@ def _process_setup_cfg(setup: Path) -> dict:
         ("date_format", extract_string_value),
         ("version_string", extract_string_value),
         ("allowed_branches", extract_list_value),
-        ("type_headers", extract_dict_value),
+        ("commit_types", extract_dict_value),
         ("sections", extract_dict_value),
-        ("semver_mapping", extract_dict_value),
         ("section_mapping", extract_dict_value),
         ("post_process", extract_dict_value),
         ("release", extract_boolean_value),
@@ -279,20 +312,24 @@ def check_deprecations(cfg: dict) -> None:
 
     if cfg.get("section_mapping") or cfg.get("sections"):
         warn(
-            "`sections` and `section_mapping` are no longer supported, use `type_headers` instead.",
+            "`sections` and `section_mapping` are no longer supported, use `commit_types` instead.",
             FutureWarning,
             stacklevel=2,
         )
 
-    if cfg.get("section_mapping") or cfg.get("sections") and not cfg.get("type_headers"):
+    if cfg.get("section_mapping") or cfg.get("sections") and not cfg.get("commit_types"):
         sm = cfg.pop("section_mapping", DEFAULT_SECTION_MAPPING.copy())
         s = cfg.pop("sections", SUPPORTED_SECTIONS.copy())
 
-        type_headers = s
+        commit_types = {
+            k: {"header": v, "semver": "minor" if k == "feat" else "patch"}
+            for k, v in s.items()
+        }
         for type_, section in sm.items():
-            type_headers[type_] = s.get(section, "Unknown")
+            header = s.get(section, "Unknown")
+            commit_types[type_] = {"header": header, "semver": "minor" if section == "feat" else "patch"}
 
-        cfg["type_headers"] = type_headers
+        cfg["commit_types"] = commit_types
 
 
 def read(**kwargs) -> Config:  # noqa: C901
@@ -356,4 +393,4 @@ def read(**kwargs) -> Config:  # noqa: C901
             msg = f"Failed to create post_process: {e!s}"
             raise RuntimeError(msg) from e
 
-    return Config(**cfg)
+    return Config.from_dict(cfg)
