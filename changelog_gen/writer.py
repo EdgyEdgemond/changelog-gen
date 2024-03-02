@@ -102,10 +102,11 @@ class MdWriter(BaseWriter):
         if issue_ref.startswith("__"):
             line = f"- {description}"
         elif self.issue_link:
-            line = f"- {description} [[#{issue_ref}]({self.issue_link})]"
+            line = f"- {description} [[#::issue_ref::]({self.issue_link})]"
         else:
-            line = f"- {description} [#{issue_ref}]"
-        line = line.format(issue_ref=issue_ref)
+            line = f"- {description} [#::issue_ref::]"
+
+        line = line.replace("::issue_ref::", issue_ref)
 
         self.content.append(line)
 
@@ -144,11 +145,12 @@ class RstWriter(BaseWriter):
         if issue_ref.startswith("__"):
             line = f"* {description}"
         elif self.issue_link:
-            line = f"* {description} [`#{issue_ref}`_]"
-            self._links[f"#{issue_ref}"] = self.issue_link.format(issue_ref=issue_ref)
+            line = f"* {description} [`#::issue_ref::`_]"
+            self._links[f"#{issue_ref}"] = self.issue_link.replace("::issue_ref::", issue_ref)
         else:
-            line = f"* {description} [#{issue_ref}]"
-        line = line.format(issue_ref=issue_ref)
+            line = f"* {description} [#::issue_ref::]"
+
+        line = line.replace("::issue_ref::", issue_ref)
 
         self.content.extend([line, ""])
 

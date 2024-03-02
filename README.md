@@ -97,9 +97,9 @@ release = true
 allow_dirty = false
 
 [changelog_gen.post_process]
-  url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-{issue_ref}/comment
+  url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment
   verb = POST
-  body = {{"body": "Released on v{new_version}"}}
+  body = {"body": "Released on v::version::"}
   auth_env = JIRA_AUTH
 ```
 
@@ -143,14 +143,14 @@ General configuration is grouped in a `[changelog_gen]` section.
   _**[optional]**_<br />
   **default**: None
 
-  Create links in the CHANGELOG to the originating issue. A url that contains an
-  `{issue_ref}` for formatting.
+  Create links in the CHANGELOG to the originating issue. A url that contains
+  an `issue_ref` placeholder for replacement.
 
   Example:
 
 ```toml
 [tool.changelog_gen]
-issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
+issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
 ```
 
 #### `date_format =`
@@ -235,7 +235,7 @@ new = "feat"
   _**[required]**_<br />
   **default**: None<br />
   The url to contact.
-  Can have the variables `{issue_ref}` and `{new_version}`.
+  Can have the placeholders `::issue_ref::` and `::version::``.
 
   `.verb=`<br />
   _**[optional]**_<br />
@@ -244,9 +244,9 @@ new = "feat"
 
   `.body=`<br />
   _**[optional]**_<br />
-  **default**: `{{"body": "Released on v{new_version}"}}`<br />
+  **default**: `{"body": "Released on ::version::"}`<br />
   The text to send to the API.
-  Can have the variables `{issue_ref}` and `{new_version}`.
+  Can have the placeholders `::issue_ref::` and `::version::`.
 
   `.auth_env =`<br />
   _**[optional]**_<br />
@@ -258,9 +258,9 @@ new = "feat"
 
 ```toml
 [tool.changelog_gen.post_process]
-url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-{issue_ref}/comment"
+url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment"
 verb = "POST"
-body = '{{"body": "Released on v{new_version}"}}'
+body = '{"body": "Released on ::version::"}'
 auth_env = "JIRA_AUTH"
 ```
   This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
@@ -268,9 +268,7 @@ auth_env = "JIRA_AUTH"
   [manage-api-tokens-for-your-atlassian-account](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
   to generate a key.
 
-  Note: spaces around `=` will not be stripped, be sure to use `<field>=<value>`.
-
-  Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog generate --post-process-url 'http://my-api-url.domain/comment{issue_ref}' --post-process-auth-env MY_API_AUTH`)
+  Also partially available as `--post-process-url` and `--post-process-auth-env` (e.g. `changelog generate --post-process-url 'http://my-api-url.domain/comment/::issue_ref::' --post-process-auth-env MY_API_AUTH`)
 
 ## Contributing
 
