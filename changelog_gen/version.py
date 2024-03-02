@@ -27,18 +27,18 @@ def parse_bump_my_version_info(semver: str, lines: list[str]) -> tuple[str, str]
     """Parse output from bump-my-version info command."""
     reg = re.compile(rf".*({semver}) [-]+ (.*)")
 
-    current = lines[0].split(" -- ")[0]
+    current = lines[0].split(" -- ")[0].strip()
     for line in lines:
         m = reg.match(line)
         if m:
-            new = m[2]
+            new = m[2].strip()
 
     return current, new
 
 
 def parse_bump2version_info(_semver: str, lines: list[str]) -> tuple[str, str]:
     """Parse output from bump2version info command."""
-    bumpversion_data = {v.split("=")[0]: v.split("=")[1] for v in lines if "_version" in v}
+    bumpversion_data = {v.split("=")[0].strip(): v.split("=")[1].strip() for v in lines if "_version" in v}
 
     return bumpversion_data["current_version"], bumpversion_data["new_version"]
 

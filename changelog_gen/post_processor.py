@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import typing
@@ -24,7 +26,7 @@ class BearerAuth(httpx.Auth):
         yield request
 
 
-def make_client(cfg: "PostProcessConfig") -> httpx.Client:
+def make_client(cfg: PostProcessConfig) -> httpx.Client:
     """Generate HTTPx client with authorization if configured."""
     auth = None
     if cfg.auth_env:
@@ -55,7 +57,7 @@ def make_client(cfg: "PostProcessConfig") -> httpx.Client:
 
 
 def per_issue_post_process(
-    cfg: "PostProcessConfig",
+    cfg: PostProcessConfig,
     issue_refs: list[str],
     version_tag: str,
     *,
