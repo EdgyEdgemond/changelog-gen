@@ -244,6 +244,7 @@ feat = "New Features"
 change = "Changes"
 remove = "Removals"
 fix = "Bugfixes"
+<<<<<<< HEAD
 ```
 
 #### `semver_mapping =`
@@ -265,6 +266,8 @@ fix = "Bugfixes"
 [tool.changelog_gen.sections]
 change = "patch"
 remove = "minor"
+=======
+>>>>>>> @{-1}
 ```
 
 #### `section_mapping =`
@@ -338,8 +341,7 @@ url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/com
 verb = "POST"
 body = '{"body": "Released on ::version::"}'
 auth_env = "JIRA_AUTH"
-[tool.changelog_gen.post_process.headers]
-content-type = "application/json"
+headers."content-type" = "application/json"
 ```
   This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
   See
