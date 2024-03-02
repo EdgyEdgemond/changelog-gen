@@ -105,7 +105,7 @@ the need to pass them in every time.
 
 Example `pyproject.toml`:
 
-```tonl
+```toml
 [tool.changelog_gen]
 commit = true
 release = true
@@ -132,7 +132,7 @@ allow_dirty = false
 
 Example `pyproject.toml`:
 
-```tonl
+```toml
 [tool.changelog_gen]
 commit = true
 release = true
