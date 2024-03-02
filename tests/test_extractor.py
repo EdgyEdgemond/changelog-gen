@@ -1,3 +1,4 @@
+import random
 from unittest import mock
 
 import pytest
@@ -333,3 +334,24 @@ def test_extract_version_tag(sections, semver_mapping, expected_semver, monkeypa
     extractor.extract_version_tag(sections, semver_mapping)
 
     assert extractor.BumpVersion.get_version_info.call_args == mock.call(expected_semver)
+
+
+def test_change_ordering():
+    changes = [
+        Change(issue_ref="23", description="Small change", authors="(edgy, tom)", scope="", breaking=False),
+        Change(issue_ref="24", description="A description", authors="(edgy)", scope="(writer)", breaking=True),
+        Change(issue_ref="25", description="Another change", authors="(tom)", scope="(extractor)", breaking=False),
+        Change(issue_ref="26", description="Bugfix", authors="", scope="(extractor)", breaking=False),
+        Change(issue_ref="27", description="Upgrade python", authors="(tom)", scope="", breaking=True),
+        Change(issue_ref="28", description="Update config", authors="(edgy)", scope="(config)", breaking=False),
+    ]
+    random.shuffle(changes)
+
+    assert sorted(changes) == [
+        Change(issue_ref="24", description="A description", authors="(edgy)", scope="(writer)", breaking=True),
+        Change(issue_ref="27", description="Upgrade python", authors="(tom)", scope="", breaking=True),
+        Change(issue_ref="28", description="Update config", authors="(edgy)", scope="(config)", breaking=False),
+        Change(issue_ref="25", description="Another change", authors="(tom)", scope="(extractor)", breaking=False),
+        Change(issue_ref="26", description="Bugfix", authors="", scope="(extractor)", breaking=False),
+        Change(issue_ref="23", description="Small change", authors="(edgy, tom)", scope="", breaking=False),
+    ]

@@ -54,11 +54,11 @@ class BaseWriter:
     def add_section(self: typing.Self, header: str, lines: dict[str, dict]) -> None:
         """Add a section to changelog file."""
         self._add_section_header(header)
-        # TODO(edgy): sort based on change attributes
-        # https://github.com/EdgyEdgemond/changelog-gen/issues/75
-        for _, change in sorted(lines.items()):
-            description = f"{change.scope} {change.description}" if change.scope else change.description
-            description = f"**Breaking:** {description}" if change.breaking else description
+        for change in sorted(lines.values()):
+            description = (
+                f"{self.italic_string(change.scope)} {change.description}" if change.scope else change.description
+            )
+            description = f"{self.bold_string('Breaking:')} {description}" if change.breaking else description
             description = f"{description} {change.authors}" if change.authors else description
 
             self._add_section_line(
@@ -66,6 +66,14 @@ class BaseWriter:
                 change.issue_ref,
             )
         self._post_section()
+
+    def bold_string(self: typing.Self, string: str) -> str:
+        """Render a string as bold."""
+        return f"**{string}**"
+
+    def italic_string(self: typing.Self, string: str) -> str:
+        """Render a string as italic."""
+        return f"*{string}*"
 
     def _add_section_header(self: typing.Self, header: str) -> None:
         raise NotImplementedError

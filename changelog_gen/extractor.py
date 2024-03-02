@@ -20,6 +20,11 @@ class Change:  # noqa: D101
     scope: str = ""
     breaking: bool = False
 
+    def __lt__(self: typing.Self, other: Change) -> bool:  # noqa: D105
+        s = (not self.breaking, self.scope if self.scope else "zzz", self.issue_ref)
+        o = (not other.breaking, other.scope if other.scope else "zzz", other.issue_ref)
+        return s < o
+
 
 SectionDict = dict[str, dict[str, Change]]
 

@@ -130,8 +130,30 @@ class TestBaseWriter:
         assert w._add_section_header.call_args == mock.call("header")
         assert w._add_section_line.call_args_list == [
             mock.call("**Breaking:** line1", "1"),
+            mock.call("*(config)* line3", "3"),
             mock.call("line2 (a, b)", "2"),
-            mock.call("(config) line3", "3"),
+        ]
+
+    def test_add_section_sorting(self, monkeypatch, changelog):
+        monkeypatch.setattr(writer.BaseWriter, "_add_section_header", mock.Mock())
+        monkeypatch.setattr(writer.BaseWriter, "_add_section_line", mock.Mock())
+
+        w = writer.BaseWriter(changelog)
+
+        w.add_section(
+            "header",
+            {
+                "3": Change("3", "line3", breaking=True),
+                "2": Change("2", "line2", authors="(a, b)"),
+                "1": Change("1", "line1", scope="(config)"),
+            },
+        )
+
+        assert w._add_section_header.call_args == mock.call("header")
+        assert w._add_section_line.call_args_list == [
+            mock.call("**Breaking:** line3", "3"),
+            mock.call("*(config)* line1", "1"),
+            mock.call("line2 (a, b)", "2"),
         ]
 
 
@@ -258,9 +280,9 @@ class TestMdWriter:
 
 ### header
 
+- *(config)* line3 [#3]
 - line1 [#1]
 - line2 [#2]
-- (config) line3 [#3]
 """
         )
 
@@ -299,9 +321,9 @@ class TestMdWriter:
 
 ### header
 
+- *(config)* line6 [#6]
 - line4 [#4]
 - line5 [#5]
-- (config) line6 [#6]
 
 ## 0.0.1
 
@@ -436,11 +458,11 @@ header
 header
 ------
 
+* *(config)* line3 [`#3`_]
+
 * line1 [`#1`_]
 
 * line2 [`#2`_]
-
-* (config) line3 [`#3`_]
 
 .. _`#1`: http://url/issues/1
 .. _`#2`: http://url/issues/2
@@ -494,11 +516,11 @@ Changelog
 header
 ------
 
+* *(config)* line3 [#3]
+
 * line1 [#1]
 
 * line2 [#2]
-
-* (config) line3 [#3]
 """
         )
 
@@ -547,11 +569,11 @@ Changelog
 header
 ------
 
+* *(config)* line6 [`#6`_]
+
 * line4 [`#4`_]
 
 * line5 [`#5`_]
-
-* (config) line6 [`#6`_]
 
 0.0.1
 =====
