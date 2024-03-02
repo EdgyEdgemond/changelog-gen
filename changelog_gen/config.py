@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import json
 import logging
 import re
 from configparser import (
@@ -38,18 +39,83 @@ DEFAULT_SECTION_MAPPING = {
 }
 
 
+def extract_dict_value(parser: ConfigParser, dictvaluename: str) -> dict | None:
+    """Extract a dictionary from configuration."""
+    try:
+        value = parser.get("changelog_gen", dictvaluename)
+    except NoOptionError:
+        return None
+
+    return parse_dict_value(value)
+
+
+def parse_dict_value(value: str) -> dict:
+    """Process a dict from a configuration string."""
+    ret = {}
+    dictvalue = list(
+        filter(None, (x.strip() for x in value.splitlines())),
+    )
+
+    for value in dictvalue:
+        k, v = value.split("=")
+        ret[k.strip()] = v.strip()
+
+    return ret
+
+
+def extract_list_value(parser: ConfigParser, listvaluename: str) -> list | None:
+    """Extract a dictionary from configuration."""
+    try:
+        value = parser.get("changelog_gen", listvaluename)
+    except NoOptionError:
+        return None
+    else:
+        ret = []
+        listvalue = list(
+            filter(None, (x.strip() for x in value.splitlines())),
+        )
+
+        for value in listvalue:
+            ret.extend([v.strip() for v in value.split(",")])
+
+        return ret
+
+
+def extract_boolean_value(parser: ConfigParser, valuename: str) -> bool | None:
+    """Extract a boolean from configuration."""
+    with contextlib.suppress(NoOptionError):
+        return parser.getboolean("changelog_gen", valuename)
+    return None
+
+
+def extract_string_value(parser: ConfigParser, valuename: str) -> str | None:
+    """Extract a string from configuration."""
+    with contextlib.suppress(NoOptionError):
+        return parser.get("changelog_gen", valuename)
+    return None
+
+
 @dataclasses.dataclass
 class PostProcessConfig:
     """Post Processor configuration options."""
 
-    url: str = ""
+    url: str | None = None
     verb: str = "POST"
     # The body to send as a post-processing command,
     # can have the entries: ::issue_ref::, ::version::
     body: str = '{"body": "Released on ::version::"}'
+    auth_type: str = "basic"  # future proof config
+    headers: dict | None = None
     # Name of an environment variable to use as HTTP Basic Auth parameters.
     # The variable should contain "{user}:{api_key}"
     auth_env: str | None = None
+
+    @classmethod
+    def from_dict(cls: type[PostProcessConfig], data: dict) -> PostProcessConfig:
+        """Convert a dictionary of key value pairs into a PostProcessConfig object."""
+        if "headers" in data and isinstance(data["headers"], str):
+            data["headers"] = json.loads(data["headers"])
+        return cls(**data)
 
 
 @dataclasses.dataclass
@@ -70,57 +136,6 @@ class Config:
     reject_empty: bool = False
 
     post_process: PostProcessConfig | None = None
-
-
-def parse_dict_value(parser: ConfigParser, dictvaluename: str) -> dict | None:
-    """Extract a dictionary from configuration."""
-    try:
-        value = parser.get("changelog_gen", dictvaluename)
-    except NoOptionError:
-        return None
-    else:
-        ret = {}
-        dictvalue = list(
-            filter(None, (x.strip() for x in value.splitlines())),
-        )
-
-        for value in dictvalue:
-            k, v = value.split("=")
-            ret[k.strip()] = v.strip()
-
-        return ret
-
-
-def parse_list_value(parser: ConfigParser, listvaluename: str) -> list | None:
-    """Extract a dictionary from configuration."""
-    try:
-        value = parser.get("changelog_gen", listvaluename)
-    except NoOptionError:
-        return None
-    else:
-        ret = []
-        listvalue = list(
-            filter(None, (x.strip() for x in value.splitlines())),
-        )
-
-        for value in listvalue:
-            ret.extend([v.strip() for v in value.split(",")])
-
-        return ret
-
-
-def parse_boolean_value(parser: ConfigParser, valuename: str) -> bool | None:
-    """Extract a boolean from configuration."""
-    with contextlib.suppress(NoOptionError):
-        return parser.getboolean("changelog_gen", valuename)
-    return None
-
-
-def parse_string_value(parser: ConfigParser, valuename: str) -> str | None:
-    """Extract a string from configuration."""
-    with contextlib.suppress(NoOptionError):
-        return parser.get("changelog_gen", valuename)
-    return None
 
 
 def _process_overrides(overrides: dict) -> tuple[dict, PostProcessConfig | None]:
@@ -151,6 +166,9 @@ def _process_pyproject(pyproject: Path) -> dict:
         if "tool" not in data or "changelog_gen" not in data["tool"]:
             return cfg
 
+        if "post_process" in data["tool"]["changelog_gen"]:
+            pp = data["tool"]["changelog_gen"]["post_process"]
+            data["tool"]["changelog_gen"]["post_process"] = PostProcessConfig.from_dict(pp)
         return data["tool"]["changelog_gen"]
 
 
@@ -165,30 +183,30 @@ def _process_setup_cfg(setup: Path) -> dict:
 
     parser.read_string(config_content)
 
-    for valuename, parse_func in [
-        ("issue_link", parse_string_value),
-        ("date_format", parse_string_value),
-        ("version_string", parse_string_value),
-        ("allowed_branches", parse_list_value),
-        ("section_mapping", parse_dict_value),
-        ("sections", parse_dict_value),
-        ("release", parse_boolean_value),
-        ("commit", parse_boolean_value),
-        ("allow_dirty", parse_boolean_value),
-        ("reject_empty", parse_boolean_value),
+    for valuename, extract_func in [
+        ("issue_link", extract_string_value),
+        ("date_format", extract_string_value),
+        ("version_string", extract_string_value),
+        ("allowed_branches", extract_list_value),
+        ("section_mapping", extract_dict_value),
+        ("sections", extract_dict_value),
+        ("release", extract_boolean_value),
+        ("commit", extract_boolean_value),
+        ("allow_dirty", extract_boolean_value),
+        ("reject_empty", extract_boolean_value),
     ]:
-        value = parse_func(parser, valuename)
+        value = extract_func(parser, valuename)
         if value:
             cfg[valuename] = value
 
     for objectname, object_class in [
         ("post_process", PostProcessConfig),
     ]:
-        dictvalue = parse_dict_value(parser, objectname)
+        dictvalue = extract_dict_value(parser, objectname)
         if dictvalue is None:
             continue
         try:
-            cfg[objectname] = object_class(**dictvalue)
+            cfg[objectname] = object_class.from_dict(dictvalue)
         except Exception as e:  # noqa: BLE001
             msg = f"Failed to create {objectname}: {e!s}"
             raise RuntimeError(msg) from e

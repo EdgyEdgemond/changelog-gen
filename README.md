@@ -297,6 +297,12 @@ new = "feat"
   The text to send to the API.
   Can have the placeholders `::issue_ref::` and `::version::`.
 
+  `.headers =`<br />
+  _**[optional]**_<br />
+  **default**: None<br />
+  Headers dictionary to inject into http requests.
+  If using setup.cfg, provide a json string representation of the headers.
+
   `.auth_env =`<br />
   _**[optional]**_<br />
   **default**: None<br />
@@ -311,6 +317,7 @@ url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/com
 verb = "POST"
 body = '{"body": "Released on ::version::"}'
 auth_env = "JIRA_AUTH"
+headers."content-type" = "application/json"
 ```
   This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
   See
