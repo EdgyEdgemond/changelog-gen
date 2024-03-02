@@ -334,27 +334,6 @@ remove.semver = "minor"
 fix.header = "Bugfixes"
 ```
 
-#### `semver_mapping =`
-  _**[optional]**_<br />
-  **default**: { <br />
-      "feat": "minor" <br />
-      "fix": "patch", <br />
-      "docs": "patch" <br />
-      "misc": "patch" <br />
-  }
-
-  Define custom type mappings for semver tagging. Any custom types need
-  to be mapped to `major`, `minor`, `patch`. Any unknown types will be
-  treated as a `patch`.
-
-  Example:
-
-```toml
-[tool.changelog_gen.semver_mapping]
-change = "patch"
-remove = "minor"
-```
-
 #### `sections =`
   _**[Deprecated]**_<br />
   _**[optional]**_<br />
@@ -458,7 +437,7 @@ new = "feat"
 
 ```toml
 [tool.changelog_gen.post_process]
-url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment"
+url = "https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment"
 verb = "POST"
 body = '{"body": "Released on ::version::"}'
 auth_env = "JIRA_AUTH"
