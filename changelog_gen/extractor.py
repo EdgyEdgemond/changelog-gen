@@ -197,7 +197,7 @@ def extract_version_tag(sections: SectionDict, cfg: config.Config, bv: BumpVersi
 
     """
     logger.warning("Detecting semver from changes.")
-    semver_mapping = cfg.semver_mapping
+    semver_mapping = cfg.semver_mappings
     version_info_ = bv.get_version_info("patch")
     current = version_info_["current"]
 

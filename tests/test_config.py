@@ -113,29 +113,47 @@ allowed_branches = [
         c = config.read()
         assert c.allowed_branches == ["master", "feature/11"]
 
-    def test_read_picks_up_type_headers(self, config_factory):
+    def test_read_picks_up_commit_types(self, config_factory):
         config_factory(
             """
-[tool.changelog_gen.type_headers]
-bug = "Bug fixes"
-docs = "Documentation"
-feat = "Features and Improvements"
-feature = "Features and Improvements"
-fix = "Bug fixes"
-misc = "Miscellaneous"
-test = "Bug fixes"
+[tool.changelog_gen.commit_types]
+bug.header = "Bug fixes"
+docs.header = "Documentation"
+feat.header = "Features and Improvements"
+feat.semver = "minor"
+feature.header = "Features and Improvements"
+feature.semver = "minor"
+fix.header = "Bug fixes"
+misc.header = "Miscellaneous"
+test.header = "Bug fixes"
 """,
         )
 
         c = config.read()
-        assert c.type_headers == {
-            "bug": "Bug fixes",
-            "docs": "Documentation",
-            "feat": "Features and Improvements",
-            "feature": "Features and Improvements",
-            "fix": "Bug fixes",
-            "misc": "Miscellaneous",
-            "test": "Bug fixes",
+        assert c.commit_types == {
+            "bug": config.CommitType(
+                header="Bug fixes",
+            ),
+            "docs": config.CommitType(
+                header="Documentation",
+            ),
+            "feat": config.CommitType(
+                header="Features and Improvements",
+                semver="minor",
+            ),
+            "feature": config.CommitType(
+                header="Features and Improvements",
+                semver="minor",
+            ),
+            "fix": config.CommitType(
+                header="Bug fixes",
+            ),
+            "misc": config.CommitType(
+                header="Miscellaneous",
+            ),
+            "test": config.CommitType(
+                header="Bug fixes",
+            ),
         }
 
     @pytest.mark.backwards_compat()
@@ -150,14 +168,30 @@ test = "fix"
         )
 
         c = config.read()
-        assert c.type_headers == {
-            "bug": "Bug fixes",
-            "docs": "Documentation",
-            "feat": "Features and Improvements",
-            "feature": "Features and Improvements",
-            "fix": "Bug fixes",
-            "misc": "Miscellaneous",
-            "test": "Bug fixes",
+        assert c.commit_types == {
+            "bug": config.CommitType(
+                header="Bug fixes",
+            ),
+            "docs": config.CommitType(
+                header="Documentation",
+            ),
+            "feat": config.CommitType(
+                header="Features and Improvements",
+                semver="minor",
+            ),
+            "feature": config.CommitType(
+                header="Features and Improvements",
+                semver="minor",
+            ),
+            "fix": config.CommitType(
+                header="Bug fixes",
+            ),
+            "misc": config.CommitType(
+                header="Miscellaneous",
+            ),
+            "test": config.CommitType(
+                header="Bug fixes",
+            ),
         }
 
     @pytest.mark.backwards_compat()
@@ -184,18 +218,41 @@ test = "misc"
         )
 
         c = config.read()
-        assert c.type_headers == {
-            "bug": "Bugfixes",
-            "feat": "New Features",
-            "remove": "Chore",
-            "ci": "Chore",
-            "chore": "Unknown",
-            "docs": "Unknown",
-            "perf": "Unknown",
-            "refactor": "Unknown",
-            "revert": "Unknown",
-            "style": "Unknown",
-            "test": "Unknown",
+        assert c.commit_types == {
+            "bug": config.CommitType(
+                header="Bugfixes",
+            ),
+            "feat": config.CommitType(
+                header="New Features",
+                semver="minor",
+            ),
+            "remove": config.CommitType(
+                header="Chore",
+            ),
+            "ci": config.CommitType(
+                header="Chore",
+            ),
+            "chore": config.CommitType(
+                header="Unknown",
+            ),
+            "docs": config.CommitType(
+                header="Unknown",
+            ),
+            "perf": config.CommitType(
+                header="Unknown",
+            ),
+            "refactor": config.CommitType(
+                header="Unknown",
+            ),
+            "revert": config.CommitType(
+                header="Unknown",
+            ),
+            "style": config.CommitType(
+                header="Unknown",
+            ),
+            "test": config.CommitType(
+                header="Unknown",
+            ),
         }
 
 
@@ -262,30 +319,46 @@ class TestSetupConfig:
         c = config.read()
         assert c.allowed_branches == ["master", "feature/11"]
 
-    def test_read_picks_up_type_headers(self, setup_factory):
+    def test_read_picks_up_commit_types(self, setup_factory):
         setup_factory(
             """
 [changelog_gen]
-type_headers =
-  bug = Bug fixes
-  docs = Documentation
-  feat = Features and Improvements
-  feature = Features and Improvements
-  fix = Bug fixes
-  misc = Miscellaneous
-  test = Bug fixes
+commit_types =
+  bug = {"header": "Bug fixes"}
+  docs = {"header": "Documentation"}
+  feat = {"header": "Features and Improvements", "semver": "minor"}
+  feature = {"header": "Features and Improvements", "semver": "minor"}
+  fix = {"header": "Bug fixes"}
+  misc = {"header": "Miscellaneous"}
+  test = {"header": "Bug fixes"}
 """,
         )
 
         c = config.read()
-        assert c.type_headers == {
-            "bug": "Bug fixes",
-            "docs": "Documentation",
-            "feat": "Features and Improvements",
-            "feature": "Features and Improvements",
-            "fix": "Bug fixes",
-            "misc": "Miscellaneous",
-            "test": "Bug fixes",
+        assert c.commit_types == {
+            "bug": config.CommitType(
+                header="Bug fixes",
+            ),
+            "docs": config.CommitType(
+                header="Documentation",
+            ),
+            "feat": config.CommitType(
+                header="Features and Improvements",
+                semver="minor",
+            ),
+            "feature": config.CommitType(
+                header="Features and Improvements",
+                semver="minor",
+            ),
+            "fix": config.CommitType(
+                header="Bug fixes",
+            ),
+            "misc": config.CommitType(
+                header="Miscellaneous",
+            ),
+            "test": config.CommitType(
+                header="Bug fixes",
+            ),
         }
 
     def test_read_picks_up_section_mapping(self, setup_factory):
@@ -300,14 +373,30 @@ section_mapping =
         )
 
         c = config.read()
-        assert c.type_headers == {
-            "bug": "Bug fixes",
-            "docs": "Documentation",
-            "feat": "Features and Improvements",
-            "feature": "Features and Improvements",
-            "fix": "Bug fixes",
-            "misc": "Miscellaneous",
-            "test": "Bug fixes",
+        assert c.commit_types == {
+            "bug": config.CommitType(
+                header="Bug fixes",
+            ),
+            "docs": config.CommitType(
+                header="Documentation",
+            ),
+            "feat": config.CommitType(
+                header="Features and Improvements",
+                semver="minor",
+            ),
+            "feature": config.CommitType(
+                header="Features and Improvements",
+                semver="minor",
+            ),
+            "fix": config.CommitType(
+                header="Bug fixes",
+            ),
+            "misc": config.CommitType(
+                header="Miscellaneous",
+            ),
+            "test": config.CommitType(
+                header="Bug fixes",
+            ),
         }
 
     def test_read_picks_up_custom_sections(self, setup_factory):
@@ -334,18 +423,41 @@ section_mapping =
         )
 
         c = config.read()
-        assert c.type_headers == {
-            "bug": "Bugfixes",
-            "feat": "New Features",
-            "remove": "Chore",
-            "ci": "Chore",
-            "chore": "Unknown",
-            "docs": "Unknown",
-            "perf": "Unknown",
-            "refactor": "Unknown",
-            "revert": "Unknown",
-            "style": "Unknown",
-            "test": "Unknown",
+        assert c.commit_types == {
+            "bug": config.CommitType(
+                header="Bugfixes",
+            ),
+            "feat": config.CommitType(
+                header="New Features",
+                semver="minor",
+            ),
+            "remove": config.CommitType(
+                header="Chore",
+            ),
+            "ci": config.CommitType(
+                header="Chore",
+            ),
+            "chore": config.CommitType(
+                header="Unknown",
+            ),
+            "docs": config.CommitType(
+                header="Unknown",
+            ),
+            "perf": config.CommitType(
+                header="Unknown",
+            ),
+            "refactor": config.CommitType(
+                header="Unknown",
+            ),
+            "revert": config.CommitType(
+                header="Unknown",
+            ),
+            "style": config.CommitType(
+                header="Unknown",
+            ),
+            "test": config.CommitType(
+                header="Unknown",
+            ),
         }
 
 

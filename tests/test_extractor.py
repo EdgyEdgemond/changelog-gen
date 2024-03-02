@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from changelog_gen import extractor
-from changelog_gen.config import Config
+from changelog_gen.config import CommitType, Config
 from changelog_gen.extractor import Change, ReleaseNoteExtractor
 from changelog_gen.vcs import Git
 
@@ -198,7 +198,13 @@ Refs: #2
         multiversion_repo.api.index.commit(msg)
         hashes.append(str(multiversion_repo.api.head.commit))
 
-    cfg = Config(type_headers={"custom": "Bug fixes", "feat": "Features and Improvements", "bug": "Bug fixes"})
+    cfg = Config(
+        commit_types={
+            "custom": CommitType("Bug fixes"),
+            "feat": CommitType("Features and Improvements"),
+            "bug": CommitType("Bug fixes"),
+        },
+    )
     git = Git()
 
     e = ReleaseNoteExtractor(cfg, git)
@@ -264,7 +270,7 @@ Refs: #1
 @pytest.mark.backwards_compat()
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_invalid_notes_skipped():
-    cfg = Config(type_headers={"fix": "Fix"})
+    cfg = Config(commit_types={"fix": CommitType("Fix")})
     git = Git()
 
     e = ReleaseNoteExtractor(cfg, git)
@@ -280,7 +286,7 @@ def test_invalid_notes_skipped():
 
 
 def test_unique_issues():
-    cfg = Config(type_headers={"bug": "BugFix", "feat": "Features"})
+    cfg = Config(commit_types={"bug": CommitType("BugFix"), "feat": CommitType("Features")})
     git = mock.Mock()
 
     e = ReleaseNoteExtractor(cfg, git)
@@ -338,21 +344,25 @@ def test_clean_removes_all_non_dotfiles(release_notes):
 
 
 @pytest.mark.parametrize(
-    ("sections", "semver_mapping", "expected_semver"),
+    ("sections", "commit_types", "expected_semver"),
     [
-        ({"header": {"1": Change("1", "desc", "fix")}}, {"feat": "minor"}, "patch"),
-        ({"header": {"1": Change("1", "desc", "feat")}}, {"feat": "minor"}, "patch"),
-        ({"header": {"1": Change("1", "desc", "fix", breaking=True)}}, {"feat": "minor"}, "minor"),
-        ({"header": {"1": Change("1", "desc", "feat", breaking=True)}}, {"feat": "minor"}, "minor"),
-        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": "patch"}, "patch"),
-        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": "minor"}, "patch"),
-        ({"header": {"1": Change("1", "desc", "custom", breaking=True)}}, {"custom": "minor"}, "minor"),
+        ({"header": {"1": Change("1", "desc", "fix")}}, {"feat": CommitType("h", "minor")}, "patch"),
+        ({"header": {"1": Change("1", "desc", "feat")}}, {"feat": CommitType("h", "minor")}, "patch"),
+        ({"header": {"1": Change("1", "desc", "fix", breaking=True)}}, {"feat": CommitType("h", "minor")}, "minor"),
+        ({"header": {"1": Change("1", "desc", "feat", breaking=True)}}, {"feat": CommitType("h", "minor")}, "minor"),
+        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": CommitType("h", "patch")}, "patch"),
+        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": CommitType("h", "minor")}, "patch"),
+        (
+            {"header": {"1": Change("1", "desc", "custom", breaking=True)}},
+            {"custom": CommitType("h", "minor")},
+            "minor",
+        ),
     ],
 )
-def test_extract_version_tag_version_zero(sections, semver_mapping, expected_semver):
+def test_extract_version_tag_version_zero(sections, commit_types, expected_semver):
     bv = mock.Mock()
     bv.get_version_info = mock.Mock(return_value={"new": "0.0.0", "current": "0.0.0"})
-    cfg = Config(semver_mapping=semver_mapping)
+    cfg = Config(commit_types=commit_types)
 
     extractor.extract_version_tag(sections, cfg, bv)
 
@@ -360,21 +370,25 @@ def test_extract_version_tag_version_zero(sections, semver_mapping, expected_sem
 
 
 @pytest.mark.parametrize(
-    ("sections", "semver_mapping", "expected_semver"),
+    ("sections", "commit_types", "expected_semver"),
     [
-        ({"header": {"1": Change("1", "desc", "fix")}}, {"feat": "minor"}, "patch"),
-        ({"header": {"1": Change("1", "desc", "feat")}}, {"feat": "minor"}, "minor"),
-        ({"header": {"1": Change("1", "desc", "fix", breaking=True)}}, {"feat": "minor"}, "major"),
-        ({"header": {"1": Change("1", "desc", "feat", breaking=True)}}, {"feat": "minor"}, "major"),
-        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": "patch"}, "patch"),
-        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": "minor"}, "minor"),
-        ({"header": {"1": Change("1", "desc", "custom", breaking=True)}}, {"custom": "minor"}, "major"),
+        ({"header": {"1": Change("1", "desc", "fix")}}, {"feat": CommitType("h", "minor")}, "patch"),
+        ({"header": {"1": Change("1", "desc", "feat")}}, {"feat": CommitType("h", "minor")}, "minor"),
+        ({"header": {"1": Change("1", "desc", "fix", breaking=True)}}, {"feat": CommitType("h", "minor")}, "major"),
+        ({"header": {"1": Change("1", "desc", "feat", breaking=True)}}, {"feat": CommitType("h", "minor")}, "major"),
+        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": CommitType("h", "patch")}, "patch"),
+        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": CommitType("h", "minor")}, "minor"),
+        (
+            {"header": {"1": Change("1", "desc", "custom", breaking=True)}},
+            {"custom": CommitType("h", "minor")},
+            "major",
+        ),
     ],
 )
-def test_extract_version_tag(sections, semver_mapping, expected_semver):
+def test_extract_version_tag(sections, commit_types, expected_semver):
     bv = mock.Mock()
     bv.get_version_info = mock.Mock(return_value={"new": "1.0.0", "current": "1.0.0"})
-    cfg = Config(semver_mapping=semver_mapping)
+    cfg = Config(commit_types=commit_types)
 
     extractor.extract_version_tag(sections, cfg, bv)
 

@@ -83,18 +83,45 @@ auth_env = "AUTH_KEY"
 
 [tool.changelog_gen.post_process.headers]
 content-type = "application/json"
+[tool.changelog_gen.commit_types.feat]
+header = "Features and Improvements"
+semver = "minor"
 
-[tool.changelog_gen.type_headers]
-feat = "Features and Improvements"
-fix = "Bug fixes"
-docs = "Documentation"
-misc = "Miscellaneous"
-bug = "Bug fixes"
-ci = "Miscellaneous"
-refactor = "Miscellaneous"
-revert = "Miscellaneous"
-style = "Miscellaneous"
-test = "Miscellaneous"
+[tool.changelog_gen.commit_types.fix]
+header = "Bug fixes"
+semver = "patch"
+
+[tool.changelog_gen.commit_types.docs]
+header = "Documentation"
+semver = "patch"
+
+[tool.changelog_gen.commit_types.misc]
+header = "Miscellaneous"
+semver = "patch"
+
+[tool.changelog_gen.commit_types.bug]
+header = "Bug fixes"
+semver = "patch"
+
+[tool.changelog_gen.commit_types.ci]
+header = "Miscellaneous"
+semver = "patch"
+
+[tool.changelog_gen.commit_types.refactor]
+header = "Miscellaneous"
+semver = "patch"
+
+[tool.changelog_gen.commit_types.revert]
+header = "Miscellaneous"
+semver = "patch"
+
+[tool.changelog_gen.commit_types.style]
+header = "Miscellaneous"
+semver = "patch"
+
+[tool.changelog_gen.commit_types.test]
+header = "Miscellaneous"
+semver = "patch"
 
 """
     )
