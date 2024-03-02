@@ -54,7 +54,7 @@ class ReleaseNoteExtractor:
     ) -> None:
         warn(
             "`release_notes` support will be dropped in a future version, please migrate to conventional commits.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         logger.warning("Extracting release note changes.")

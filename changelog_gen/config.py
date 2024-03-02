@@ -234,7 +234,7 @@ def _process_setup_cfg(setup: Path) -> dict:
     if cfg != {}:
         warn(
             "setup.cfg use is deprecated, run `changelog migrate` to generate equivalent toml to paste into pyproject.toml",  # noqa: E501
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
 
@@ -249,14 +249,14 @@ def check_deprecations(cfg: dict) -> None:
         if "{issue_ref}" in url or "{new_version}" in url:
             warn(
                 "{replace} format strings are not supported in `post_process.url` configuration, use ::replace:: instead.",  # noqa: E501
-                DeprecationWarning,
+                FutureWarning,
                 stacklevel=2,
             )
             cfg["post_process"]["url"] = url.format(issue_ref="::issue_ref::", new_version="::version::")
         if "{issue_ref}" in body or "{new_version}" in body:
             warn(
                 "{replace} format strings are not supported in `post_process.body` configuration, use ::replace:: instead.",  # noqa: E501
-                DeprecationWarning,
+                FutureWarning,
                 stacklevel=2,
             )
             cfg["post_process"]["body"] = body.format(issue_ref="::issue_ref::", new_version="::version::")
@@ -264,7 +264,7 @@ def check_deprecations(cfg: dict) -> None:
     if cfg.get("issue_link") and "{issue_ref}" in cfg["issue_link"]:
         warn(
             "{replace} format strings are not supported in `issue_link` configuration, use ::replace:: instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         cfg["issue_link"] = cfg["issue_link"].format(issue_ref="::issue_ref::", new_version="::version::")
@@ -272,7 +272,7 @@ def check_deprecations(cfg: dict) -> None:
     if cfg.get("commit_link") and "{commit_hash}" in cfg["commit_link"]:
         warn(
             "{replace} format strings are not supported in `commit_link` configuration, use ::replace:: instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         cfg["commit_link"] = cfg["commit_link"].format(commit_hash="::commit_hash::")
@@ -280,7 +280,7 @@ def check_deprecations(cfg: dict) -> None:
     if cfg.get("section_mapping") or cfg.get("sections"):
         warn(
             "`sections` and `section_mapping` are no longer supported, use `type_headers` instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
 

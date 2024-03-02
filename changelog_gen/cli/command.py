@@ -111,7 +111,7 @@ def init(
     if ctx.command.name == "changelog-init":
         warn(
             "`changelog-init` has been deprecated, please use `changelog init`",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
     setup_logging(verbose)
@@ -180,7 +180,7 @@ def gen(  # noqa: PLR0913
     if ctx.command.name == "changelog-gen":
         warn(
             "`changelog-gen` has been deprecated, please use `changelog generate`",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
     setup_logging(verbose)
