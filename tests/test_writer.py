@@ -245,14 +245,14 @@ class TestMdWriter:
         assert w.content == ["- line"]
 
     def test_add_section_line_with_commit_link(self, changelog_md):
-        w = writer.MdWriter(changelog_md, commit_link="http://url/commit/$COMMIT_HASH")
+        w = writer.MdWriter(changelog_md, commit_link="http://url/commit/::commit_hash::")
 
         w._add_section_line("line", Change("__1__", "line", short_hash="1234567", commit_hash="commit-hash"))
 
         assert w.content == ["- line [[1234567](http://url/commit/commit-hash)]"]
 
     def test_add_section_line_with_commit_link_ignores_null_commit_hash(self, changelog_md):
-        w = writer.MdWriter(changelog_md, commit_link="http://url/commit/$COMMIT_HASH")
+        w = writer.MdWriter(changelog_md, commit_link="http://url/commit/::commit_hash::")
 
         w._add_section_line("line", Change("__1__", "line"))
 
@@ -452,7 +452,7 @@ header
         assert w.links == []
 
     def test_add_section_line_with_commit_link(self, changelog_rst):
-        w = writer.RstWriter(changelog_rst, commit_link="http://url/commit/$COMMIT_HASH")
+        w = writer.RstWriter(changelog_rst, commit_link="http://url/commit/::commit_hash::")
 
         w._add_section_line("line", Change("__1__", "line", short_hash="1234567", commit_hash="commit-hash"))
 
@@ -461,7 +461,7 @@ header
         assert w.links == [".. _`1234567`: http://url/commit/commit-hash"]
 
     def test_add_section_line_with_commit_link_ignores_null_commit_hash(self, changelog_rst):
-        w = writer.RstWriter(changelog_rst, commit_link="http://url/commit/$COMMIT_HASH")
+        w = writer.RstWriter(changelog_rst, commit_link="http://url/commit/::commit_hash::")
 
         w._add_section_line("line", Change("__1__", "line"))
 
