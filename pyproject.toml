@@ -38,12 +38,6 @@ allowed_branches = [
 ]
 issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
 
-[tool.changelog_gen.sesion_mapping]
-feature = "feat"
-test = "fix"
-docs = "fix"
-bug = "fix"
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--random-order"

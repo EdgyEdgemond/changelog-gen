@@ -55,7 +55,7 @@ class ReleaseNoteExtractor:
 
         # Build a conventional commit regex based on configured sections
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
-        types = "|".join(self.supported_sections.keys())
+        types = "|".join(set(list(self.supported_sections.keys()) + list(section_mapping.keys())))
         reg = re.compile(rf"^({types}){{1}}(\([\w\-\.]+\))?(!)?: ([\w .]+)+([\s\S]*)")
 
         for i, log in enumerate(logs):
@@ -75,6 +75,7 @@ class ReleaseNoteExtractor:
                     if m:
                         issue_ref = m[1]
 
+                section = section_mapping.get(section, section)
                 sections[section][issue_ref] = {
                     "description": message,
                     "breaking": breaking,
@@ -96,7 +97,7 @@ class ReleaseNoteExtractor:
         On dry_run, leave files where they are as they haven't been written to
         a changelog.
         """
-        if not self.dry_run:
+        if not self.dry_run and self.release_notes.exists():
             for x in self.release_notes.iterdir():
                 if x.is_file and not x.name.startswith("."):
                     x.unlink()

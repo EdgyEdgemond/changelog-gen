@@ -28,8 +28,31 @@ poetry install
 Commits](https://www.conventionalcommits.org/en/v1.0.0/), as well as reading
 changes from a `release_notes` folder.
 
-By default supported types are currently `fix` and `feat`. Additional types can be configured
-to map to these initial types.
+By default supported sections are `feat`, `fix`, `docs` and `misc`. Additional types can be configured
+to map to these initial sections, custom sections can be added and mapped to types as well.
+
+See [Configuration](#Configuration) below for default sections and section
+mappings and how to customize them.
+
+```md
+## <version>
+
+### Features and Improvements
+- xxx
+- xxx
+
+### Bug fixes
+- xxx
+- xxx
+
+### Documentation
+- xxx
+- xxx
+
+### Miscellaneous
+- xxx
+- xxx
+```
 
 ### Conventional commits
 
@@ -191,7 +214,12 @@ allowed_branches = [
 
 #### `sections =`
   _**[optional]**_<br />
-  **default**: None
+  **default**: {
+      "feat": "Features and Improvements",
+      "fix": "Bug fixes",
+      "docs": "Documentation",
+      "misc": "Miscellaneous",
+  }
 
   Define custom headers or new sections/headers, new sections will require a matching
   section_mapping configuration.
@@ -208,10 +236,19 @@ fix = "Bugfixes"
 
 #### `section_mapping =`
   _**[optional]**_<br />
-  **default**: None
+  **default**: {
+      "bug": "fix",
+      "chore": "misc",
+      "ci": "misc",
+      "docs": "docs",
+      "perf": "misc",
+      "refactor": "misc",
+      "revert": "misc",
+      "style": "misc",
+      "test": "misc",
+  }
 
-  Configure additional supported release_note extensions to supported changelog
-  sections.
+  Configure additional supported commit types to supported changelog sections.
 
   Example:
 

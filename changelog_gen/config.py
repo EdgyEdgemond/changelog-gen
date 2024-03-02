@@ -20,6 +20,21 @@ logger = logging.getLogger(__name__)
 SUPPORTED_SECTIONS = {
     "feat": "Features and Improvements",
     "fix": "Bug fixes",
+    "docs": "Documentation",
+    "misc": "Miscellaneous",
+}
+
+
+DEFAULT_SECTION_MAPPING = {
+    "bug": "fix",
+    "chore": "misc",
+    "ci": "misc",
+    "docs": "docs",
+    "perf": "misc",
+    "refactor": "misc",
+    "revert": "misc",
+    "style": "misc",
+    "test": "misc",
 }
 
 
@@ -45,7 +60,7 @@ class Config:
     date_format: str | None = None
 
     allowed_branches: list[str] = dataclasses.field(default_factory=list)
-    section_mapping: dict = dataclasses.field(default_factory=dict)
+    section_mapping: dict = dataclasses.field(default_factory=lambda: DEFAULT_SECTION_MAPPING)
     sections: dict = dataclasses.field(default_factory=lambda: SUPPORTED_SECTIONS)
 
     release: bool = False
