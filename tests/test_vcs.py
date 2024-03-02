@@ -189,3 +189,21 @@ Formatted
 
     logs = Git.get_logs("0.0.2")
     assert logs == ["Commit message 3\n\nFormatted\n", "commit log 2", "commit log"]
+
+
+def test_revert(multiversion_repo):
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("hello world! v3")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("commit log")
+
+    f.write_text("hello world! v4")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("commit log 2")
+
+    assert multiversion_repo.api.head.commit.message == "commit log 2"
+
+    Git.revert()
+
+    assert multiversion_repo.api.head.commit.message == "commit log"

@@ -438,6 +438,37 @@ release = true
     assert git_repo.api.head.commit.message == "Bump version: 0.0.0 → 0.0.1\n"
 
 
+@pytest.mark.usefixtures("changelog", "_release_notes")
+def test_generate_handles_bumpversion_failure_and_reverts_changelog_commit(
+    gen_cli_runner,
+    git_repo,
+    monkeypatch,
+):
+    p = git_repo.workspace / "setup.cfg"
+    p.write_text(
+        """
+[bumpversion]
+current_version = 0.0.0
+commit = true
+tag = true
+
+[changelog_gen]
+commit = true
+release = true
+""",
+    )
+
+    git_repo.run("git add setup.cfg")
+    git_repo.api.index.commit("commit setup.cfg")
+    monkeypatch.setattr(command.BumpVersion, "release", mock.Mock(side_effect=Exception))
+    monkeypatch.setattr(typer, "confirm", mock.MagicMock(return_value=True))
+
+    result = gen_cli_runner.invoke()
+
+    assert result.exit_code == 1
+    assert git_repo.api.head.commit.message == "commit setup.cfg"
+
+
 @pytest.mark.usefixtures("setup", "_release_notes")
 def test_generate_uses_supplied_version_tag(
     gen_cli_runner,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.metadata
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 import typer
@@ -197,12 +198,17 @@ def _finalise(  # noqa: PLR0913
             return False
 
         Git.add_path(f"CHANGELOG.{extension.value}")
-        # TODO(edgy): Dont add release notes if using commit messages...
-        Git.add_path("release_notes")
+        if Path("release_notes").exists():
+            Git.add_path("release_notes")
         Git.commit(version_tag)
 
         if cfg.release:
-            BumpVersion.release(version_tag)
+            try:
+                BumpVersion.release(version_tag)
+            except Exception as e:  # noqa: BLE001
+                Git.revert()
+                typer.echo("Error creating release: {e}")
+                raise typer.Exit(code=1) from e
         return True
 
     return False
