@@ -105,7 +105,11 @@ the need to pass them in every time.
 
 Example `pyproject.toml`:
 
+<<<<<<< HEAD
 ```tonl
+=======
+```toml
+>>>>>>> @{-1}
 [tool.changelog_gen]
 commit = true
 release = true
@@ -128,6 +132,21 @@ Example `setup.cfg`:
 commit = true
 release = true
 allow_dirty = false
+```
+
+Example `pyproject.toml`:
+
+```toml
+[tool.changelog_gen]
+commit = true
+release = true
+allow_dirty = false
+
+[changelog_gen.post_process]
+  url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/comment
+  verb = POST
+  body = {"body": "Released on v::version::"}
+  auth_env = JIRA_AUTH
 ```
 
 ### Configuration file -- Global configuration
@@ -171,7 +190,7 @@ General configuration is grouped in a `[changelog_gen]` section.
   **default**: None
 
   Create links in the CHANGELOG to the originating issue. A url that contains
-  an `$ISSUE_REF` placeholder for replacement.
+  an `issue_ref` placeholder for replacement.
 
   Example:
 
@@ -402,8 +421,7 @@ url = https://your-domain.atlassian.net/rest/api/2/issue/ISSUE-::issue_ref::/com
 verb = "POST"
 body = '{"body": "Released on ::version::"}'
 auth_env = "JIRA_AUTH"
-[tool.changelog_gen.post_process.headers]
-content-type = "application/json"
+headers."content-type" = "application/json"
 ```
   This assumes an environment variable `JIRA_AUTH` with the content `user@domain.com:{api_key}`.
   See
