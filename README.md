@@ -28,11 +28,9 @@ poetry install
 Commits](https://www.conventionalcommits.org/en/v1.0.0/), as well as reading
 changes from a `release_notes` folder.
 
-<<<<<<< HEAD
 NOTE: `release_notes` support will be dropped in a future version, migration to
 conventional commits is recommended.
-=======
->>>>>>> @{-1}
+
 By default supported sections are `feat`, `fix`, `docs` and `misc`. Additional types can be configured
 to map to these initial sections, custom sections can be added and mapped to types as well.
 
