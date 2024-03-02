@@ -35,7 +35,7 @@ def parse_bump_my_version_info(semver: str, lines: list[str]) -> tuple[str, str]
 
 def parse_bump2version_info(_semver: str, lines: list[str]) -> tuple[str, str]:
     """Parse output from bump2version info command."""
-    bumpversion_data = {v.split("=")[0]: v.split("=")[1] for v in lines if "_version" in v}
+    bumpversion_data = {v.split("=")[0].strip(): v.split("=")[1].strip() for v in lines if "_version" in v}
 
     return bumpversion_data["current_version"], bumpversion_data["new_version"]
 
@@ -83,6 +83,7 @@ class BumpVersion:  # noqa: D101
             raise errors.VersionDetectionError(msg) from e
 
         current, new = commands[bump_library]["parser"](semver, describe_out)
+
         return {
             "current": current,
             "new": new,

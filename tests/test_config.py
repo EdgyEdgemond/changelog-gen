@@ -26,6 +26,17 @@ def setup_factory(cwd):
 
 
 @pytest.fixture()
+def pyproject_factory(cwd):
+    def factory(contents=None):
+        p = cwd / "pyproject.toml"
+        p.touch()
+        if contents:
+            p.write_text(contents)
+
+    return factory
+
+
+@pytest.fixture()
 def _empty_config(config_factory):
     config_factory()
 
