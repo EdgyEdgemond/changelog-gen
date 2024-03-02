@@ -50,19 +50,19 @@ class BaseWriter:
     def _add_version(self: typing.Self, version: str) -> None:
         raise NotImplementedError
 
-    def consume(self: typing.Self, supported_sections: dict[str, str], sections: SectionDict) -> None:
+    def consume(self: typing.Self, type_headers: dict[str, str], sections: SectionDict) -> None:
         """Process sections and generate changelog file entries."""
-        for section in sorted(supported_sections):
-            if section not in sections:
+        for header in type_headers.values():
+            if header not in sections:
                 continue
+            # Remove processed headers to prevent rendering duplicate type -> header mappings
+            changes = sections.pop(header)
+            self.add_section(header, changes)
 
-            header = supported_sections[section]
-            self.add_section(header, sections[section])
-
-    def add_section(self: typing.Self, header: str, lines: dict[str, dict]) -> None:
+    def add_section(self: typing.Self, header: str, changes: dict[str, Change]) -> None:
         """Add a section to changelog file."""
         self._add_section_header(header)
-        for change in sorted(lines.values()):
+        for change in sorted(changes.values()):
             description = (
                 f"{self.italic_string(change.scope)} {change.description}" if change.scope else change.description
             )

@@ -38,13 +38,12 @@ allowed_branches = [
     "master",
 ]
 date_format = "- %Y-%m-%d"
-issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/$ISSUE_REF"
-commit_link = "https://github.com/EdgyEdgemond/changelog-gen/commit/$COMMIT_HASH"
+issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
+commit_link = "https://github.com/EdgyEdgemond/changelog-gen/commit/::commit_hash::"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--random-order"
-
 
 [tool.coverage.report]
 sort = "cover"
@@ -58,7 +57,6 @@ exclude_lines = [
 [tool.coverage.run]
 branch = true
 source = ["changelog_gen"]
-
 
 [tool.ruff]
 line-length = 120

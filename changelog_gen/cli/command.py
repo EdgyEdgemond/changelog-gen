@@ -141,13 +141,11 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
 
     process_info(Git.get_latest_tag_info(), cfg, dry_run=dry_run)
 
-    section_mapping = cfg.section_mapping
-    supported_sections = cfg.sections
+    e = extractor.ReleaseNoteExtractor(dry_run=dry_run, type_headers=cfg.type_headers)
+    sections = e.extract()
 
-    e = extractor.ReleaseNoteExtractor(dry_run=dry_run, supported_sections=supported_sections)
-    sections = e.extract(section_mapping)
-
-    if not e.unique_issues(sections) and cfg.reject_empty:
+    unique_issues = e.unique_issues(sections)
+    if not unique_issues and cfg.reject_empty:
         typer.echo("No changes present and reject_empty configured.")
         raise typer.Exit(code=0)
 
@@ -163,7 +161,7 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
     w = writer.new_writer(extension, dry_run=dry_run, issue_link=cfg.issue_link, commit_link=cfg.commit_link)
 
     w.add_version(version_string)
-    w.consume(supported_sections, sections)
+    w.consume(cfg.type_headers, sections)
 
     typer.echo(w)
 
@@ -171,7 +169,7 @@ def _gen(cfg: config.Config, version_tag: str | None = None, *, dry_run: bool = 
 
     post_process = cfg.post_process
     if post_process and processed:
-        unique_issues = [r for r in e.unique_issues(sections) if not r.startswith("__")]
+        unique_issues = [r for r in unique_issues if not r.startswith("__")]
         per_issue_post_process(post_process, sorted(unique_issues), version_tag, dry_run=dry_run)
 
 

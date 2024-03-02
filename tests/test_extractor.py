@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from changelog_gen import errors, extractor
-from changelog_gen.config import SUPPORTED_SECTIONS
+from changelog_gen.config import TYPE_HEADERS
 from changelog_gen.extractor import Change, ReleaseNoteExtractor
 
 
@@ -68,7 +68,7 @@ def _remap_release_notes(release_notes):
 
 @pytest.mark.usefixtures("multiversion_repo")
 def test_init_with_no_release_notes():
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    e = ReleaseNoteExtractor(TYPE_HEADERS)
     assert e.has_release_notes is False
 
 
@@ -77,43 +77,43 @@ def test_init_with_release_notes_non_dir(multiversion_repo):
     r = path / "release_notes"
     r.write_text("not a dir")
 
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    e = ReleaseNoteExtractor(TYPE_HEADERS)
 
     assert e.has_release_notes is False
 
 
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_valid_notes_extraction():
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    e = ReleaseNoteExtractor(TYPE_HEADERS)
 
     sections = e.extract()
 
     assert sections == {
-        "feat": {
-            "2": Change("2", "Detail about 2"),
-            "3": Change("3", "Detail about 3"),
+        "Features and Improvements": {
+            "2": Change("2", "Detail about 2", "feat"),
+            "3": Change("3", "Detail about 3", "feat"),
         },
-        "fix": {
-            "1": Change("1", "Detail about 1"),
-            "4": Change("4", "Detail about 4"),
+        "Bug fixes": {
+            "1": Change("1", "Detail about 1", "fix"),
+            "4": Change("4", "Detail about 4", "fix"),
         },
     }
 
 
 @pytest.mark.usefixtures("_breaking_release_notes")
 def test_breaking_notes_extraction():
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    e = ReleaseNoteExtractor(TYPE_HEADERS)
 
     sections = e.extract()
 
     assert sections == {
-        "feat": {
-            "2": Change("2", "Detail about 2"),
-            "3": Change("3", "Detail about 3", breaking=True),
+        "Features and Improvements": {
+            "2": Change("2", "Detail about 2", "feat"),
+            "3": Change("3", "Detail about 3", "feat", breaking=True),
         },
-        "fix": {
-            "1": Change("1", "Detail about 1", breaking=True),
-            "4": Change("4", "Detail about 4"),
+        "Bug fixes": {
+            "1": Change("1", "Detail about 1", "fix", breaking=True),
+            "4": Change("4", "Detail about 4", "fix"),
         },
     }
 
@@ -150,13 +150,13 @@ Refs: #2
         multiversion_repo.api.index.commit(msg)
         hashes.append(str(multiversion_repo.api.head.commit))
 
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    e = ReleaseNoteExtractor(TYPE_HEADERS)
 
     sections = e.extract()
 
     assert sections == {
-        "feat": {
-            "2": Change("2", "Detail about 2", short_hash=hashes[5][:7], commit_hash=hashes[5]),
+        "Features and Improvements": {
+            "2": Change("2", "Detail about 2", short_hash=hashes[5][:7], commit_hash=hashes[5], commit_type="feat"),
             "3": Change(
                 "3",
                 "Detail about 3",
@@ -164,11 +164,26 @@ Refs: #2
                 scope="(docs)",
                 short_hash=hashes[2][:7],
                 commit_hash=hashes[2],
+                commit_type="feat",
             ),
         },
-        "fix": {
-            "1": Change("1", "Detail about 1", breaking=True, short_hash=hashes[3][:7], commit_hash=hashes[3]),
-            "4": Change("4", "Detail about 4", scope="(config)", short_hash=hashes[0][:7], commit_hash=hashes[0]),
+        "Bug fixes": {
+            "1": Change(
+                "1",
+                "Detail about 1",
+                breaking=True,
+                short_hash=hashes[3][:7],
+                commit_hash=hashes[3],
+                commit_type="fix",
+            ),
+            "4": Change(
+                "4",
+                "Detail about 4",
+                scope="(config)",
+                short_hash=hashes[0][:7],
+                commit_hash=hashes[0],
+                commit_type="fix",
+            ),
         },
     }
 
@@ -178,7 +193,7 @@ def test_git_commit_extraction_picks_up_custom_types(multiversion_repo):
     f = path / "hello.txt"
     hashes = []
     for msg in [
-        """bug: Detail about 1
+        """custom: Detail about 1
 
 With some details
 
@@ -196,60 +211,50 @@ Refs: #2
         multiversion_repo.api.index.commit(msg)
         hashes.append(str(multiversion_repo.api.head.commit))
 
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    e = ReleaseNoteExtractor({"custom": "Bug fixes", "feat": "Features and Improvements", "bug": "Bug fixes"})
 
-    sections = e.extract({"bug": "fix"})
+    sections = e.extract()
 
     assert sections == {
-        "feat": {
-            "2": Change("2", "Detail about 2", short_hash=hashes[2][:7], commit_hash=hashes[2]),
+        "Features and Improvements": {
+            "2": Change("2", "Detail about 2", short_hash=hashes[2][:7], commit_hash=hashes[2], commit_type="feat"),
         },
-        "fix": {
-            "1": Change("1", "Detail about 1", breaking=True, short_hash=hashes[0][:7], commit_hash=hashes[0]),
+        "Bug fixes": {
+            "1": Change(
+                "1",
+                "Detail about 1",
+                breaking=True,
+                short_hash=hashes[0][:7],
+                commit_hash=hashes[0],
+                commit_type="custom",
+            ),
         },
     }
 
 
 @pytest.mark.usefixtures("_invalid_release_notes")
 def test_invalid_notes_extraction_raises():
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    e = ReleaseNoteExtractor({"fix": "Fix", "feat": "Features"})
 
     with pytest.raises(errors.InvalidSectionError) as ex:
         e.extract()
 
-    assert str(ex.value) == "Unsupported CHANGELOG section bug, derived from `./release_notes/3.bug`"
-
-
-@pytest.mark.usefixtures("_invalid_release_notes")
-def test_section_remapping_can_remap_custom_sections():
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
-
-    sections = e.extract({"bug": "fix"})
-    assert sections == {
-        "feat": {
-            "2": Change("2", "Detail about 2"),
-        },
-        "fix": {
-            "1": Change("1", "Detail about 1"),
-            "3": Change("3", "Detail about 3"),
-            "4": Change("4", "Detail about 4"),
-        },
-    }
+    assert str(ex.value) == "Unsupported CHANGELOG commit type bug, derived from `./release_notes/3.bug`"
 
 
 @pytest.mark.usefixtures("_invalid_release_notes")
 def test_section_mapping_can_handle_new_sections():
-    e = ReleaseNoteExtractor({"bug": "BugFix", "feat": "Features"})
+    e = ReleaseNoteExtractor({"bug": "BugFix", "feat": "Features", "fix": "BugFix"})
 
-    sections = e.extract({"fix": "bug"})
+    sections = e.extract()
     assert sections == {
-        "feat": {
-            "2": Change("2", "Detail about 2"),
+        "Features": {
+            "2": Change("2", "Detail about 2", "feat"),
         },
-        "bug": {
-            "1": Change("1", "Detail about 1"),
-            "3": Change("3", "Detail about 3"),
-            "4": Change("4", "Detail about 4"),
+        "BugFix": {
+            "1": Change("1", "Detail about 1", "fix"),
+            "3": Change("3", "Detail about 3", "bug"),
+            "4": Change("4", "Detail about 4", "fix"),
         },
     }
 
@@ -259,16 +264,16 @@ def test_unique_issues():
 
     assert e.unique_issues(
         {
-            "unsupported": {
-                "5": Change("5", "Detail about 5"),
+            "Unsupported header": {
+                "5": Change("5", "Detail about 5", "unsupported"),
             },
-            "feat": {
-                "2": Change("2", "Detail about 2"),
+            "Feature header": {
+                "2": Change("2", "Detail about 2", "feat"),
             },
-            "bug": {
-                "2": Change("2", "Detail about 2"),
-                "3": Change("3", "Detail about 3"),
-                "4": Change("4", "Detail about 4"),
+            "Bug header": {
+                "2": Change("2", "Detail about 2", "bug"),
+                "3": Change("3", "Detail about 3", "bug"),
+                "4": Change("4", "Detail about 4", "bug"),
             },
         },
     ) == ["2", "3", "4"]
@@ -276,7 +281,7 @@ def test_unique_issues():
 
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_dry_run_clean_keeps_files(release_notes):
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS, dry_run=True)
+    e = ReleaseNoteExtractor(TYPE_HEADERS, dry_run=True)
 
     e.clean()
 
@@ -294,7 +299,7 @@ def test_dry_run_clean_keeps_files(release_notes):
 @pytest.mark.usefixtures("_valid_release_notes")
 def test_clean_removes_all_non_dotfiles(release_notes):
     """Clean should not remove .gitkeep files etc."""
-    e = ReleaseNoteExtractor(SUPPORTED_SECTIONS)
+    e = ReleaseNoteExtractor(TYPE_HEADERS)
 
     e.clean()
 
@@ -304,13 +309,13 @@ def test_clean_removes_all_non_dotfiles(release_notes):
 @pytest.mark.parametrize(
     ("sections", "semver_mapping", "expected_semver"),
     [
-        ({"fix": {"1": Change("1", "desc")}}, {"feat": "minor"}, "patch"),
-        ({"feat": {"1": Change("1", "desc")}}, {"feat": "minor"}, "patch"),
-        ({"fix": {"1": Change("1", "desc", breaking=True)}}, {"feat": "minor"}, "minor"),
-        ({"feat": {"1": Change("1", "desc", breaking=True)}}, {"feat": "minor"}, "minor"),
-        ({"custom": {"1": Change("1", "desc")}}, {"custom": "patch"}, "patch"),
-        ({"custom": {"1": Change("1", "desc")}}, {"custom": "minor"}, "patch"),
-        ({"custom": {"1": Change("1", "desc", breaking=True)}}, {"custom": "minor"}, "minor"),
+        ({"header": {"1": Change("1", "desc", "fix")}}, {"feat": "minor"}, "patch"),
+        ({"header": {"1": Change("1", "desc", "feat")}}, {"feat": "minor"}, "patch"),
+        ({"header": {"1": Change("1", "desc", "fix", breaking=True)}}, {"feat": "minor"}, "minor"),
+        ({"header": {"1": Change("1", "desc", "feat", breaking=True)}}, {"feat": "minor"}, "minor"),
+        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": "patch"}, "patch"),
+        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": "minor"}, "patch"),
+        ({"header": {"1": Change("1", "desc", "custom", breaking=True)}}, {"custom": "minor"}, "minor"),
     ],
 )
 def test_extract_version_tag_version_zero(sections, semver_mapping, expected_semver, monkeypatch):
@@ -328,13 +333,13 @@ def test_extract_version_tag_version_zero(sections, semver_mapping, expected_sem
 @pytest.mark.parametrize(
     ("sections", "semver_mapping", "expected_semver"),
     [
-        ({"fix": {"1": Change("1", "desc")}}, {"feat": "minor"}, "patch"),
-        ({"feat": {"1": Change("1", "desc")}}, {"feat": "minor"}, "minor"),
-        ({"fix": {"1": Change("1", "desc", breaking=True)}}, {"feat": "minor"}, "major"),
-        ({"feat": {"1": Change("1", "desc", breaking=True)}}, {"feat": "minor"}, "major"),
-        ({"custom": {"1": Change("1", "desc")}}, {"custom": "patch"}, "patch"),
-        ({"custom": {"1": Change("1", "desc")}}, {"custom": "minor"}, "minor"),
-        ({"custom": {"1": Change("1", "desc", breaking=True)}}, {"custom": "minor"}, "major"),
+        ({"header": {"1": Change("1", "desc", "fix")}}, {"feat": "minor"}, "patch"),
+        ({"header": {"1": Change("1", "desc", "feat")}}, {"feat": "minor"}, "minor"),
+        ({"header": {"1": Change("1", "desc", "fix", breaking=True)}}, {"feat": "minor"}, "major"),
+        ({"header": {"1": Change("1", "desc", "feat", breaking=True)}}, {"feat": "minor"}, "major"),
+        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": "patch"}, "patch"),
+        ({"header": {"1": Change("1", "desc", "custom")}}, {"custom": "minor"}, "minor"),
+        ({"header": {"1": Change("1", "desc", "custom", breaking=True)}}, {"custom": "minor"}, "major"),
     ],
 )
 def test_extract_version_tag(sections, semver_mapping, expected_semver, monkeypatch):
@@ -351,20 +356,104 @@ def test_extract_version_tag(sections, semver_mapping, expected_semver, monkeypa
 
 def test_change_ordering():
     changes = [
-        Change(issue_ref="23", description="Small change", authors="(edgy, tom)", scope="", breaking=False),
-        Change(issue_ref="24", description="A description", authors="(edgy)", scope="(writer)", breaking=True),
-        Change(issue_ref="25", description="Another change", authors="(tom)", scope="(extractor)", breaking=False),
-        Change(issue_ref="26", description="Bugfix", authors="", scope="(extractor)", breaking=False),
-        Change(issue_ref="27", description="Upgrade python", authors="(tom)", scope="", breaking=True),
-        Change(issue_ref="28", description="Update config", authors="(edgy)", scope="(config)", breaking=False),
+        Change(
+            issue_ref="23",
+            description="Small change",
+            authors="(edgy, tom)",
+            scope="",
+            breaking=False,
+            commit_type="fix",
+        ),
+        Change(
+            issue_ref="24",
+            description="A description",
+            authors="(edgy)",
+            scope="(writer)",
+            breaking=True,
+            commit_type="misc",
+        ),
+        Change(
+            issue_ref="25",
+            description="Another change",
+            authors="(tom)",
+            scope="(extractor)",
+            breaking=False,
+            commit_type="ci",
+        ),
+        Change(
+            issue_ref="26",
+            description="Bugfix",
+            authors="",
+            scope="(extractor)",
+            breaking=False,
+            commit_type="chore",
+        ),
+        Change(
+            issue_ref="27",
+            description="Upgrade python",
+            authors="(tom)",
+            scope="",
+            breaking=True,
+            commit_type="custom",
+        ),
+        Change(
+            issue_ref="28",
+            description="Update config",
+            authors="(edgy)",
+            scope="(config)",
+            breaking=False,
+            commit_type="feat",
+        ),
     ]
     random.shuffle(changes)
 
     assert sorted(changes) == [
-        Change(issue_ref="24", description="A description", authors="(edgy)", scope="(writer)", breaking=True),
-        Change(issue_ref="27", description="Upgrade python", authors="(tom)", scope="", breaking=True),
-        Change(issue_ref="28", description="Update config", authors="(edgy)", scope="(config)", breaking=False),
-        Change(issue_ref="25", description="Another change", authors="(tom)", scope="(extractor)", breaking=False),
-        Change(issue_ref="26", description="Bugfix", authors="", scope="(extractor)", breaking=False),
-        Change(issue_ref="23", description="Small change", authors="(edgy, tom)", scope="", breaking=False),
+        Change(
+            issue_ref="24",
+            description="A description",
+            authors="(edgy)",
+            scope="(writer)",
+            breaking=True,
+            commit_type="misc",
+        ),
+        Change(
+            issue_ref="27",
+            description="Upgrade python",
+            authors="(tom)",
+            scope="",
+            breaking=True,
+            commit_type="custom",
+        ),
+        Change(
+            issue_ref="28",
+            description="Update config",
+            authors="(edgy)",
+            scope="(config)",
+            breaking=False,
+            commit_type="feat",
+        ),
+        Change(
+            issue_ref="25",
+            description="Another change",
+            authors="(tom)",
+            scope="(extractor)",
+            breaking=False,
+            commit_type="ci",
+        ),
+        Change(
+            issue_ref="26",
+            description="Bugfix",
+            authors="",
+            scope="(extractor)",
+            breaking=False,
+            commit_type="chore",
+        ),
+        Change(
+            issue_ref="23",
+            description="Small change",
+            authors="(edgy, tom)",
+            scope="",
+            breaking=False,
+            commit_type="fix",
+        ),
     ]

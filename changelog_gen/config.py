@@ -18,18 +18,40 @@ from changelog_gen import errors
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_SECTIONS = {
+TYPE_HEADERS = {
     "feat": "Features and Improvements",
     "fix": "Bug fixes",
     "docs": "Documentation",
-    "misc": "Miscellaneous",
+    "bug": "Bug fixes",
+    "chore": "Miscellaneous",
+    "ci": "Miscellaneous",
+    "perf": "Miscellaneous",
+    "refactor": "Miscellaneous",
+    "revert": "Miscellaneous",
+    "style": "Miscellaneous",
+    "test": "Miscellaneous",
 }
 
 SEMVER_MAPPING = {
     "feat": "minor",
     "fix": "patch",
+    "bug": "patch",
+    "chore": "patch",
+    "ci": "patch",
     "docs": "patch",
-    "misc": "patch",
+    "perf": "patch",
+    "refactor": "patch",
+    "revert": "patch",
+    "style": "patch",
+    "test": "patch",
+}
+
+# Deprecated
+SUPPORTED_SECTIONS = {
+    "feat": "Features and Improvements",
+    "fix": "Bug fixes",
+    "docs": "Documentation",
+    "misc": "Miscellaneous",
 }
 
 DEFAULT_SECTION_MAPPING = {
@@ -134,9 +156,8 @@ class Config:
     version_string: str = "v{new_version}"
 
     allowed_branches: list[str] = dataclasses.field(default_factory=list)
-    sections: dict = dataclasses.field(default_factory=lambda: SUPPORTED_SECTIONS)
+    type_headers: dict = dataclasses.field(default_factory=lambda: TYPE_HEADERS)
     semver_mapping: dict = dataclasses.field(default_factory=lambda: SEMVER_MAPPING)
-    section_mapping: dict = dataclasses.field(default_factory=lambda: DEFAULT_SECTION_MAPPING)
 
     release: bool = False
     commit: bool = False
@@ -174,9 +195,6 @@ def _process_pyproject(pyproject: Path) -> dict:
         if "tool" not in data or "changelog_gen" not in data["tool"]:
             return cfg
 
-        if "post_process" in data["tool"]["changelog_gen"]:
-            pp = data["tool"]["changelog_gen"]["post_process"]
-            data["tool"]["changelog_gen"]["post_process"] = PostProcessConfig.from_dict(pp)
         return data["tool"]["changelog_gen"]
 
 
@@ -197,9 +215,11 @@ def _process_setup_cfg(setup: Path) -> dict:
         ("date_format", extract_string_value),
         ("version_string", extract_string_value),
         ("allowed_branches", extract_list_value),
+        ("type_headers", extract_dict_value),
         ("sections", extract_dict_value),
         ("semver_mapping", extract_dict_value),
         ("section_mapping", extract_dict_value),
+        ("post_process", extract_dict_value),
         ("release", extract_boolean_value),
         ("commit", extract_boolean_value),
         ("allow_dirty", extract_boolean_value),
@@ -209,19 +229,51 @@ def _process_setup_cfg(setup: Path) -> dict:
         if value:
             cfg[valuename] = value
 
-    for objectname, object_class in [
-        ("post_process", PostProcessConfig),
-    ]:
-        dictvalue = extract_dict_value(parser, objectname)
-        if dictvalue is None:
-            continue
-        try:
-            cfg[objectname] = object_class.from_dict(dictvalue)
-        except Exception as e:  # noqa: BLE001
-            msg = f"Failed to create {objectname}: {e!s}"
-            raise RuntimeError(msg) from e
-
     return cfg
+
+
+def check_deprecations(cfg: dict) -> None:
+    """Check parsed configuration dict for deprecated features."""
+    if cfg.get("post_process"):
+        url = cfg["post_process"].get("url", "")
+        body = cfg["post_process"].get("body", "")
+        if "{issue_ref}" in url or "{new_version}" in url:
+            warn(
+                "{replace} format strings are not supported in `post_process.url` configuration, use ::replace:: instead.",  # noqa: E501
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            cfg["post_process"]["url"] = url.format(issue_ref="::issue_ref::", new_version="::version::")
+        if "{issue_ref}" in body or "{new_version}" in body:
+            warn(
+                "{replace} format strings are not supported in `post_process.body` configuration, use ::replace:: instead.",  # noqa: E501
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            cfg["post_process"]["body"] = body.format(issue_ref="::issue_ref::", new_version="::version::")
+
+    if cfg.get("issue_link") and "{issue_ref}" in cfg["issue_link"]:
+        warn(
+            "{replace} format strings are not supported in `issue_link` configuration, use ::replace:: instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        cfg["issue_link"] = cfg["issue_link"].format(issue_ref="::issue_ref::", new_version="::version::")
+
+    if cfg.get("commit_link") and "{commit_hash}" in cfg["config_link"]:
+        warn(
+            "{replace} format strings are not supported in `config_link` configuration, use ::replace:: instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        cfg["commit_link"] = cfg["commit_link"].format(commit_hash="::commit_hash::")
+
+    if cfg.get("section_mapping") or cfg.get("sections"):
+        warn(
+            "`sections` and `section_mapping` are no longer supported, use `type_headers` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
 
 def read(**kwargs) -> Config:  # noqa: C901, PLR0912
@@ -245,39 +297,36 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
         cfg = _process_setup_cfg(setup)
 
     if "post_process" not in cfg and post_process:
-        cfg["post_process"] = post_process
+        cfg["post_process"] = {
+            "url": post_process.url,
+            "auth_env": post_process.auth_env,
+        }
 
     if "post_process" in cfg and post_process:
-        cfg["post_process"].url = post_process.url or cfg["post_process"].url
-        cfg["post_process"].auth_env = post_process.auth_env or cfg["post_process"].auth_env
+        cfg["post_process"]["url"] = post_process.url or cfg["post_process"].get("url")
+        cfg["post_process"]["auth_env"] = post_process.auth_env or cfg["post_process"].get("auth_env")
 
     cfg.update(overrides)
 
-    if cfg.get("post_process"):
-        url = cfg["post_process"].url
-        body = cfg["post_process"].body
-        if "{issue_ref}" in url or "{new_version}" in url:
-            warn(
-                "{replace} format strings are not supported in `post_process.url` configuration, use ::replace:: instead.",  # noqa: E501
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            cfg["post_process"].url = url.format(issue_ref="::issue_ref::", new_version="::version::")
-        if "{issue_ref}" in body or "{new_version}" in body:
-            warn(
-                "{replace} format strings are not supported in `post_process.body` configuration, use ::replace:: instead.",  # noqa: E501
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            cfg["post_process"].body = body.format(issue_ref="::issue_ref::", new_version="::version::")
+    check_deprecations(cfg)
 
-    if cfg.get("issue_link") and "{issue_ref}" in cfg["issue_link"]:
-        warn(
-            "{replace} format strings are not supported in `issue_link` configuration, use ::replace:: instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        cfg["issue_link"] = cfg["issue_link"].format(issue_ref="::issue_ref::", new_version="::version::")
+    if cfg.get("post_process"):
+        pp = cfg["post_process"]
+        try:
+            cfg["post_process"] = PostProcessConfig.from_dict(pp)
+        except Exception as e:  # noqa: BLE001
+            msg = f"Failed to create post_process: {e!s}"
+            raise RuntimeError(msg) from e
+
+    if cfg.get("section_mapping") or cfg.get("sections") and not cfg.get("type_headers"):
+        sm = cfg.pop("section_mapping", DEFAULT_SECTION_MAPPING.copy())
+        s = cfg.pop("sections", SUPPORTED_SECTIONS.copy())
+
+        type_headers = s
+        for type_, section in sm.items():
+            type_headers[type_] = s.get(section, "Unknown")
+
+        cfg["type_headers"] = type_headers
 
     # this feels messy, but later on there is an update that should assist in cleaning this up.
     for key_path in [
@@ -305,13 +354,5 @@ def read(**kwargs) -> Config:  # noqa: C901, PLR0912
                     if replace not in ["::issue_ref::", "::version::"]:
                         msg = f"Replace string {replace}, not supported."
                         raise errors.UnsupportedReplaceError(msg)
-
-    if cfg.get("commit_link") and "{commit_hash}" in cfg["config_link"]:
-        warn(
-            "{replace} format strings are not supported in `config_link` configuration, use $REPLACE instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        cfg["commit_link"] = cfg["commit_link"].format(commit_hash="$COMMIT_HASH")
 
     return Config(**cfg)
