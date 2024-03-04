@@ -92,9 +92,11 @@ class ReleaseNoteExtractor:
     def _extract_commit_logs(
         self: typing.Self,
         sections: dict[str, dict],
+        current_version: str,
     ) -> None:
-        latest_info = self.git.get_latest_tag_info()
-        logs = self.git.get_logs(latest_info["current_tag"])
+        # find tag from current version
+        tag = self.git.find_tag(current_version)
+        logs = self.git.get_logs(tag)
 
         # Build a conventional commit regex based on configured sections
         #   ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
@@ -150,14 +152,14 @@ class ReleaseNoteExtractor:
                 header = self.type_headers.get(commit_type, commit_type)
                 sections[header][change.issue_ref] = change
 
-    def extract(self: typing.Self) -> SectionDict:
+    def extract(self: typing.Self, current_version: str) -> SectionDict:
         """Iterate over release note files extracting sections and issues."""
         sections = defaultdict(dict)
 
         if self.has_release_notes:
             self._extract_release_notes(sections)
 
-        self._extract_commit_logs(sections)
+        self._extract_commit_logs(sections, current_version)
 
         return sections
 

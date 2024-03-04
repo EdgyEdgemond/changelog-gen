@@ -218,10 +218,11 @@ def _gen(
         logger.error("No CHANGELOG file detected, run `changelog init`")
         raise typer.Exit(code=1)
 
-    process_info(git.get_latest_tag_info(), cfg, dry_run=dry_run)
+    process_info(git.get_current_info(), cfg, dry_run=dry_run)
 
+    version_info_ = bv.get_version_info("patch")
     e = extractor.ReleaseNoteExtractor(cfg=cfg, git=git, dry_run=dry_run)
-    sections = e.extract()
+    sections = e.extract(version_info_["current"])
 
     unique_issues = e.unique_issues(sections)
     if not unique_issues and cfg.reject_empty:

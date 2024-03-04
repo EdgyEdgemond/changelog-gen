@@ -118,7 +118,7 @@ def test_breaking_notes_extraction():
 
     e = ReleaseNoteExtractor(cfg, git)
 
-    sections = e.extract()
+    sections = e.extract("0.0.2")
 
     assert sections == {
         "Features and Improvements": {
@@ -139,7 +139,7 @@ def test_git_commit_extraction(conventional_commits):
 
     e = ReleaseNoteExtractor(cfg, git)
 
-    sections = e.extract()
+    sections = e.extract("0.0.2")
 
     assert sections == {
         "Features and Improvements": {
@@ -170,6 +170,64 @@ def test_git_commit_extraction(conventional_commits):
                 short_hash=hashes[0][:7],
                 commit_hash=hashes[0],
                 commit_type="fix",
+            ),
+        },
+    }
+
+
+def test_git_commit_extraction_handles_random_tags(conventional_commits, multiversion_repo):
+    hashes = conventional_commits
+    multiversion_repo.api.create_tag("a-random-tag")
+    path = multiversion_repo.workspace
+    f = path / "hello.txt"
+    f.write_text("Detail about 5.")
+    multiversion_repo.run("git add hello.txt")
+    multiversion_repo.api.index.commit("fix: Detail about 5")
+    hashes.append(str(multiversion_repo.api.head.commit))
+
+    cfg = Config()
+    git = Git()
+
+    e = ReleaseNoteExtractor(cfg, git)
+
+    sections = e.extract("0.0.2")
+
+    assert sections == {
+        "Bug fixes": {
+            "__0__": Change(
+                "__0__",
+                "Detail about 5",
+                short_hash=hashes[6][:7],
+                commit_hash=hashes[6],
+                commit_type="fix",
+            ),
+            "1": Change(
+                "1",
+                "Detail about 1",
+                breaking=True,
+                short_hash=hashes[3][:7],
+                commit_hash=hashes[3],
+                commit_type="fix",
+            ),
+            "4": Change(
+                "4",
+                "Detail about 4",
+                scope="(`config`)",
+                short_hash=hashes[0][:7],
+                commit_hash=hashes[0],
+                commit_type="fix",
+            ),
+        },
+        "Features and Improvements": {
+            "2": Change("2", "Detail about 2", short_hash=hashes[5][:7], commit_hash=hashes[5], commit_type="feat"),
+            "3": Change(
+                "3",
+                "Detail about 3",
+                breaking=True,
+                scope="(`docs`)",
+                short_hash=hashes[2][:7],
+                commit_hash=hashes[2],
+                commit_type="feat",
             ),
         },
     }
@@ -209,7 +267,7 @@ Refs: #2
 
     e = ReleaseNoteExtractor(cfg, git)
 
-    sections = e.extract()
+    sections = e.extract("0.0.2")
 
     assert sections == {
         "Features and Improvements": {
@@ -251,7 +309,7 @@ Refs: #1
 
     e = ReleaseNoteExtractor(cfg, git)
 
-    sections = e.extract()
+    sections = e.extract("0.0.2")
 
     assert sections == {
         "Bug fixes": {
@@ -275,7 +333,7 @@ def test_invalid_notes_skipped():
 
     e = ReleaseNoteExtractor(cfg, git)
 
-    sections = e.extract()
+    sections = e.extract("0.0.2")
 
     assert sections == {
         "Fix": {
