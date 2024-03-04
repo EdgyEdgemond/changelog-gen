@@ -96,7 +96,7 @@ class BumpVersion:  # noqa: D101
                 .split("\n")
             )
         except subprocess.CalledProcessError as e:
-            logger.warning(e.output, self.verbose)
+            logger.warning(e.output)
             msg = "Unable to get version data from bumpversion."
             raise errors.VersionDetectionError(msg) from e
 
