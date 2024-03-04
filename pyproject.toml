@@ -93,8 +93,8 @@ source = ["changelog_gen"]
 [tool.ruff]
 line-length = 120
 target-version = "py39"
-select = ["ALL"]
-ignore = [
+lint.select = ["ALL"]
+lint.ignore = [
     "D100",
     "D104",
     "D107",
@@ -103,15 +103,15 @@ ignore = [
     "FIX",  # allow TODO
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tasks.py" = ["ANN", "E501", "INP001"]
 "changelog_gen/cli/command.py" = ["UP007", "B008"]
 "tests/*" = ["ANN", "D", "S105", "S106", "SLF001", "S101", "PLR0913"]
 
-[tool.ruff.flake8-quotes]
+[tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.poetry.scripts]
