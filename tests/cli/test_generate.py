@@ -12,15 +12,12 @@ from changelog_gen.config import PostProcessConfig
 @pytest.fixture(autouse=True)
 def mock_git(monkeypatch):
     mock_git = mock.Mock()
-    mock_git.get_latest_tag_info.return_value = {
-        "commit_sha": "commit-sha",
-        "distance_to_latest_tag": 0,
-        "current_version": "0.0.0",
-        "current_tag": "v0.0.0",
+    mock_git.get_current_info.return_value = {
         "dirty": False,
         "branch": "main",
     }
     mock_git.get_logs.return_value = []
+    mock_git.find_tag.return_value = "v0.0.0"
 
     monkeypatch.setattr(command, "Git", mock.Mock(return_value=mock_git))
 
@@ -160,18 +157,14 @@ def test_generate_aborts_if_changelog_missing(gen_cli_runner):
 
 @pytest.mark.usefixtures("changelog", "_conventional_commits")
 def test_generate_aborts_if_dirty(gen_cli_runner, cwd, mock_git):
-    mock_git.get_latest_tag_info.return_value = {
-        "commit_sha": "commit-sha",
-        "distance_to_latest_tag": 0,
-        "current_version": "0.0.0",
-        "current_tag": "v0.0.0",
+    mock_git.get_current_info.return_value = {
         "dirty": True,
         "branch": "main",
     }
     p = cwd / "pyproject.toml"
     p.write_text(
         """
-[toolchangelog_gen]
+[tool.changelog_gen]
 allow_dirty = false
 """,
     )

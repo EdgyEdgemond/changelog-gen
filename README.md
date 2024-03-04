@@ -215,7 +215,7 @@ issue_link = "http://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::"
   Example:
 
 ```toml
-[toolchangelog_gen]
+[tool.changelog_gen]
 commit_link = "http://github.com/EdgyEdgemond/changelog-gen/commit/::commit_hash::"
 ```
 

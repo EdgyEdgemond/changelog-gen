@@ -18,43 +18,24 @@ class Git:
         self._commit = commit
         self.dry_run = dry_run
 
-    def get_latest_tag_info(self: T) -> dict[str, str | int]:
-        """Extract latest tag info from git."""
-        describe_out = None
-        for tags in ["[0-9]*", "v[0-9]*"]:
-            try:
-                describe_out = (
-                    subprocess.check_output(
-                        [  # noqa: S603, S607
-                            "git",
-                            "describe",
-                            "--tags",
-                            "--dirty",
-                            "--long",
-                            "--match",
-                            tags,
-                        ],
-                        stderr=subprocess.STDOUT,
-                    )
-                    .decode()
-                    .strip()
-                    .split("-")
-                )
-            except subprocess.CalledProcessError:  # noqa: PERF203
-                pass
-            else:
-                break
-        else:
-            msg = "Unable to get version number from git tags."
-            raise errors.VcsError(msg)
+    def get_current_info(self: T) -> dict[str, str]:
+        """Get current state info from git."""
+        changed_files = (
+            subprocess.check_output(
+                ["git", "status", "-s"],  # noqa: S603, S607
+                stderr=subprocess.STDOUT,
+            )
+            .decode()
+            .strip()
+            .split("\n")
+        )
 
         try:
-            rev_parse_out = (
+            branch = (
                 subprocess.check_output(
                     [  # noqa: S603, S607
                         "git",
                         "rev-parse",
-                        "--tags",
                         "--abbrev-ref",
                         "HEAD",
                     ],
@@ -72,37 +53,46 @@ class Git:
             )
             raise errors.VcsError(msg) from e
 
-        info = {
-            "dirty": False,
-            "branch": rev_parse_out[-1],
+        return {
+            "dirty": changed_files != [""],  # Any changed files == dirty
+            "branch": branch[0],
         }
 
-        if describe_out[-1].strip() == "dirty":
-            info["dirty"] = True
-            describe_out.pop()
+    def find_tag(self: T, version_string: str) -> str | None:
+        """Find a version tag given the version string.
 
-        info["commit_sha"] = describe_out.pop().lstrip("g")
-        info["distance_to_latest_tag"] = int(describe_out.pop())
-        tag = "-".join(describe_out)
-        info["current_version"] = tag.lstrip("v")
-        info["current_tag"] = tag
+        Given a version string `0.1.2` find the version tag `v0.1.2`, `0.1.2` etc.
+        """
+        tag = (
+            subprocess.check_output(
+                [  # noqa: S603, S607
+                    "git",
+                    "tag",
+                    "-n",
+                    "--format='%(refname:short)'",
+                    fr"*{version_string}",
+                ],
+                stderr=subprocess.STDOUT,
+            )
+            .decode()
+            .strip()
+        )
 
-        return info
+        return tag.strip("'") or None
 
-    def get_logs(self: T, tag: str) -> list:
+    def get_logs(self: T, tag: str | None) -> list:
         """Fetch logs since last tag."""
+        args = [
+            "git", "log",
+            "--format=%h:%H:%B",  # message only
+            "-z",  # separate with \x00 rather than \n to differentiate multiline commits
+        ]
+        if tag:
+            args.append(f"{tag}..HEAD")
         return [
             m.split(":", 2)
             for m in (
-                subprocess.check_output(
-                    [  # noqa: S603, S607
-                        "git",
-                        "log",
-                        f"{tag}..HEAD",  # between last tag and HEAd
-                        "--format=%h:%H:%B",  # message only
-                        "-z",  # separate with \x00 rather than \n to differentiate multiline commits
-                    ],
-                )
+                subprocess.check_output(args)  # noqa: S603
                 .decode()
                 .strip()
                 .split("\x00")
