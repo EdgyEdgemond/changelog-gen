@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.1 - 2024-03-04
+
+### Bug fixes
+
+- Drop release notes support, fix issue in verbosity logging [[b8f9a7d](https://github.com/EdgyEdgemond/changelog-gen/commit/b8f9a7dcef9263c9177be36a4996c97f2fe60a0b)]
+
 ## v0.9.0 - 2024-03-04
 
 ### Features and Improvements
