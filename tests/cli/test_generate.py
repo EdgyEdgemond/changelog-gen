@@ -68,7 +68,8 @@ def commit_factory(mock_git):
 
 
 @pytest.fixture()
-def _empty_conventional_commits(): ...
+def _empty_conventional_commits():
+    ...
 
 
 @pytest.fixture()

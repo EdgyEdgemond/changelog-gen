@@ -174,6 +174,7 @@ def test_git_commit_extraction(conventional_commits):
         },
     }
 
+
 def test_git_commit_extraction_handles_random_tags(conventional_commits, multiversion_repo):
     hashes = conventional_commits
     multiversion_repo.api.create_tag("a-random-tag")

@@ -70,7 +70,7 @@ class Git:
                     "tag",
                     "-n",
                     "--format='%(refname:short)'",
-                    fr"*{version_string}",
+                    rf"*{version_string}",
                 ],
                 stderr=subprocess.STDOUT,
             )
@@ -83,7 +83,8 @@ class Git:
     def get_logs(self: T, tag: str | None) -> list:
         """Fetch logs since last tag."""
         args = [
-            "git", "log",
+            "git",
+            "log",
             "--format=%h:%H:%B",  # message only
             "-z",  # separate with \x00 rather than \n to differentiate multiline commits
         ]

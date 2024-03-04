@@ -206,7 +206,6 @@ Formatted
 
 @pytest.mark.usefixtures("multiversion_repo")
 def test_get_logs_no_tag():
-
     logs = Git().get_logs(None)
     assert [log[2] for log in logs] == [
         "update",
