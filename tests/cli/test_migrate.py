@@ -11,7 +11,7 @@ release = true
 commit = true
 allow_dirty = false
 reject_empty = false
-allowed_branches = master, test
+allowed_branches = main, test
 section_mapping =
     bug=fix
     ci=misc
@@ -47,7 +47,7 @@ release = true
 commit = true
 allow_dirty = false
 reject_empty = false
-allowed_branches = master
+allowed_branches = main
 version_string={new_version}
 date_format=on %%Y-%%b-%%d
 issue_link = https://github.com/EdgyEdgemond/changelog-gen/issues/::issue_ref::
@@ -73,7 +73,7 @@ date_format = "on %Y-%b-%d"
 version_string = "{new_version}"
 release = true
 commit = true
-allowed_branches = ["master", "test"]
+allowed_branches = ["main", "test"]
 
 [tool.changelog_gen.post_process]
 url = "http://url"
@@ -141,7 +141,7 @@ date_format = "on %Y-%b-%d"
 version_string = "{new_version}"
 release = true
 commit = true
-allowed_branches = ["master"]
+allowed_branches = ["main"]
 
 """
     )

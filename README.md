@@ -4,7 +4,7 @@
 [![image](https://img.shields.io/pypi/pyversions/changelog_gen.svg)](https://pypi.org/project/changelog_gen/)
 ![style](https://github.com/EdgyEdgemond/changelog-gen/workflows/style/badge.svg)
 ![tests](https://github.com/EdgyEdgemond/changelog-gen/workflows/tests/badge.svg)
-[![codecov](https://codecov.io/gh/EdgyEdgemond/changelog-gen/branch/master/graph/badge.svg)](https://codecov.io/gh/EdgyEdgemond/changelog-gen)
+[![codecov](https://codecov.io/gh/EdgyEdgemond/changelog-gen/branch/main/graph/badge.svg)](https://codecov.io/gh/EdgyEdgemond/changelog-gen)
 
 `changelog-gen` is a CHANGELOG generator intended to be used in conjunction
 with [bump-my-version](https://github.com/callowayproject/bump-my-version) to generate
@@ -272,7 +272,7 @@ date_format = "on %Y-%m-%d"
 ```toml
 [tool.changelog_gen]
 allowed_branches = [
-  "master",
+  "main",
   "develop",
 ]
 ```

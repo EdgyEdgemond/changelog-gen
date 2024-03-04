@@ -104,14 +104,14 @@ issue_link = "https://github.com/EdgyEdgemond/changelog-gen/issues/{issue_ref}"
             """
 [tool.changelog_gen]
 allowed_branches = [
-    "master",
+    "main",
     "feature/11",
 ]
 """,
         )
 
         c = config.read()
-        assert c.allowed_branches == ["master", "feature/11"]
+        assert c.allowed_branches == ["main", "feature/11"]
 
     def test_read_picks_up_commit_types(self, config_factory):
         config_factory(
@@ -303,9 +303,9 @@ class TestSetupConfig:
     @pytest.mark.parametrize(
         "branches",
         [
-            "allowed_branches = master,feature/11",
-            "allowed_branches=master,feature/11",
-            "allowed_branches = \n  master\n  feature/11",
+            "allowed_branches = main,feature/11",
+            "allowed_branches=main,feature/11",
+            "allowed_branches = \n  main\n  feature/11",
         ],
     )
     def test_read_picks_up_list_values(self, setup_factory, branches):
@@ -317,7 +317,7 @@ class TestSetupConfig:
         )
 
         c = config.read()
-        assert c.allowed_branches == ["master", "feature/11"]
+        assert c.allowed_branches == ["main", "feature/11"]
 
     def test_read_picks_up_commit_types(self, setup_factory):
         setup_factory(
