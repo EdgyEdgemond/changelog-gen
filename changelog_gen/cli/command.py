@@ -74,8 +74,7 @@ def _callback(
         callback=_version_callback,
         help="Print version and exit.",
     ),
-) -> None:
-    ...
+) -> None: ...
 
 
 app = typer.Typer(name="changelog", callback=_callback)
