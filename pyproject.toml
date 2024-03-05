@@ -93,8 +93,10 @@ source = ["changelog_gen"]
 [tool.ruff]
 line-length = 120
 target-version = "py39"
-lint.select = ["ALL"]
-lint.ignore = [
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
     "D100",
     "D104",
     "D107",
