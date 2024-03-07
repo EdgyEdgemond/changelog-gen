@@ -6,6 +6,12 @@
 ![tests](https://github.com/EdgyEdgemond/changelog-gen/workflows/tests/badge.svg)
 [![codecov](https://codecov.io/gh/EdgyEdgemond/changelog-gen/branch/main/graph/badge.svg)](https://codecov.io/gh/EdgyEdgemond/changelog-gen)
 
+# Archived
+
+This repository has migrated to [NRWLDev](https://github.com/NRWLDev/changelog-gen).
+
+# Details
+
 `changelog-gen` is a CHANGELOG generator intended to be used in conjunction
 with [bump-my-version](https://github.com/callowayproject/bump-my-version) to generate
 changelogs and create release tags.
